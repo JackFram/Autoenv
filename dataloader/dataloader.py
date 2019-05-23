@@ -6,6 +6,13 @@ import pandas as pd
 import numpy as np
 import os
 from tqdm import tqdm
+from src.Vec import VecE2, VecSE2
+from src.curves import CurvePt
+from src.Roadway import roadway
+
+
+FLOATING_POINT_REGEX = r'[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?'
+METERS_PER_FOOT = 0.3048
 
 
 # Trajectory data loader

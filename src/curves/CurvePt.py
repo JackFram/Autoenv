@@ -1,6 +1,6 @@
-from Vec import VecSE2
-from Vec import VecE2
-from Vec.geom import geom
+from src.Vec import VecSE2
+from src.Vec import VecE2
+from src.Vec.geom import geom
 
 
 class CurvePt:

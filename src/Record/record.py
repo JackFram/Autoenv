@@ -1,4 +1,4 @@
-from Basic import Vehicle
+from src.Basic import Vehicle
 
 
 class RecordFrame:

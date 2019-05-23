@@ -1,5 +1,5 @@
 import math
-from Vec import VecSE2
+from src.Vec import VecSE2
 
 
 def deltaangle(a, b):

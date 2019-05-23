@@ -2,8 +2,8 @@
 # VecE2 class in python
 
 import math
-from Vec.VecE2 import VecE2
-from Vec.geom.geom import lerp_angle, clamp
+from src.Vec.VecE2 import VecE2
+from src.Vec.geom.geom import lerp_angle, clamp
 
 
 class VecSE2:

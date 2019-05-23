@@ -1,8 +1,8 @@
 # Zhihao Zhang
 # roadway class in python
-from curves import CurvePt
-from Vec import VecSE2, VecE2
-from Vec.geom import geom
+from src.curves import CurvePt
+from src.Vec import VecSE2, VecE2
+from src.Vec.geom import geom
 import math
 import re
 import warnings
