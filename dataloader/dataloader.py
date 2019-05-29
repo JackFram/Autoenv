@@ -104,74 +104,81 @@ def load_ngsim_trajdata(filepath: str):
 
 # Roadway data loader
 def read_boundaries(filepath_boundaries: str):
-    fp = open(filepath_boundaries, 'r')
-    lines = fp.readlines()
-    fp.close()
-    for i, line in enumerate(lines):
-        lines[i] = line.strip()
-    assert lines[0] == 'BOUNDARIES'
+    with open(filepath_boundaries, 'r') as fp:
+        lines = fp.readlines()
+        fp.close()
+        for i, line in enumerate(lines):
+            lines[i] = line.strip()
+        assert lines[0] == 'BOUNDARIES'
 
-    n_boundaries = int(lines[1])
+        n_boundaries = int(lines[1])
 
-    assert n_boundaries >= 0
+        assert n_boundaries >= 0
 
-    retval = []  # Array{Vector{VecE2}}
+        retval = []  # Array{Vector{VecE2}}
 
-    line_index = 1
-    for i in range(n_boundaries):
-        line_index += 1
-        assert lines[line_index] == "BOUNDARY {}".format(i+1)
-        line_index += 1
-        npts = int(lines[line_index])
-        line = []  # Array{VecE2}
-        for j in range(npts):
+        line_index = 1
+        for i in range(n_boundaries):
             line_index += 1
-            matches = re.findall(FLOATING_POINT_REGEX, lines[line_index])
-            x = float(matches[0]) * METERS_PER_FOOT
-            y = float(matches[1]) * METERS_PER_FOOT
-            line.append(VecE2.VecE2(x, y))
-        retval.append(line)
-    return retval
+            assert lines[line_index] == "BOUNDARY {}".format(i+1)
+            line_index += 1
+            npts = int(lines[line_index])
+            line = []  # Array{VecE2}
+            for j in range(npts):
+                line_index += 1
+                matches = re.findall(FLOATING_POINT_REGEX, lines[line_index])
+                x = float(matches[0]) * METERS_PER_FOOT
+                y = float(matches[1]) * METERS_PER_FOOT
+                line.append(VecE2.VecE2(x, y))
+            retval.append(line)
+        return retval
 
 
 def read_centerlines(filepath_centerlines: str):
-    fp = open(filepath_centerlines, 'r')
-    lines = fp.readlines()
-    fp.close()
-    for i, line in enumerate(lines):
-        lines[i] = line.strip()
-    assert lines[0] == 'CENTERLINES'
-    n_centerlines = int(lines[1])
-    assert n_centerlines >= 0
-    line_index = 1
-    retval = {}
-    for i in range(n_centerlines):
-        line_index += 1
-        assert lines[line_index] == "CENTERLINE"
-        line_index += 1
-        name = lines[line_index]
-        line_index += 1
-        npts = int(lines[line_index])
-        line = []
-        for j in range(npts):
+    with open(filepath_centerlines, 'r') as fp:
+        lines = fp.readlines()
+        fp.close()
+        for i, line in enumerate(lines):
+            lines[i] = line.strip()
+        assert lines[0] == 'CENTERLINES'
+        n_centerlines = int(lines[1])
+        assert n_centerlines >= 0
+        line_index = 1
+        retval = {}
+        for i in range(n_centerlines):
             line_index += 1
-            matches = re.findall(FLOATING_POINT_REGEX, lines[line_index])
-            x = float(matches[0]) * METERS_PER_FOOT
-            y = float(matches[1]) * METERS_PER_FOOT
-            line.append(VecE2.VecE2(x, y))
+            assert lines[line_index] == "CENTERLINE"
+            line_index += 1
+            name = lines[line_index]
+            line_index += 1
+            npts = int(lines[line_index])
+            line = []
+            for j in range(npts):
+                line_index += 1
+                matches = re.findall(FLOATING_POINT_REGEX, lines[line_index])
+                x = float(matches[0]) * METERS_PER_FOOT
+                y = float(matches[1]) * METERS_PER_FOOT
+                line.append(VecE2.VecE2(x, y))
 
-        centerline = []
-        theta = (line[1] - line[0]).atan()
-        centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[0].x, line[0].y, theta), 0.0))
-        for j in range(1, npts - 1):
-            s = centerline[j - 1].s + (line[j] - line[j - 1]).hypot()
-            theta = ((line[j] - line[j - 1]).atan() + (line[j + 1] - line[j]).atan())/2  # mean angle
-            centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[j], theta), s))
-        s = centerline[npts - 2].s + (line[npts - 1] - line[npts - 2]).hypot()
-        theta = (line[npts - 1] - line[npts - 2]).atan()
-        centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[npts - 1], theta), s))
-        retval[name] = centerline
-    return retval
+            centerline = []
+            theta = (line[1] - line[0]).atan()
+            centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[0].x, line[0].y, theta), 0.0))
+            for j in range(1, npts - 1):
+                s = centerline[j - 1].s + (line[j] - line[j - 1]).hypot()
+                theta = ((line[j] - line[j - 1]).atan() + (line[j + 1] - line[j]).atan())/2  # mean angle
+                centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[j], theta), s))
+            s = centerline[npts - 2].s + (line[npts - 1] - line[npts - 2]).hypot()
+            theta = (line[npts - 1] - line[npts - 2]).atan()
+            centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[npts - 1], theta), s))
+            retval[name] = centerline
+        return retval
+
+
+def read_roadway(centerline_path:str, boundary_path:str):
+    centerlines = read_centerlines(centerline_path)
+    boundaries = read_boundaries(boundary_path)
+
+
 
 
 
