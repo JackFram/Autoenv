@@ -1,5 +1,5 @@
 import math
-
+from src.Roadway.roadway import Roadway
 
 class ConvexPolygon:
     def __init__(self, npts):
@@ -43,5 +43,22 @@ class CarLidarFeatureExtractor:
 
     def __len__(self):
         return self.num_features
+
+    def pull_features(self, rec: SceneRecord, roadway: Roadway, veh_idx: int,
+                      models: {}, pastframe: int = 0):
+        scene = rec[pastframe]
+        nbeams_carlidar = self.carlidar.nbeams
+        idx = 0
+        if nbeams_carlidar > 0:
+            observe!(self.carlidar, scene, roadway, veh_idx)
+            stop = len(self.carlidar.ranges) + idx
+            self.features[idx:stop] = self.carlidar.ranges
+            idx += nbeams_carlidar
+            if self.extract_carlidar_rangerate:
+                stop = len(self.carlidar.range_rates) + idx
+                self.features[idx:stop] = self.carlidar.range_rates
+
+        return self.features
+
 
 
