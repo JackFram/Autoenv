@@ -59,6 +59,19 @@ class ListRecord:
             recframe.write(fp)
 
 
+class SceneRecord:
+    def __init__(self):
+        '''
+        frames::List{Frame{Vehicle}}
+        timestep::Float64
+        nframes::Int # number of active Frames
+        '''
+        self.frames = []
+        self.timestep = 0
+        self.nframes = 0
+
+
+
 
 
 

@@ -63,3 +63,10 @@ class VehicleState:
         fp.write(" %.16e %.16e %.16e" % (self.posF.s, self.posF.t, self.posF.phi))
         fp.write(" %.16e" % self.v)
 
+
+class Vehicle:
+    def __init__(self, state_, def_, id):
+        self.state = state_
+        self.definition = def_
+        self.id = id
+

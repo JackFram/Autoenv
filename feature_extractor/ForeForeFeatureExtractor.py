@@ -1,4 +1,5 @@
 from src.Roadway.roadway import Roadway
+from src.Record.record import SceneRecord
 
 
 class ForeForeFeatureExtractor:

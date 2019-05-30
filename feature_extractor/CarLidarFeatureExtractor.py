@@ -1,5 +1,6 @@
 import math
 from src.Roadway.roadway import Roadway
+from src.Record.record import SceneRecord
 
 class ConvexPolygon:
     def __init__(self, npts):
