@@ -65,8 +65,12 @@ class VehicleState:
 
 
 class Vehicle:
-    def __init__(self, state_, def_, id):
+    def __init__(self, state_: VehicleState, def_: VehicleDef, id: int):
         self.state = state_
         self.definition = def_
         self.id = id
+
+    @property
+    def get_center(self):
+        return self.state.posG
 

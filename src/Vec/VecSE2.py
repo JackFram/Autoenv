@@ -85,6 +85,10 @@ def rot(a: VecSE2, theta: float):
     return VecSE2(a.x, a.y, a.theta + theta)
 
 
+def convert(a: VecSE2):
+    return VecE2(a.x, a.y)
+
+
 
 
 

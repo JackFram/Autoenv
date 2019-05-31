@@ -3,6 +3,9 @@ from src.Roadway.roadway import Roadway
 from src.Record.record import SceneRecord
 from src.Record.frame import Frame
 from src.Vec import VecE2, VecSE2
+from src.Basic.Vehicle import Vehicle
+from src.Vec.geom.line_segment import LineSegment
+from src.Vec.geom.projectile import Projectile
 
 class ConvexPolygon:
     def __init__(self, npts):
@@ -63,6 +66,56 @@ class CarLidarFeatureExtractor:
 
         return self.features
 
+def to_oriented_bounding_box_1(retval: ConvexPolygon, center: VecSE2.VecSE2, len: float, wid: float):
+
+    assert len > 0
+    assert wid > 0
+    assert center.theta is not None
+    assert center.x is not None
+    assert center.y is not None
+
+    x = VecE2.polar(len/2, center.theta)
+    y = VecE2.polar(wid/2, center.theta + math.pi/2)
+
+    C = VecSE2.convert(center)
+    retval.pts[0] = x - y + C
+    retval.pts[1] = x + y + C
+    retval.pts[2] = -x + y + C
+    retval.pts[3] = -x - y + C
+    retval.npts = 4
+
+    AutomotiveDrivingModels.ensure_pts_sorted_by_min_polar_angle!(retval)
+
+    return retval
+
+
+def to_oriented_bounding_box_2(retval: ConvexPolygon, veh: Vehicle):
+    return to_oriented_bounding_box_1(retval, veh.get_center, veh.definition.length_, veh.definition.width_)
+
+
+def get_edge(pts: list, i: int):
+    npts = len(pts)
+    a = pts[i]
+    if i + 1 < npts:
+        b = pts[i + 1]
+    else:
+        b = pts[0]
+    return LineSegment(a,b)
+
+def get_poly_edge(poly: ConvexPolygon, i: int):
+    return get_edge(poly.pts, i)
+
+
+def get_collision_time(ray: VecSE2.VecSE2, poly: ConvexPolygon, ray_speed: float):
+    min_col_time = math.inf
+    for i in range(len(poly)):
+        seg = get_poly_edge(poly, i)
+        col_time = get_intersection_time(Projectile(ray, ray_speed), seg)
+        if col_time and col_time < min_col_time:
+            min_col_time = col_time
+    return min_col_time
+
+
 
 def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: int):
     state_ego = scene[vehicle_index].state
@@ -92,10 +145,10 @@ def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: i
         for veh in scene:
             # only consider the set of potentially in range vehicles
             if veh.id in in_range_ids:
-                to_oriented_bounding_box!(lidar.poly, veh)
+                lidar.poly = to_oriented_bounding_box_2(lidar.poly, veh)
 
-                range2 = AutomotiveDrivingModels.get_collision_time(ray, lidar.poly, 1.0)
-                if !isnan(range2) and range2 < range:
+                range2 = get_collision_time(ray, lidar.poly, 1.0)
+                if range2 and range2 < range:
                     range = range2
                     relative_speed = VecE2.polar(veh.state.v, veh.state.posG.theta) - ego_vel
                     range_rate = VecE2.proj_(relative_speed, ray_vec)
