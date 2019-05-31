@@ -5,7 +5,7 @@ from src.Record.frame import Frame
 from src.Vec import VecE2, VecSE2
 from src.Basic.Vehicle import Vehicle
 from src.Vec.geom.line_segment import LineSegment
-from src.Vec.geom.projectile import Projectile
+from src.Vec.geom.projectile import Projectile, get_intersection_time
 
 class ConvexPolygon:
     def __init__(self, npts):
@@ -147,7 +147,7 @@ def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: i
             if veh.id in in_range_ids:
                 lidar.poly = to_oriented_bounding_box_2(lidar.poly, veh)
 
-                range2 = get_collision_time(ray, lidar.poly, 1.0)
+                range2 = get_collision_time(ray, lidar.poly, 1.0)  # TODO: continue finish here
                 if range2 and range2 < range:
                     range = range2
                     relative_speed = VecE2.polar(veh.state.v, veh.state.posG.theta) - ego_vel
