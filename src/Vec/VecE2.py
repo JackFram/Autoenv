@@ -54,6 +54,10 @@ def proj(a: VecE2, b: VecE2, t: type):
         raise TypeError("Wrong type!")
 
 
+def proj_(a: VecE2, b: VecE2):
+    return (a.x * b.x + a.y * b.y) / math.hypot(b.x, b.y)  # dot(a,b)/|b|
+
+
 def lerp(a: VecE2, b: VecE2, t):
     assert isinstance(t, int) or isinstance(t, float)
     return VecE2(a.x + (b.x-a.x)*t, a.y + (b.y-a.y)*t)

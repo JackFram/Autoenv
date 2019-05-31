@@ -6,3 +6,7 @@ class Frame:
         '''
         self.entities = []
         self.n = 0
+
+    def __getitem__(self, item):
+        return self.entities[item]
+

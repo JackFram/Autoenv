@@ -70,6 +70,10 @@ class SceneRecord:
         self.timestep = 0
         self.nframes = 0
 
+    def __getitem__(self, item):
+        return self.frames[0-item]
+
+
 
 
 

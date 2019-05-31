@@ -2,14 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="60f23679-9a28-48b8-bb04-903951b6efb8" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/CarLidarFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/CarLidarFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/CoreFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/CoreFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/ForeForeFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/ForeForeFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/TemporalFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/TemporalFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/WellBehavedFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/WellBehavedFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/feature_extractor.py" afterPath="$PROJECT_DIR$/feature_extractor/feature_extractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Basic/Vehicle.py" afterPath="$PROJECT_DIR$/src/Basic/Vehicle.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Record/frame.py" afterPath="$PROJECT_DIR$/src/Record/frame.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Record/record.py" afterPath="$PROJECT_DIR$/src/Record/record.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Vec/VecE2.py" afterPath="$PROJECT_DIR$/src/Vec/VecE2.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -20,89 +17,41 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="utils.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/feature_extractor/utils.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="13" column="72" lean-forward="true" selection-start-line="13" selection-start-column="72" selection-end-line="13" selection-end-column="72" />
-              <folding>
-                <element signature="e#0#79#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="feature_extractor.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/feature_extractor/feature_extractor.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="15">
-              <caret line="1" column="41" lean-forward="false" selection-start-line="1" selection-start-column="41" selection-end-line="1" selection-end-column="41" />
-              <folding>
-                <element signature="e#0#39#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="CoreFeatureExtractor.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/feature_extractor/CoreFeatureExtractor.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="15">
-              <caret line="1" column="41" lean-forward="false" selection-start-line="1" selection-start-column="41" selection-end-line="1" selection-end-column="41" />
-              <folding>
-                <element signature="e#0#39#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="record.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/Record/record.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="870">
-              <caret line="58" column="30" lean-forward="true" selection-start-line="58" selection-start-column="30" selection-end-line="58" selection-end-column="30" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="frame.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/Record/frame.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="90">
-              <caret line="6" column="26" lean-forward="true" selection-start-line="6" selection-start-column="26" selection-end-line="6" selection-end-column="26" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="Vehicle.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/Basic/Vehicle.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="275">
-              <caret line="48" column="0" lean-forward="true" selection-start-line="48" selection-start-column="0" selection-end-line="48" selection-end-column="0" />
+            <state relative-caret-position="140">
+              <caret line="42" column="20" lean-forward="false" selection-start-line="42" selection-start-column="20" selection-end-line="42" selection-end-column="20" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="TemporalFeatureExtractor.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/feature_extractor/TemporalFeatureExtractor.py">
+      <file leaf-file-name="CurvePt.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/curves/CurvePt.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="39" />
-              <folding>
-                <element signature="e#0#39#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="180">
+              <caret line="14" column="8" lean-forward="false" selection-start-line="14" selection-start-column="8" selection-end-line="14" selection-end-column="8" />
+              <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="WellBehavedFeatureExtractor.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/feature_extractor/WellBehavedFeatureExtractor.py">
+      <file leaf-file-name="VecSE2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/Vec/VecSE2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="41" lean-forward="true" selection-start-line="0" selection-start-column="41" selection-end-line="0" selection-end-column="41" />
+            <state relative-caret-position="-326">
+              <caret line="20" column="12" lean-forward="false" selection-start-line="20" selection-start-column="12" selection-end-line="20" selection-end-column="12" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="VecE2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/Vec/VecE2.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="221">
+              <caret line="46" column="16" lean-forward="true" selection-start-line="46" selection-start-column="16" selection-end-line="46" selection-end-column="16" />
               <folding />
             </state>
           </provider>
@@ -111,11 +60,31 @@
       <file leaf-file-name="CarLidarFeatureExtractor.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/feature_extractor/CarLidarFeatureExtractor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="282">
-              <caret line="48" column="54" lean-forward="true" selection-start-line="48" selection-start-column="54" selection-end-line="48" selection-end-column="54" />
+            <state relative-caret-position="327">
+              <caret line="90" column="24" lean-forward="true" selection-start-line="90" selection-start-column="24" selection-end-line="90" selection-end-column="24" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="frame.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/Record/frame.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="60">
+              <caret line="4" column="14" lean-forward="true" selection-start-line="4" selection-start-column="14" selection-end-line="4" selection-end-column="14" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="record.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/Record/record.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="374">
+              <caret line="61" column="18" lean-forward="true" selection-start-line="61" selection-start-column="18" selection-end-line="61" selection-end-column="18" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -177,15 +146,16 @@
         <option value="$PROJECT_DIR$/src/trajectory_smoothing.py" />
         <option value="$PROJECT_DIR$/dataloader/dataloader.py" />
         <option value="$PROJECT_DIR$/feature_extractor/utils.py" />
-        <option value="$PROJECT_DIR$/src/Basic/Vehicle.py" />
-        <option value="$PROJECT_DIR$/src/Record/frame.py" />
-        <option value="$PROJECT_DIR$/src/Record/record.py" />
-        <option value="$PROJECT_DIR$/feature_extractor/CarLidarFeatureExtractor.py" />
         <option value="$PROJECT_DIR$/feature_extractor/CoreFeatureExtractor.py" />
         <option value="$PROJECT_DIR$/feature_extractor/feature_extractor.py" />
         <option value="$PROJECT_DIR$/feature_extractor/ForeForeFeatureExtractor.py" />
         <option value="$PROJECT_DIR$/feature_extractor/TemporalFeatureExtractor.py" />
         <option value="$PROJECT_DIR$/feature_extractor/WellBehavedFeatureExtractor.py" />
+        <option value="$PROJECT_DIR$/src/Record/record.py" />
+        <option value="$PROJECT_DIR$/src/Record/frame.py" />
+        <option value="$PROJECT_DIR$/src/Basic/Vehicle.py" />
+        <option value="$PROJECT_DIR$/src/Vec/VecE2.py" />
+        <option value="$PROJECT_DIR$/feature_extractor/CarLidarFeatureExtractor.py" />
       </list>
     </option>
   </component>
@@ -244,7 +214,19 @@
               <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
               <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="curves" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="Record" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="Vec" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -383,16 +365,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/curves/CurvePt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="14" column="8" lean-forward="false" selection-start-line="14" selection-start-column="8" selection-end-line="14" selection-end-column="8" />
-          <folding>
-            <element signature="e#0#26#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/MvNormal/MvNormal.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="45">
@@ -418,14 +390,6 @@
           <folding>
             <element signature="e#0#11#0" expanded="false" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/Vec/VecE2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -471,16 +435,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/Vec/VecSE2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="20" column="12" lean-forward="false" selection-start-line="20" selection-start-column="12" selection-end-line="20" selection-end-column="12" />
-          <folding>
-            <element signature="e#40#51#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/const.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="225">
@@ -522,7 +476,7 @@
         <state relative-caret-position="30">
           <caret line="2" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
           <folding>
-            <element signature="e#71#82#0" expanded="true" />
+            <element signature="e#71#82#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -540,32 +494,8 @@
         <state relative-caret-position="195">
           <caret line="13" column="72" lean-forward="true" selection-start-line="13" selection-start-column="72" selection-end-line="13" selection-end-column="72" />
           <folding>
-            <element signature="e#0#79#0" expanded="true" />
+            <element signature="e#0#79#0" expanded="false" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/Basic/Vehicle.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="275">
-          <caret line="48" column="0" lean-forward="true" selection-start-line="48" selection-start-column="0" selection-end-line="48" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/Record/frame.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="6" column="26" lean-forward="true" selection-start-line="6" selection-start-column="26" selection-end-line="6" selection-end-column="26" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/Record/record.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="870">
-          <caret line="58" column="30" lean-forward="true" selection-start-line="58" selection-start-column="30" selection-end-line="58" selection-end-column="30" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -584,7 +514,7 @@
         <state relative-caret-position="15">
           <caret line="1" column="41" lean-forward="false" selection-start-line="1" selection-start-column="41" selection-end-line="1" selection-end-column="41" />
           <folding>
-            <element signature="e#0#39#0" expanded="true" />
+            <element signature="e#0#39#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -599,6 +529,22 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/feature_extractor/WellBehavedFeatureExtractor.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="41" lean-forward="true" selection-start-line="0" selection-start-column="41" selection-end-line="0" selection-end-column="41" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/curves/CurvePt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="14" column="8" lean-forward="false" selection-start-line="14" selection-start-column="8" selection-end-line="14" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/feature_extractor/TemporalFeatureExtractor.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -609,18 +555,50 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/feature_extractor/WellBehavedFeatureExtractor.py">
+    <entry file="file://$PROJECT_DIR$/src/Record/record.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="41" lean-forward="true" selection-start-line="0" selection-start-column="41" selection-end-line="0" selection-end-column="41" />
+        <state relative-caret-position="374">
+          <caret line="61" column="18" lean-forward="true" selection-start-line="61" selection-start-column="18" selection-end-line="61" selection-end-column="18" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/Record/frame.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" column="14" lean-forward="true" selection-start-line="4" selection-start-column="14" selection-end-line="4" selection-end-column="14" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/Basic/Vehicle.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="140">
+          <caret line="42" column="20" lean-forward="false" selection-start-line="42" selection-start-column="20" selection-end-line="42" selection-end-column="20" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/Vec/VecSE2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-326">
+          <caret line="20" column="12" lean-forward="false" selection-start-line="20" selection-start-column="12" selection-end-line="20" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/Vec/VecE2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="221">
+          <caret line="46" column="16" lean-forward="true" selection-start-line="46" selection-start-column="16" selection-end-line="46" selection-end-column="16" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/feature_extractor/CarLidarFeatureExtractor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="282">
-          <caret line="48" column="54" lean-forward="true" selection-start-line="48" selection-start-column="54" selection-end-line="48" selection-end-column="54" />
+        <state relative-caret-position="327">
+          <caret line="90" column="24" lean-forward="true" selection-start-line="90" selection-start-column="24" selection-end-line="90" selection-end-column="24" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>

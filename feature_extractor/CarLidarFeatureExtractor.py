@@ -1,6 +1,8 @@
 import math
 from src.Roadway.roadway import Roadway
 from src.Record.record import SceneRecord
+from src.Record.frame import Frame
+from src.Vec import VecE2, VecSE2
 
 class ConvexPolygon:
     def __init__(self, npts):
@@ -51,7 +53,7 @@ class CarLidarFeatureExtractor:
         nbeams_carlidar = self.carlidar.nbeams
         idx = 0
         if nbeams_carlidar > 0:
-            observe!(self.carlidar, scene, roadway, veh_idx)
+            observe(self.carlidar, scene, roadway, veh_idx)
             stop = len(self.carlidar.ranges) + idx
             self.features[idx:stop] = self.carlidar.ranges
             idx += nbeams_carlidar
@@ -61,5 +63,43 @@ class CarLidarFeatureExtractor:
 
         return self.features
 
+
+def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: int):
+    state_ego = scene[vehicle_index].state
+    egoid = scene[vehicle_index].id
+    ego_vel = VecE2.polar(state_ego.v, state_ego.posG.theta)
+
+    in_range_ids = set()
+
+    for veh in scene:
+        if veh.id != egoid:
+            a = state_ego.posG - veh.state.posG
+            distance = VecE2.norm(VecE2.VecE2(a.x, a.y))
+            # account for the length and width of the vehicle by considering
+            # the worst case where their maximum radius is aligned
+            distance = distance - math.hypot(veh.definition.length_ / 2., veh.definition.width_ / 2.)
+            if distance < lidar.max_range:
+                in_range_ids.add(veh.id)
+
+                # compute range and range_rate for each angle
+    for (i, angle) in enumerate(lidar.angles):
+        ray_angle = state_ego.posG.theta + angle
+        ray_vec = VecE2.polar(1.0, ray_angle)
+        ray = VecSE2.VecSE2(state_ego.posG.x, state_ego.posG.y, ray_angle)
+
+        range = lidar.max_range
+        range_rate = 0.0
+        for veh in scene:
+            # only consider the set of potentially in range vehicles
+            if veh.id in in_range_ids:
+                to_oriented_bounding_box!(lidar.poly, veh)
+
+                range2 = AutomotiveDrivingModels.get_collision_time(ray, lidar.poly, 1.0)
+                if !isnan(range2) and range2 < range:
+                    range = range2
+                    relative_speed = VecE2.polar(veh.state.v, veh.state.posG.theta) - ego_vel
+                    range_rate = VecE2.proj_(relative_speed, ray_vec)
+    lidar.ranges[i] = range
+    lidar.range_rates[i] = range_rate
 
 
