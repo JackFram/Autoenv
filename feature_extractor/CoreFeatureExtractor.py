@@ -1,5 +1,7 @@
 from src.Roadway.roadway import Roadway
 from src.Record.record import SceneRecord
+from src.Basic import Vehicle
+from feature_extractor.Get import get_LaneCurvature
 
 
 class CoreFeatureExtractor:
@@ -14,23 +16,23 @@ class CoreFeatureExtractor:
                       models: {}, pastframe: int = 0):
         scene = rec[pastframe]
         veh_ego = scene[veh_idx]
-        d_ml = get_markerdist_left(veh_ego, roadway)
-        d_mr = get_markerdist_right(veh_ego, roadway)
+        d_ml = Vehicle.get_markerdist_left(veh_ego, roadway)
+        d_mr = Vehicle.get_markerdist_right(veh_ego, roadway)
         idx = 0
         self.features[idx] = veh_ego.state.posF.t
         idx += 1
-        self.features[idx] = veh_ego.state.posF.ϕ
+        self.features[idx] = veh_ego.state.posF.phi
         idx += 1
         self.features[idx] = veh_ego.state.v
         idx += 1
-        self.features[idx] = veh_ego.def.length
+        self.features[idx] = veh_ego.definition.length_
         idx += 1
-        self.features[idx] = veh_ego.def.width
+        self.features[idx] = veh_ego.definition.width_
         idx += 1
-        self.features[idx] = convert(Float64, get(
-            LANECURVATURE, rec, roadway, veh_idx, pastframe))
+        self.features[idx] = get_LaneCurvature(rec, roadway, veh_idx, pastframe).v
         idx += 1
         self.features[idx] = d_ml
         idx += 1
         self.features[idx] = d_mr
         return self.features
+

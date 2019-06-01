@@ -336,6 +336,14 @@ def proj_2(posG: VecSE2.VecSE2, roadway: Roadway):
     return best_proj
 
 
+def n_lanes_right(lane: Lane, roadway: Roadway):
+    return lane.tag.lane - 1
+
+
+def n_lanes_left(lane: Lane, roadway: Roadway):
+    seg = roadway.get_by_id(lane.tag.segment)
+    return len(seg.lanes) - lane.tag.lane
+
 
 
 

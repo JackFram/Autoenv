@@ -1,5 +1,6 @@
-from src.Vec import VecSE2
+from src.Vec import VecSE2, VecE2
 from src.Roadway import roadway, utils
+import math
 
 """
 Frenet
@@ -73,4 +74,32 @@ class Vehicle:
     @property
     def get_center(self):
         return self.state.posG
+
+    @property
+    def get_footpoint(self):
+        return self.state.posG + VecE2.polar(self.state.posF.t, self.state.posG.theta-self.state.posF.phi-math.pi/2)
+
+
+def get_lane_width(veh: Vehicle, roadway_: roadway.Roadway):
+    lane = roadway_.get_by_tag(veh.state.posF.roadind.tag)
+
+    if roadway.n_lanes_left(lane, roadway_) > 0:
+        footpoint = veh.get_footpoint
+        lane_left = roadway_.get_by_tag(roadway.LaneTag(lane.tag.segment, lane.tag.lane + 1))
+        return -roadway.proj_1(footpoint, lane_left, roadway_).curveproj.t
+    else:
+        return lane.width
+
+
+def get_markerdist_left(veh: Vehicle, roadway_: roadway.Roadway):
+    t = veh.state.posF.t
+    lane_width = get_lane_width(veh, roadway_)
+    return lane_width / 2 - t
+
+
+def get_markerdist_right(veh: Vehicle, roadway_: roadway.Roadway):
+    t = veh.state.posF.t
+    lane_width = get_lane_width(veh, roadway_)
+    return lane_width / 2 + t
+
 
