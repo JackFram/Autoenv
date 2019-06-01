@@ -7,6 +7,7 @@ from src.Basic.Vehicle import Vehicle
 from src.Vec.geom.line_segment import LineSegment
 from src.Vec.geom.projectile import Projectile, get_intersection_time
 
+
 class ConvexPolygon:
     def __init__(self, npts):
         self.pts = [None for i in range(npts)]
@@ -14,6 +15,10 @@ class ConvexPolygon:
 
     def __len__(self):
         return self.npts
+
+    def set(self, poly):
+        self.pts = poly.pts
+        self.npts = poly.npts
 
 
 class LidarSensor:
@@ -56,7 +61,7 @@ class CarLidarFeatureExtractor:
         nbeams_carlidar = self.carlidar.nbeams
         idx = 0
         if nbeams_carlidar > 0:
-            observe(self.carlidar, scene, roadway, veh_idx)
+            self.carlidar = observe(self.carlidar, scene, roadway, veh_idx)
             stop = len(self.carlidar.ranges) + idx
             self.features[idx:stop] = self.carlidar.ranges
             idx += nbeams_carlidar
@@ -65,6 +70,63 @@ class CarLidarFeatureExtractor:
                 self.features[idx:stop] = self.carlidar.range_rates
 
         return self.features
+
+
+def get_signed_area(pts: []):
+    npts = len(pts)
+
+    # https://en.wikipedia.org/wiki/Shoelace_formula
+    # sign of -1 means clockwise, sign of 1 means counterclockwise
+
+    retval = pts[npts-1].x*pts[0].y - pts[0].x*pts[npts-1].y
+    for i in range(npts-1):
+        retval += pts[i].x * pts[i+1].y
+        retval -= pts[i+1].x * pts[i].y
+
+    return retval/2
+
+
+def cyclic_shift_left(arr: list, d: int, n: int):
+    for i in range(math.gcd(d, n)):
+        # move i-th values of blocks
+
+        temp = arr[i]
+        j = i
+        while True:
+            k = j + d
+            if k > n:
+                k = k - n
+            if k == i:
+                break
+            arr[j] = arr[k]
+            j = k
+        arr[j] = temp
+    return arr
+
+
+def ensure_pts_sorted_by_min_polar_angle(poly: ConvexPolygon):
+    npts = poly.npts
+    assert npts >= 3
+    assert get_signed_area(poly.pts) > 0 # must be counter-clockwise
+
+    # ensure that edges are sorted by minimum polar angle in [0,2π]
+
+    angle_start = math.inf
+    index_start = -1
+
+    for i in range(npts):
+        seg = get_edge(poly.pts, i, npts)
+        theta = math.atan2(seg.B.y - seg.A.y, seg.B.x - seg.A.x)
+
+        if theta < 0:
+            theta += 2*math.pi
+        if theta < angle_start:
+            angle_start = theta
+            index_start = i
+    if index_start != 0:
+        poly.pts = cyclic_shift_left(poly.pts, index_start, npts)
+    return poly
+
 
 def to_oriented_bounding_box_1(retval: ConvexPolygon, center: VecSE2.VecSE2, len: float, wid: float):
 
@@ -84,7 +146,7 @@ def to_oriented_bounding_box_1(retval: ConvexPolygon, center: VecSE2.VecSE2, len
     retval.pts[3] = -x - y + C
     retval.npts = 4
 
-    AutomotiveDrivingModels.ensure_pts_sorted_by_min_polar_angle!(retval)
+    retval.set(ensure_pts_sorted_by_min_polar_angle(retval))
 
     return retval
 
@@ -93,17 +155,17 @@ def to_oriented_bounding_box_2(retval: ConvexPolygon, veh: Vehicle):
     return to_oriented_bounding_box_1(retval, veh.get_center, veh.definition.length_, veh.definition.width_)
 
 
-def get_edge(pts: list, i: int):
-    npts = len(pts)
+def get_edge(pts: list, i: int, npts: int):
     a = pts[i]
     if i + 1 < npts:
         b = pts[i + 1]
     else:
         b = pts[0]
-    return LineSegment(a,b)
+    return LineSegment(a, b)
+
 
 def get_poly_edge(poly: ConvexPolygon, i: int):
-    return get_edge(poly.pts, i)
+    return get_edge(poly.pts, i, poly.npts)
 
 
 def get_collision_time(ray: VecSE2.VecSE2, poly: ConvexPolygon, ray_speed: float):
@@ -114,7 +176,6 @@ def get_collision_time(ray: VecSE2.VecSE2, poly: ConvexPolygon, ray_speed: float
         if col_time and col_time < min_col_time:
             min_col_time = col_time
     return min_col_time
-
 
 
 def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: int):
@@ -140,19 +201,21 @@ def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: i
         ray_vec = VecE2.polar(1.0, ray_angle)
         ray = VecSE2.VecSE2(state_ego.posG.x, state_ego.posG.y, ray_angle)
 
-        range = lidar.max_range
+        range_ = lidar.max_range
         range_rate = 0.0
         for veh in scene:
             # only consider the set of potentially in range vehicles
             if veh.id in in_range_ids:
-                lidar.poly = to_oriented_bounding_box_2(lidar.poly, veh)
+                lidar.poly.set(to_oriented_bounding_box_2(lidar.poly, veh))
 
                 range2 = get_collision_time(ray, lidar.poly, 1.0)  # TODO: continue finish here
-                if range2 and range2 < range:
-                    range = range2
+                if range2 and range2 < range_:
+                    range_ = range2
                     relative_speed = VecE2.polar(veh.state.v, veh.state.posG.theta) - ego_vel
                     range_rate = VecE2.proj_(relative_speed, ray_vec)
-    lidar.ranges[i] = range
-    lidar.range_rates[i] = range_rate
+        lidar.ranges[i] = range_
+        lidar.range_rates[i] = range_rate
+
+    return lidar
 
 
