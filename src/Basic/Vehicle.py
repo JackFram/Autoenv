@@ -79,6 +79,16 @@ class Vehicle:
     def get_footpoint(self):
         return self.state.posG + VecE2.polar(self.state.posF.t, self.state.posG.theta-self.state.posF.phi-math.pi/2)
 
+    def get_targetpoint_delta(self, part: str):
+        if part == "Front":
+            return self.definition.length_/2*math.cos(self.state.posF.phi)
+        elif part == "Center":
+            return 0.0
+        elif part == "Rear":
+            return -self.definition.length_/2*math.cos(self.state.posF.phi)
+        else:
+            raise ValueError("Invalid TargetPoint!")
+
 
 def get_lane_width(veh: Vehicle, roadway_: roadway.Roadway):
     lane = roadway_.get_by_tag(veh.state.posF.roadind.tag)

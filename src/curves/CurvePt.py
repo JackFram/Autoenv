@@ -187,4 +187,11 @@ def proj(posG: VecSE2.VecSE2, curve: list):  # TODO: adjust list index
 
     return get_curve_projection(posG, footpoint, curveind)
 
+'''
+
+Curve : list(CurvePt)
+
+
+'''
+
 

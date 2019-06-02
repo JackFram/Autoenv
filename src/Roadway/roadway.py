@@ -345,5 +345,29 @@ def n_lanes_left(lane: Lane, roadway: Roadway):
     return len(seg.lanes) - lane.tag.lane
 
 
+def is_between_segments_lo(ind: CurvePt.CurveIndex):
+    return ind.i == 0
+
+
+def is_between_segments_hi(ind: CurvePt.CurveIndex, curve: list):
+    return ind.i == len(curve)
+
+
+def is_in_exits(lane: Lane, target: LaneTag):
+    for lc in lane.exits:
+        if lc.target.tag == target:
+            return True
+    return False
+
+
+def is_in_entrances(lane: Lane, target: LaneTag):
+    for lc in lane.entrances:
+        if lc.target.tag == target:
+            return True
+    return False
+
+
+
+
 
 
