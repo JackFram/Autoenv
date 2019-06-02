@@ -74,7 +74,12 @@ class SceneRecord:
         return self.frames[0-item]
 
 
+def pastframe_inbounds(rec: SceneRecord, pastframe: int):
+    return 0 <= 0 - pastframe <= rec.nframes - 1
 
+
+def get_elapsed_time_3(rec: SceneRecord, pastframe_farthest_back: int, pastframe_most_recent: int):
+    return (pastframe_most_recent - pastframe_farthest_back)*rec.timestep
 
 
 

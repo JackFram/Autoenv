@@ -3,6 +3,7 @@ from src.Roadway.roadway import Roadway, LaneTag, has_next, next_lane_point, nex
 from src.Record.record import SceneRecord
 from src.Record.frame import Frame
 from src.Vec import VecE2
+from feature_extractor.interface import get_AccFs, convert_2_float
 
 
 class ForeForeFeatureExtractor:
@@ -37,7 +38,7 @@ class ForeForeFeatureExtractor:
             # relative velocity to ego vehicle
             self.features[1] = scene[fore_fore_M.ind].state.v - ego_vel
             # absolute acceleration
-            self.features[2] = convert(Float64, get(ACCFS, rec, roadway, fore_fore_M.ind, pastframe))
+            self.features[2] = convert_2_float(get_AccFs(rec, roadway, fore_fore_M.ind, pastframe))
         else:
             self.features[0] = self.deltas_censor_hi
             self.features[1] = 0.
