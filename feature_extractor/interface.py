@@ -26,6 +26,21 @@ def _get_feature_derivative_backwards(f: str, rec: SceneRecord, roadway: Roadway
             if f == "VELFS":
                 curr = convert_2_float(Get.get_VelFs(rec, roadway, veh_index_curr, pastframe))
                 past = convert_2_float(Get.get_VelFs(rec, roadway, veh_index_prev, pastframe2))
+            elif f == "SPEED":
+                curr = convert_2_float(Get.get_Speed(rec, roadway, veh_index_curr, pastframe))
+                past = convert_2_float(Get.get_Speed(rec, roadway, veh_index_prev, pastframe2))
+            elif f == "ACC":
+                curr = convert_2_float(get_Acc(rec, roadway, veh_index_curr, pastframe))
+                past = convert_2_float(get_Acc(rec, roadway, veh_index_prev, pastframe2))
+            elif f == "TURNRATEG":
+                curr = convert_2_float(Get.get_TurnRateG(rec, roadway, veh_index_curr, pastframe))
+                past = convert_2_float(Get.get_TurnRateG(rec, roadway, veh_index_prev, pastframe2))
+            elif f == "POSFYAW":
+                curr = convert_2_float(Get.get_PosFyaw(rec, roadway, veh_index_curr, pastframe))
+                past = convert_2_float(Get.get_PosFyaw(rec, roadway, veh_index_prev, pastframe2))
+            elif f == "TURNRATEF":
+                curr = convert_2_float(Get.get_TurnRateF(rec, roadway, veh_index_curr, pastframe))
+                past = convert_2_float(Get.get_TurnRateF(rec, roadway, veh_index_prev, pastframe2))
             else:
                 raise ValueError("No matching feature as {}".format(f))
             delta_t = get_elapsed_time_3(rec, pastframe2, pastframe)
@@ -40,6 +55,14 @@ def convert_2_float(fv: FeatureValue):
 
 def get_AccFs(rec: SceneRecord, roadway: Roadway, vehicle_index: int, pastframe: int=0):
     return _get_feature_derivative_backwards("VELFS", rec, roadway, vehicle_index, pastframe)
+
+
+def get_Acc(rec: SceneRecord, roadway: Roadway, vehicle_index: int, pastframe: int=0):
+    return _get_feature_derivative_backwards("SPEED", rec, roadway, vehicle_index, pastframe)
+
+
+def get_Jerk(rec: SceneRecord, roadway: Roadway, vehicle_index: int, pastframe: int=0):
+    return _get_feature_derivative_backwards("ACC", rec, roadway, vehicle_index, pastframe)
 
 
 

@@ -2,11 +2,18 @@ import math
 from src.Vec import VecSE2, VecE2
 
 
+'''
+deltaangle(a::Real, b::Real)
+Return the minimum δ such that
+    a + δ = mod(b, 2π)
+'''
+
+
 def deltaangle(a, b):
     assert isinstance(a, int) or isinstance(a, float)
     assert isinstance(b, int) or isinstance(b, float)
 
-    return math.atan(math.sin(b-a)/math.cos(b-a))
+    return math.atan2(math.sin(b-a), math.cos(b-a))
 
 
 def lerp_angle(a, b, t):

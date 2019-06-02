@@ -1,5 +1,11 @@
 from src.Roadway.roadway import Roadway
 from src.Record.record import SceneRecord
+from feature_extractor.interface import convert_2_float, get_Acc, get_Jerk, FeatureValue
+from feature_extractor.Get import get_TurnRateG, get_AngularRateG, get_TurnRateF, get_AngularRateF, get_TimeGap, \
+    get_Inv_TTC
+from feature_extractor.neighbor_feature import get_neighbor_fore_along_lane_3
+from feature_extractor.feature_extractor import set_dual_feature
+from feature_extractor.utils import inverse_ttc_to_ttc
 
 
 class TemporalFeatureExtractor:
@@ -13,41 +19,37 @@ class TemporalFeatureExtractor:
     def pull_features(self, rec: SceneRecord, roadway: Roadway, veh_idx: int,
                       models: {}, pastframe: int = 0):
         idx = 0
-        self.features[idx] = convert(Float64, get(
-            ACC, rec, roadway, veh_idx, pastframe))
+        self.features[idx] = convert_2_float(get_Acc(rec, roadway, veh_idx, pastframe))
         idx += 1
-        self.features[idx] = convert(Float64, get(
-            JERK, rec, roadway, veh_idx, pastframe))
+        self.features[idx] = convert_2_float(get_Jerk(rec, roadway, veh_idx, pastframe))
         idx += 1
-        self.features[idx] = convert(Float64, get(
-            TURNRATEG, rec, roadway, veh_idx, pastframe))
+        self.features[idx] = convert_2_float(get_TurnRateG(rec, roadway, veh_idx, pastframe))
         idx += 1
-        self.features[idx] = convert(Float64, get(
-            ANGULARRATEG, rec, roadway, veh_idx, pastframe))
+        self.features[idx] = convert_2_float(get_AngularRateG(rec, roadway, veh_idx, pastframe))
         idx += 1
-        self.features[idx] = convert(Float64, get(
-            TURNRATEF, rec, roadway, veh_idx, pastframe))
+        self.features[idx] = convert_2_float(get_TurnRateF(rec, roadway, veh_idx, pastframe))
         idx += 1
-        self.features[idx] = convert(Float64, get(
-            ANGULARRATEF, rec, roadway, veh_idx, pastframe))
+        self.features[idx] = convert_2_float(get_AngularRateF(rec, roadway, veh_idx, pastframe))
 
         # timegap is the time between when this vehicle's front bumper
         # will be in the position currently occupied by the vehicle
         # infront's back bumper
         timegap_censor_hi = 30.
-        timegap = get(TIMEGAP, rec, roadway, veh_idx, pastframe, censor_hi=timegap_censor_hi)
+        neighborfore = get_neighbor_fore_along_lane_3(rec[pastframe], veh_idx, roadway)
+        timegap = get_TimeGap(rec, roadway, veh_idx, pastframe, neighborfore=neighborfore, censor_hi=timegap_censor_hi)
         if timegap.v > timegap_censor_hi:
             timegap = FeatureValue(timegap_censor_hi, timegap.i)
-        set_dual_feature!(self.features, idx, timegap, censor = timegap_censor_hi)
+        self.features = set_dual_feature(self.features, idx, timegap, censor=timegap_censor_hi)
         idx += 2
 
         # inverse time to collision is the time until a collision
         # assuming that no actions are taken
         # inverse is taken so as to avoid infinite value, so flip here to get back
         # to TTC
-        inv_ttc = get(INV_TTC, rec, roadway, veh_idx, pastframe)
+        neighborfore = get_neighbor_fore_along_lane_3(rec[pastframe], veh_idx, roadway)
+        inv_ttc = get_Inv_TTC(rec, roadway, veh_idx, pastframe, neighborfore=neighborfore)
         ttc = inverse_ttc_to_ttc(inv_ttc, censor_hi=30.0)
-        set_dual_feature!(self.features, idx, ttc, censor = 30.0)
+        self.features = set_dual_feature(self.features, idx, ttc, censor=30.0)
         return self.features
 
 

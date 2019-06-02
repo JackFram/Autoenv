@@ -1,5 +1,6 @@
 from src.Roadway.roadway import Roadway
 from src.Record.record import SceneRecord
+from feature_extractor.interface import FeatureValue, FeatureState
 
 
 class MultiFeatureExtractor:
@@ -21,4 +22,27 @@ class MultiFeatureExtractor:
             self.features[feature_index:stop] = subext.pull_features(rec, roadway, vehicle_index, models, pastframe)
             feature_index += length
         return self.features
+
+
+def set_feature_missing(features: list, i: int, censor: float = 0.):
+    features[i] = censor
+    features[i + 1] = 1.0
+    return features
+
+
+def set_feature(features: list, i: int, v: float):
+    features[i] = v
+    features[i + 1] = 0.0
+    return features
+
+
+def set_dual_feature(features: list, i: int, f: FeatureValue, censor: float = 0.):
+    if f.i == FeatureState.MISSING:
+        features = set_feature_missing(features, i, censor=censor)
+    else:
+        features = set_feature(features, i, f.v)
+
+    return features
+
+
 
