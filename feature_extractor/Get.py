@@ -1,4 +1,4 @@
-from src.Roadway.roadway import Roadway
+from src.Roadway.roadway import Roadway, proj_1, RoadIndex
 from src.Record.record import SceneRecord, pastframe_inbounds, get_elapsed_time_3
 from feature_extractor.interface import FeatureValue, _get_feature_derivative_backwards, convert_2_float
 from feature_extractor import FeatureState
@@ -6,6 +6,7 @@ from src.Vec.geom.geom import deltaangle
 from feature_extractor.neighbor_feature import NeighborLongitudinalResult
 import math
 from feature_extractor.collision_detection import CPAMemory, get_first_collision
+from src.Vec import VecE2
 
 
 
@@ -117,6 +118,33 @@ def get_Is_Colliding(rec: SceneRecord, roadway: Roadway, vehicle_index: int, pas
     scene = rec[pastframe]
     is_colliding = convert_2_float(get_first_collision(scene, vehicle_index, mem).is_colliding)
     return FeatureValue(is_colliding)
+
+
+def get_RoadEdgeDist_Left(rec: SceneRecord, roadway: Roadway, vehicle_index: int, pastframe: int=0):
+    veh = rec[pastframe][vehicle_index]
+    offset = veh.state.posF.t
+    footpoint = veh.get_footpoint
+    seg = roadway.get_by_id(veh.state.posF.roadind.tag.segment)
+    lane = seg.lanes[-1]
+    roadproj = proj_1(footpoint, lane, roadway)
+    curvept = roadway.get_by_roadindex(RoadIndex(roadproj.curveproj.ind, roadproj.tag))
+    lane = roadway.get_by_tag(roadproj.tag)
+    vec = curvept.pos - footpoint
+    return FeatureValue(lane.width/2 + VecE2.norm(VecE2.VecE2(vec.x, vec.y)) - offset)
+
+
+def get_RoadEdgeDist_Right(rec: SceneRecord, roadway: Roadway, vehicle_index: int, pastframe: int=0):
+    veh = rec[pastframe][vehicle_index]
+    offset = veh.state.posF.t
+    footpoint = veh.get_footpoint
+    seg = roadway.get_by_id(veh.state.posF.roadind.tag.segment)
+    lane = seg.lanes[0]
+    roadproj = proj_1(footpoint, lane, roadway)
+    curvept = roadway.get_by_roadindex(RoadIndex(roadproj.curveproj.ind, roadproj.tag))
+    lane = roadway.get_by_tag(roadproj.tag)
+    vec = curvept.pos - footpoint
+    return FeatureValue(lane.width/2 + VecE2.norm(VecE2.VecE2(vec.x, vec.y)) + offset)
+
 
 
 
