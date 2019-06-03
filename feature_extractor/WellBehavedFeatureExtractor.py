@@ -1,6 +1,8 @@
 from src.Record.record import SceneRecord
 from src.Roadway.roadway import Roadway
 from src.Basic import Vehicle
+from feature_extractor.interface import convert_2_float
+from feature_extractor.Get import get_Is_Colliding
 
 
 class WellBehavedFeatureExtractor:
@@ -18,12 +20,11 @@ class WellBehavedFeatureExtractor:
         d_ml = Vehicle.get_markerdist_left(veh_ego, roadway)
         d_mr = Vehicle.get_markerdist_right(veh_ego, roadway)
         idx = 0
-        self.features[idx] = convert(Float64, get(
-            IS_COLLIDING, rec, roadway, veh_idx, pastframe))
+        self.features[idx] = convert_2_float(get_Is_Colliding(rec, roadway, veh_idx, pastframe))
         idx += 1
-        self.features[idx] = convert(Float64, d_ml < -1.0 or d_mr < -1.0)
+        self.features[idx] = float(d_ml < -1.0 or d_mr < -1.0)
         idx += 1
-        self.features[idx] = convert(Float64, veh_ego.state.v < 0.0)
+        self.features[idx] = float(veh_ego.state.v < 0.0)
         idx += 1
         self.features[idx] = convert(Float64, get(
             ROADEDGEDIST_LEFT, rec, roadway, veh_idx, pastframe

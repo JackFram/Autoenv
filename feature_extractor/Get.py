@@ -1,10 +1,12 @@
 from src.Roadway.roadway import Roadway
 from src.Record.record import SceneRecord, pastframe_inbounds, get_elapsed_time_3
-from feature_extractor.interface import FeatureValue, _get_feature_derivative_backwards
+from feature_extractor.interface import FeatureValue, _get_feature_derivative_backwards, convert_2_float
 from feature_extractor import FeatureState
 from src.Vec.geom.geom import deltaangle
 from feature_extractor.neighbor_feature import NeighborLongitudinalResult
 import math
+from feature_extractor.collision_detection import CPAMemory, get_first_collision
+
 
 
 def get_LaneCurvature(rec: SceneRecord, roadway: Roadway, vehicle_index: int, pastframe: int=0):
@@ -108,6 +110,14 @@ def get_Inv_TTC(rec: SceneRecord, roadway: Roadway, vehicle_index: int, pastfram
                 return FeatureValue(f, FeatureState.CENSORED_HI)
             else:
                 return FeatureValue(f)
+
+
+def get_Is_Colliding(rec: SceneRecord, roadway: Roadway, vehicle_index: int, pastframe: int=0,
+                     mem: CPAMemory = CPAMemory()):
+    scene = rec[pastframe]
+    is_colliding = convert_2_float(get_first_collision(scene, vehicle_index, mem).is_colliding)
+    return FeatureValue(is_colliding)
+
 
 
 

@@ -51,3 +51,12 @@ def are_collinear(a: VecSE2.VecSE2, b: VecE2.VecE2, c: VecE2, tol: float=1e-8):
     # if val = 0 then they are collinear
     val = a.x*(b.y-c.y) + b.x*(c.y-a.y)+c.x*(a.y-b.y)
     return abs(val) < tol
+
+
+def sign(a):
+    if a == 0:
+        return 0
+    elif a > 0:
+        return 1
+    else:
+        return -1
