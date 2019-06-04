@@ -56,6 +56,16 @@ class CarLidarFeatureExtractor:
 
         return self.features
 
+    def feature_names(self):
+        fs = []
+        for i in range(self.carlidar.nbeams):
+            fs.append("lidar_{}".format(i))
+        if self.extract_carlidar_rangerate:
+            for i in range(self.carlidar.nbeams):
+                fs.append("rangerate_lidar_{}".format(i))
+
+        return fs
+
 
 def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: int):
     state_ego = scene[vehicle_index].state

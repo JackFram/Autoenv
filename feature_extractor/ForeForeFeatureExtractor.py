@@ -44,5 +44,8 @@ class ForeForeFeatureExtractor:
 
         return self.features
 
+    def feature_names(self):
+        return ["fore_fore_dist", "fore_fore_relative_vel", "fore_fore_accel"]
+
 
 

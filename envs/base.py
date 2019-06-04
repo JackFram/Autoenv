@@ -1,75 +1,89 @@
-class Env(object):
-    def step(self, action):
-        """
-        Run one timestep of the environment's dynamics. When end of episode
-        is reached, reset() should be called to reset the environment's internal state.
-        Input
-        -----
-        action : an action provided by the environment
-        Outputs
-        -------
-        (observation, reward, done, info)
-        observation : agent's observation of the current environment
-        reward [Float] : amount of reward due to the previous action
-        done : a boolean, indicating whether the episode has ended
-        info : a dictionary containing other diagnostic information from the previous action
-        """
-        raise NotImplementedError
+from envs.utils import dict_get, max_n_objects, fill_infos_cache
+from src.Record.frame import Frame
+from src.Record.record import SceneRecord
+from feature_extractor.utils import build_feature_extractor
 
-    def reset(self):
-        """
-        Resets the state of the environment, returning an initial observation.
-        Outputs
-        -------
-        observation : the initial observation of the space. (Initial reward is assumed to be 0.)
-        """
-        raise NotImplementedError
 
-    @property
-    def action_space(self):
-        """
-        Returns a action space
-        :rtype: action space type
-        """
-        raise NotImplementedError
+class AutoEnv:
+    def __init__(self, params: dict, trajdatas: list = None, trajinfos: list = None, roadways:list = None,
+                 reclength: int = 5, delta_t: float = .1, primesteps: int = 50, H: int = 50,
+                 terminate_on_collision: bool = True, terminate_on_off_road: bool = True,
+                 render_params: dict = {"zoom": 5., "viz_dir": "/tmp"}):
+        '''
 
-    @property
-    def observation_space(self):
-        """
-        Returns a Space object
-        :rtype: observation space type
-        """
-        raise NotImplementedError
+        trajdatas::Vector{ListRecord}
+        trajinfos::Vector{Dict}
+        roadways::Vector{Roadway}
+        roadway::Union{Nothing, Roadway} # current roadway
+        scene::Scene
+        rec::SceneRecord
+        ext::MultiFeatureExtractor
+        egoid::Int # current id of relevant ego vehicle
+        ego_veh::Union{Nothing, Vehicle} # the ego vehicle
+        traj_idx::Int # current index into trajdatas
+        t::Int # current timestep in the trajdata
+        h::Int # current maximum horizon for egoid
+        H::Int # maximum horizon
+        primesteps::Int # timesteps to prime the scene
+        Δt::Float64
 
-    # Helpers that derive from Spaces
-    @property
-    def action_dim(self):
-        raise NotImplementedError
+        # settings
+        terminate_on_collision::Bool
+        terminate_on_off_road::Bool
 
-    def render(self):
-        pass
+        # metadata
+        epid::Int # episode id
+        render_params::Dict # rendering options
+        infos_cache::Dict # cache for infos intermediate results
 
-    def log_diagnostics(self, paths):
-        """
-        Log extra information per iteration based on the collected paths
-        """
-        pass
+        '''
+        param_keys = params.keys()
+        assert "trajectory_filepaths" in param_keys
 
-    @property
-    def horizon(self):
-        """
-        Horizon of the environment, if it has one
-        """
-        raise NotImplementedError
+        # optionally overwrite defaults
+        reclength = dict_get(params, "reclength", reclength)
+        primesteps = dict_get(params, "primesteps", primesteps)
+        H = dict_get(params, "H", H)
 
-    def terminate(self):
-        """
-        Clean up operation,
-        """
-        pass
+        for (k, v) in dict_get(params, "render_params", render_params):
+            render_params[k] = v
 
-    def get_param_values(self):
-        return None
+        terminate_on_collision = dict_get(params, "terminate_on_collision", terminate_on_collision)
+        terminate_on_off_road = dict_get(params, "terminate_on_off_road", terminate_on_off_road)
 
-    def set_param_values(self, params):
-        pass
+        if trajdatas is None or trajinfos is None or roadways is None:
+            trajdatas, trajinfos, roadways = load_ngsim_trajdatas(
+                params["trajectory_filepaths"],
+                minlength=primesteps + H
+            )
+
+        # build components
+        scene_length = max_n_objects(trajdatas)
+        scene = Frame().init(scene_length)
+        rec = SceneRecord().init(reclength, delta_t, scene_length)
+        ext = build_feature_extractor(params)
+        infos_cache = fill_infos_cache(ext)
+
+        self.trajdatas = trajdatas
+        self.trajinfos = trajinfos
+        self.roadways = roadways
+        self.roadway = None
+        self.scene = scene
+        self.rec = rec
+        self.ext = ext
+        self.ego_id = 0
+        self.ego_veh = None
+        self.traj_idx = 0
+        self.t = 0
+        self.h = 0
+        self.H = H
+        self.primesteps = primesteps
+        self.delta_t = delta_t
+        self.terminate_on_collision = terminate_on_collision
+        self.terminate_on_off_road = terminate_on_off_road
+        self.epid = 0
+        self.render_params = render_params
+        self.infos_cache = infos_cache
+
+
+

@@ -23,6 +23,12 @@ class MultiFeatureExtractor:
             feature_index += length
         return self.features
 
+    def feature_names(self):
+        fs = []
+        for subext in self.extractors:
+            fs.append(subext.feature_names())
+        return fs
+
 
 def set_feature_missing(features: list, i: int, censor: float = 0.):
     features[i] = censor

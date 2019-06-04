@@ -31,5 +31,9 @@ class WellBehavedFeatureExtractor:
         self.features[idx] = convert_2_float(get_RoadEdgeDist_Right(rec, roadway, veh_idx, pastframe))
         return self.features
 
+    def feature_names(self):
+        return ["is_colliding", "out_of_lane", "negative_velocity",
+                "distance_road_edge_left", "distance_road_edge_right"]
+
 
 

@@ -1,7 +1,7 @@
 class Frame:
     def __init__(self):
         '''
-        entities::List{Vehicle}
+        entities::List{Vehicle} , Scene
         n::Int
         '''
         self.entities = []
@@ -17,4 +17,9 @@ class Frame:
                 return entity_index
 
         return None
+
+    def init(self, n: int):
+        for i in range(n):
+            self.entities.append(None)
+
 

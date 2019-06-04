@@ -8,7 +8,7 @@ from feature_extractor.interface import FeatureValue
 from feature_extractor import FeatureState
 
 
-def build_feature_extractor():
+def build_feature_extractor(params={}):
     subexts = list()
     subexts.append(CoreFeatureExtractor())
     subexts.append(TemporalFeatureExtractor())

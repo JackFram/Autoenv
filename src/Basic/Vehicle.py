@@ -1,5 +1,6 @@
 from src.Vec import VecSE2, VecE2
 from src.Roadway import roadway, utils
+from src.curves import CurvePt
 import math
 
 """
@@ -13,7 +14,13 @@ t: lane offset, positive is to left. zero point is the centerline of the lane.
 
 
 class Frenet:
-    def __init__(self, posG: VecSE2.VecSE2, roadWay: roadway.Roadway):
+    def __init__(self, roadind: roadway.RoadIndex = None, s: float = None, t: float = None, phi: float = None):
+        self.roadind = roadind
+        self.s = s
+        self.t = t
+        self.phi = phi
+
+    def set(self, posG: VecSE2.VecSE2, roadWay: roadway.Roadway):
         # roadind: roadway.RoadIndex, s: float, t: float, phi: float
         roadproj = roadway.proj_2(posG, roadWay)
         roadind = roadway.RoadIndex(roadproj.curveproj.ind, roadproj.tag)
@@ -48,13 +55,27 @@ class VehicleDef:
         fp.write("%d %.16e %.16e" % (self.class_, self.length_, self.width_))
 
 
+def read_def(fp):
+    tokens = fp.readline().strip().split(' ')
+    class_ = int(tokens[0])
+    length_ = int(tokens[1])
+    width_ = int(tokens[2])
+    return VehicleDef(class_, length_, width_)
+
+
 NULL_VEHICLEDEF = VehicleDef(AgentClass.CAR, None, None)
 
 
 class VehicleState:
-    def __init__(self, posG: VecSE2.VecSE2, roadWay: roadway.Roadway, v: float):
+    def __init__(self, posG: VecSE2.VecSE2 = None, posF: Frenet = None, v: float = None):
         self.posG = posG
-        self.posF = Frenet(posG, roadWay)
+        self.posF = posF
+        self.v = v
+
+    def set(self, posG: VecSE2.VecSE2, roadWay: roadway.Roadway, v: float):
+        self.posG = posG
+        self.posF = Frenet()
+        self.posF.set(posG, roadWay)
         self.v = v
 
     def write(self, fp):
@@ -63,6 +84,38 @@ class VehicleState:
                                       self.posF.roadind.tag.segment, self.posF.roadind.tag.lane))
         fp.write(" %.16e %.16e %.16e" % (self.posF.s, self.posF.t, self.posF.phi))
         fp.write(" %.16e" % self.v)
+
+
+def read_state(fp):
+    tokens = fp.readline().strip().split(' ')
+    i = 0
+    x = float(tokens[i])
+    i += 1
+    y = float(tokens[i])
+    i += 1
+    theta = float(tokens[i])
+    i += 1
+    posG = VecSE2.VecSE2(x, y, theta)
+    ind_i = int(tokens[i])
+    i += 1
+    ind_t = float(tokens[i])
+    i += 1
+    tag_segment = int(tokens[i])
+    i += 1
+    tag_lane = int(tokens[i])
+    i += 1
+    roadind = roadway.RoadIndex(CurvePt.CurveIndex(ind_i, ind_t), roadway.LaneTag(tag_segment, tag_lane))
+    s = float(tokens[i])
+    i += 1
+    t = float(tokens[i])
+    i += 1
+    phi = float(tokens[i])
+    i += 1
+    posF = Frenet(roadind, s, t, phi)
+    v = float(tokens[i])
+    return VehicleState(posG, posF, v)
+
+
 
 
 class Vehicle:

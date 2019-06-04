@@ -12,6 +12,7 @@ from src.Roadway import roadway
 from src.Record import record
 from src.Basic import Vehicle
 from tqdm import tqdm
+from src.Record.record import read_trajdata
 
 NGSIM_TIMESTEP = 0.1  # [sec]
 SMOOTHING_WIDTH_POS = const.SMOOTHING_WIDTH_POS # [s]
@@ -187,7 +188,8 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
             speed = df.loc[dfind, 'speed'] * METERS_PER_FOOT
             state_ind += 1
             #print(state_ind)
-            states.append(record.RecordState(Vehicle.VehicleState(posG, roadway, speed), id))
+            state = Vehicle.VehicleState()
+            states.append(record.RecordState(state.set(posG, roadway, speed), id))
 
         frame_hi = state_ind
         frames.append(record.RecordFrame(frame_lo, frame_hi))
@@ -222,9 +224,10 @@ def convert_raw_ngsim_to_trajdatas():
         fp.close()
 
 
-# def load_trajdata(filepath: str):
-#     td = open(io->read(io, MIME"text/plain"(), Trajdata), filepath, "r")
-#     return td
+def load_trajdata(filepath: str):
+    with open(filepath, "r") as fp:
+        td = read_trajdata(fp)
+    return td
 
 
 

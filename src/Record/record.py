@@ -1,4 +1,6 @@
 from src.Basic import Vehicle
+from src.Record.frame import Frame
+from src.Basic.Vehicle import read_def, read_state
 
 
 class RecordFrame:
@@ -11,6 +13,13 @@ class RecordFrame:
 
     def write(self, fp):
         fp.write("%d %d" % (self.lo, self.hi))
+
+
+def read_frame(fp):
+    tokens = fp.readline().strip().split(' ')
+    lo = int(tokens[0])
+    hi = int(tokens[1])
+    return RecordFrame(lo, hi)
 
 
 class RecordState:
@@ -34,11 +43,12 @@ class ListRecord:
         self.defs = defs
 
     def write(self, fp):
-        fp.write("ListRecord{%s, %s, %s}(%d frames)" % ('NGSIM_TIMESTEP', 'Array{RecordFrame}', 'Array{RecordState{VehicleState, Int}}\n', len(self.frames)))
+        fp.write("ListRecord{%s, %s, %s}(%d frames)\n" % ('NGSIM_TIMESTEP', 'Array{RecordFrame}', 'Array{RecordState{VehicleState, Int}}\n', len(self.frames)))
         fp.write("%.16e\n" % self.timestep)
 
         # defs
         fp.write(str(len(self.defs)))
+        fp.write("\n")
         for id in self.defs:
             fp.write(str(id))
             fp.write("\n")
@@ -47,16 +57,54 @@ class ListRecord:
 
         # ids & states
         fp.write(str(len(self.states)))
+        fp.write("\n")
         for recstate in self.states:
-            fp.write(str(recstate.id))
+            fp.write(str(len(recstate.id)))
             fp.write("\n")
+            for index in recstate.id:
+                fp.write(str(index))
+                fp.write("\n")
             recstate.state.write(fp)
             fp.write("\n")
 
         # frames
         fp.write(str(len(self.frames)))
+        fp.write("\n")
         for recframe in self.frames:
             recframe.write(fp)
+
+    def n_objects_in_frame(self, frame_index: int):
+        return len(self.frames[frame_index])
+
+
+def read_trajdata(fp):
+    lines = fp.readline()  # skip first line
+
+    timestep = float(fp.readline())
+    defs = dict()
+
+    n = int(fp.readline())
+    for i in range(n):
+        id = int(fp.readline())
+        # TODO: check if need parse /n
+        defs[id] = read_def(fp)
+
+    n = int(fp.readline())
+    states = [None for i in range(n)]
+    for i in range(n):
+        id = []
+        m = int(fp.readline())
+        for j in range(m):
+            id.append(int(fp.readline()))
+        state = read_state(fp)
+        states[i] = RecordState(state, id)
+
+    n = int(fp.readline())
+    frames = [None for i in range(n)]
+    for i in range(n):
+        frames[i] = read_frame(fp)
+
+    return ListRecord(timestep, frames, states, defs)
 
 
 class SceneRecord:
@@ -72,6 +120,15 @@ class SceneRecord:
 
     def __getitem__(self, item):
         return self.frames[0-item]
+
+    def init(self, capacity: int, timestep: float, frame_capacity: int = 100):
+        frames = []
+        for i in range(capacity):
+            frames.append(Frame().init(frame_capacity))
+
+        self.frames = frames
+        self.timestep = timestep
+        self.nframes = 0
 
 
 def pastframe_inbounds(rec: SceneRecord, pastframe: int):

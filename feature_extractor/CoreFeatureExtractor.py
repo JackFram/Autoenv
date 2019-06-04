@@ -36,3 +36,7 @@ class CoreFeatureExtractor:
         self.features[idx] = d_mr
         return self.features
 
+    def feature_names(self):
+        return ["relative_offset", "relative_heading", "velocity", "length",
+                "width", "lane_curvature", "markerdist_left", "markerdist_right"]
+

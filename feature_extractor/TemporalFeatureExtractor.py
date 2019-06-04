@@ -52,4 +52,10 @@ class TemporalFeatureExtractor:
         self.features = set_dual_feature(self.features, idx, ttc, censor=30.0)
         return self.features
 
+    def feature_names(self):
+        return ["accel", "jerk", "turn_rate_global", "angular_rate_global",
+                "turn_rate_frenet", "angular_rate_frenet",
+                "timegap", "timegap_is_avail",
+                "time_to_collision", "time_to_collision_is_avail"]
+
 
