@@ -1,7 +1,10 @@
 from envs.utils import dict_get, max_n_objects, fill_infos_cache, sample_trajdata_vehicle, load_ngsim_trajdatas
 from src.Record.frame import Frame
 from src.Record.record import SceneRecord, get_scene
+from src.Basic.Vehicle import Vehicle
 from feature_extractor.utils import build_feature_extractor
+from envs.action import AccelTurnrate, propagate
+from src.Vec.VecE2 import norm
 import copy
 
 
@@ -119,6 +122,91 @@ class AutoEnv:
         self.h = min(self.h, self.t + self.H)
         return self.get_features()
 
+    def _step(self, action: list):
+        # convert action into form
+        # action[0] is `a::Float64` longitudinal acceleration [m/s^2]
+        # action[1] is `ω::Float64` desired turn rate [rad/sec]
+        ego_action = AccelTurnrate(action[0], action[1])
+
+        # propagate the ego vehicle
+        ego_state = propagate(
+            self.ego_veh,
+            ego_action,
+            self.roadway,
+            self.delta_t
+        )
+        # update the ego_veh
+        self.ego_veh = Vehicle(ego_state, self.ego_veh.definition, self.ego_veh.id)
+
+        # load the actual scene, and insert the vehicle into it
+        self.scene = get_scene(self.scene, self.trajdatas[self.traj_idx], self.t)
+        vehidx = self.scene.findfirst(self.egoid)
+        orig_veh = self.scene[vehidx]  # for infos purposes
+        self.scene[vehidx] = self.ego_veh
+
+        # update rec with current scene
+        self.rec.update(self.scene)
+
+        # compute info about the step
+        step_infos = dict()
+        step_infos["rmse_pos"] = norm((orig_veh.state.posG - self.ego_veh.state.posG))
+        step_infos["rmse_vel"] = norm((orig_veh.state.v - self.ego_veh.state.v))
+        step_infos["rmse_t"] = norm((orig_veh.state.posF.t - self.ego_veh.state.posF.t))
+        step_infos["x"] = self.ego_veh.state.posG.x
+        step_infos["y"] = self.ego_veh.state.posG.y
+        step_infos["s"] = self.ego_veh.state.posF.s
+        step_infos["phi"] = self.ego_veh.state.posF.phi
+        return step_infos
+
+    def _extract_rewards(self, infos: dict):
+        # rewards design
+        r = 0
+        if infos["is_colliding"] == 1:
+            r -= 1
+        if infos["is_offroad"] == 1:
+            r -= 1
+        return r
+
+    def _compute_feature_infos(self, features: list):
+        is_colliding = features[self.infos_cache["is_colliding_idx"]]
+        markerdist_left = features[self.infos_cache["markerdist_left_idx"]]
+        markerdist_right = features[self.infos_cache["markerdist_right_idx"]]
+        is_offroad = features[self.infos_cache["out_of_lane_idx"]]
+        return {
+            "is_colliding": is_colliding,
+            "markerdist_left": markerdist_left,
+            "markerdist_right": markerdist_right,
+            "is_offroad": is_offroad
+        }
+
+    def step(self, action: list):
+
+        # action[0] is `a::Float64` longitudinal acceleration [m/s^2]
+        # action[1] is `ω::Float64` desired turn rate [rad/sec]
+        step_infos = self._step(action)
+
+        # compute features and feature_infos
+        features = self.get_features()
+        feature_infos = self._compute_feature_infos(features)
+        # combine infos
+        infos = dict(**step_infos, **feature_infos)
+
+        # update env timestep to be the next scene to load
+        self.t += 1
+
+        # compute terminal
+        if self.t >= self.h:
+            terminal = True
+        elif self.terminate_on_collision and infos["is_colliding"] == 1:
+            terminal = True
+        elif self.terminate_on_off_road and (abs(infos["markerdist_left"]) > 3 and abs(infos["markerdist_right"]) > 3):
+            terminal = True
+        else:
+            terminal = False
+
+        reward = self._extract_rewards(infos)
+        return features, reward, terminal, infos
+
     def get_features(self):
         veh_idx = self.scene.findfirst(self.egoid)
         self.ext.pull_features(
@@ -127,6 +215,22 @@ class AutoEnv:
             veh_idx
         )
         return copy.deepcopy(self.ext.features)
+
+    def observation_space_spec(self):
+        low = [0 for i in range(len(self.ext))]
+        high = [0 for i in range(len(self.ext))]
+        feature_infos = feature_info(self.ext)
+        for (i, fn) in enumerate(self.ext.feature_names()):
+            low[i] = feature_infos[fn]["low"]
+            high[i] = feature_infos[fn]["high"]
+        infos = {"high": high, "low": low}
+        return (len(self.ext),), "Box", infos
+
+    def action_space_spec(self):
+        return (2,), "Box", {"high": [4., .15], "low": [-4., -.15]}
+
+    def obs_names(self):
+        return self.ext.feature_names()
 
 
 

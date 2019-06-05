@@ -1,4 +1,9 @@
-def propagate(veh, action, roadway, derta_t):
+class AccelTurnrate:
+    def __init__(self, a: float, omega: float):
+        self.a = a
+        self.omega = omega
+
+def propagate(veh, action, roadway, delta_t):
 
     raise NotImplementedError
 

@@ -116,8 +116,6 @@ def read_state(fp):
     return VehicleState(posG, posF, v)
 
 
-
-
 class Vehicle:
     def __init__(self, state_: VehicleState, def_: VehicleDef, id: int):
         self.state = state_
