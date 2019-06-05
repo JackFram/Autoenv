@@ -58,4 +58,18 @@ class TemporalFeatureExtractor:
                 "timegap", "timegap_is_avail",
                 "time_to_collision", "time_to_collision_is_avail"]
 
+    def feature_info(self):
+        return {
+            "accel": {"high": 9., "low": -9.},
+            "jerk": {"high": 70., "low": -70.},
+            "turn_rate_global": {"high": .5, "low": -.5},
+            "angular_rate_global": {"high": 3., "low": -3.},
+            "turn_rate_frenet": {"high": .1, "low": -.1},
+            "angular_rate_frenet": {"high": 3., "low": -3.},
+            "timegap": {"high": 30., "low": 0.},
+            "timegap_is_avail": {"high": 1., "low": 0.},
+            "time_to_collision": {"high": 30., "low": 0.},
+            "time_to_collision_is_avail": {"high": 1., "low": 0.}
+        }
+
 

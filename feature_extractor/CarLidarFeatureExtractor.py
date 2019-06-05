@@ -66,6 +66,15 @@ class CarLidarFeatureExtractor:
 
         return fs
 
+    def feature_info(self):
+        info = dict()
+        for name in self.feature_names():
+            if "rangerate" in name:
+                info[name] = {"high": 30., "low": -30.}
+            else:
+                info[name] = {"high": self.carlidar.max_range, "low": 0.}
+        return info
+
 
 def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: int):
     state_ego = scene[vehicle_index].state

@@ -47,5 +47,12 @@ class ForeForeFeatureExtractor:
     def feature_names(self):
         return ["fore_fore_dist", "fore_fore_relative_vel", "fore_fore_accel"]
 
+    def feature_info(self):
+        return {
+            "fore_fore_dist": {"high": 50., "low": 0},
+            "fore_fore_relative_vel": {"high": 40., "low": -20.},
+            "fore_fore_accel": {"high": 9., "low": -9.}
+        }
+
 
 

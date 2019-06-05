@@ -219,7 +219,7 @@ class AutoEnv:
     def observation_space_spec(self):
         low = [0 for i in range(len(self.ext))]
         high = [0 for i in range(len(self.ext))]
-        feature_infos = feature_info(self.ext)
+        feature_infos = self.ext.feature_info()
         for (i, fn) in enumerate(self.ext.feature_names()):
             low[i] = feature_infos[fn]["low"]
             high[i] = feature_infos[fn]["high"]

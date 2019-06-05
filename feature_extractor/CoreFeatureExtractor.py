@@ -40,3 +40,15 @@ class CoreFeatureExtractor:
         return ["relative_offset", "relative_heading", "velocity", "length",
                 "width", "lane_curvature", "markerdist_left", "markerdist_right"]
 
+    def feature_info(self):
+        return {
+            "relative_offset": {"high": 1., "low": -1.},
+            "relative_heading": {"high": .05, "low": -.05},
+            "velocity": {"high": 40., "low": -5.},
+            "length": {"high": 30., "low": 2.},
+            "width": {"high": 3., "low": .9},
+            "lane_curvature": {"high": .1, "low": -.1},
+            "markerdist_left": {"high": 3., "low": 0.},
+            "markerdist_right": {"high": 3., "low": 0.}
+        }
+

@@ -35,5 +35,14 @@ class WellBehavedFeatureExtractor:
         return ["is_colliding", "out_of_lane", "negative_velocity",
                 "distance_road_edge_left", "distance_road_edge_right"]
 
+    def feature_info(self):
+        return{
+            "is_colliding": {"high": 1., "low": 0.},
+            "out_of_lane": {"high": 1., "low": 0.},
+            "negative_velocity": {"high": 1., "low": 0.},
+            "distance_road_edge_left": {"high": 50., "low": -50.},
+            "distance_road_edge_right": {"high": 50., "low": -50.},
+        }
+
 
 
