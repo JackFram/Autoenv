@@ -59,7 +59,8 @@ class AutoEnv:
 
         # build components
         scene_length = max_n_objects(trajdatas)
-        scene = Frame().init(scene_length)
+        scene = Frame()
+        scene.init(scene_length)
         rec = SceneRecord().init(reclength, delta_t, scene_length)
         ext = build_feature_extractor(params)
         infos_cache = fill_infos_cache(ext)

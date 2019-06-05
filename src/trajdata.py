@@ -174,7 +174,7 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
 
     state_ind = -1
     print("convert: frames and states")
-    for frame in tqdm(range(0, tdraw.nframes + 1)):  # change from 1 to 0
+    for frame in tqdm(range(0, tdraw.nframes)):  # change from 1 to 0
 
         frame_lo = state_ind + 1
 

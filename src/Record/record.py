@@ -76,6 +76,18 @@ class ListRecord:
     def n_objects_in_frame(self, frame_index: int):
         return len(self.frames[frame_index])
 
+    @property
+    def nframes(self):
+        return len(self.frames)
+
+    @property
+    def nstates(self):
+        return len(self.states)
+
+    @property
+    def nids(self):
+        return len(self.defs.keys())
+
 
 def read_trajdata(fp):
     lines = fp.readline()  # skip first line
@@ -131,12 +143,39 @@ class SceneRecord:
         self.nframes = 0
 
 
+def frame_inbounds(rec: ListRecord, frame_index: int):
+    return 0 <= frame_index < rec.nframes
+
+
 def pastframe_inbounds(rec: SceneRecord, pastframe: int):
     return 0 <= 0 - pastframe <= rec.nframes - 1
 
 
 def get_elapsed_time_3(rec: SceneRecord, pastframe_farthest_back: int, pastframe_most_recent: int):
     return (pastframe_most_recent - pastframe_farthest_back)*rec.timestep
+
+
+def get_def(rec: ListRecord, id: int):
+    return rec.defs[id]
+
+
+def get_vehicle(rec: ListRecord, stateindex: int):
+    recstate = rec.states[stateindex]
+    return Vehicle.Vehicle(recstate.state, get_def(rec, recstate.id), recstate.id)
+
+
+def get_scene(frame: Frame, rec: ListRecord, frame_index: int):
+    frame.empty()
+
+    if frame_inbounds(rec, frame_index):
+        recframe = rec.frames[frame_index]
+        for stateindex in range(recframe.lo, recframe.hi):
+            frame.push(get_vehicle(rec, stateindex))
+
+    return frame
+
+
+
 
 
 

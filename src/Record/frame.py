@@ -22,4 +22,11 @@ class Frame:
         for i in range(n):
             self.entities.append(None)
 
+    def push(self, entity):
+        self.entities[self.n] = entity
+        self.n += 1
+
+    def empty(self):
+        self.n = 0
+
 
