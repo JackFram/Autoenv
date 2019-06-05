@@ -3,7 +3,7 @@ import os
 from src.trajdata import load_trajdata, get_corresponding_roadway
 from src.Record.frame import Frame
 from src.Record.record import get_scene
-import pickle
+import pickle, random
 
 
 def dict_get(d: dict, key, default):
@@ -96,6 +96,21 @@ def index_ngsim_trajectory(filepath: str, minlength: int = 100, offset: int = 50
             index.pop(vehid)
 
     return index
+
+
+def sample_trajdata_vehicle(trajinfos, offset: int = 0, traj_idx: int = None, egoid: int = None,
+                            start: int = None):
+    if traj_idx is None or egoid is None or start is None:
+        traj_idx = random.randint(0, len(trajinfos) - 1)
+        egoid = random.choice(list(trajinfos[traj_idx].keys()))
+        ts = trajinfos[traj_idx][egoid]["ts"]
+        te = trajinfos[traj_idx][egoid]["te"]
+        ts = random.randint(ts, te - offset)
+    else:
+        ts = start
+        te = start + offset
+
+    return traj_idx, egoid, ts, te
 
 
 def load_ngsim_trajdatas(filepaths, minlength: int=100):

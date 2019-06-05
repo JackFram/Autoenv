@@ -1,11 +1,12 @@
-from envs.utils import dict_get, max_n_objects, fill_infos_cache
+from envs.utils import dict_get, max_n_objects, fill_infos_cache, sample_trajdata_vehicle, load_ngsim_trajdatas
 from src.Record.frame import Frame
-from src.Record.record import SceneRecord
+from src.Record.record import SceneRecord, get_scene
 from feature_extractor.utils import build_feature_extractor
+import copy
 
 
 class AutoEnv:
-    def __init__(self, params: dict, trajdatas: list = None, trajinfos: list = None, roadways:list = None,
+    def __init__(self, params: dict, trajdatas: list = None, trajinfos: list = None, roadways: list = None,
                  reclength: int = 5, delta_t: float = .1, primesteps: int = 50, H: int = 50,
                  terminate_on_collision: bool = True, terminate_on_off_road: bool = True,
                  render_params: dict = {"zoom": 5., "viz_dir": "/tmp"}):
@@ -61,7 +62,8 @@ class AutoEnv:
         scene_length = max_n_objects(trajdatas)
         scene = Frame()
         scene.init(scene_length)
-        rec = SceneRecord().init(reclength, delta_t, scene_length)
+        rec = SceneRecord()
+        rec.init(reclength, delta_t, scene_length)
         ext = build_feature_extractor(params)
         infos_cache = fill_infos_cache(ext)
 
@@ -72,7 +74,7 @@ class AutoEnv:
         self.scene = scene
         self.rec = rec
         self.ext = ext
-        self.ego_id = 0
+        self.egoid = 0
         self.ego_veh = None
         self.traj_idx = 0
         self.t = 0
@@ -85,6 +87,48 @@ class AutoEnv:
         self.epid = 0
         self.render_params = render_params
         self.infos_cache = infos_cache
+
+    def reset(self, offset: int = None, egoid: int = None, start: int = None, traj_idx: int = 1):
+        if offset is None:
+            offset = self.H + self.primesteps
+        self.traj_idx, self.egoid, self.t, self.h = sample_trajdata_vehicle(
+            self.trajinfos,
+            offset,
+            traj_idx,
+            egoid,
+            start
+        )
+
+        self.epid += 1
+
+        self.rec.empty()
+        self.scene.empty()
+
+        # prime
+        for t in range(self.t, (self.t + self.primesteps + 1)):
+            self.scene = get_scene(self.scene, self.trajdatas[self.traj_idx], t)
+            self.rec.update(self.scene)
+
+        # set the ego vehicle
+        self.ego_veh = self.scene[self.scene.findfirst(self.egoid)]
+        # set the roadway
+        self.roadway = self.roadways[self.traj_idx]
+        # self.t is the next timestep to load
+        self.t += self.primesteps + 1
+        # enforce a maximum horizon 
+        self.h = min(self.h, self.t + self.H)
+        return self.get_features()
+
+    def get_features(self):
+        veh_idx = self.scene.findfirst(self.egoid)
+        self.ext.pull_features(
+            self.rec,
+            self.roadway,
+            veh_idx
+        )
+        return copy.deepcopy(self.ext.features)
+
+
 
 
 

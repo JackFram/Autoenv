@@ -1,5 +1,5 @@
 from src.Basic import Vehicle
-from src.Record.frame import Frame
+from src.Record.frame import Frame, copyto
 from src.Basic.Vehicle import read_def, read_state
 
 
@@ -136,11 +136,32 @@ class SceneRecord:
     def init(self, capacity: int, timestep: float, frame_capacity: int = 100):
         frames = []
         for i in range(capacity):
-            frames.append(Frame().init(frame_capacity))
+            frame = Frame()
+            frame.init(frame_capacity)
+            frames.append(frame)
 
         self.frames = frames
         self.timestep = timestep
         self.nframes = 0
+
+    @property
+    def capacity(self):
+        return len(self.frames)
+
+    def empty(self):
+        self.nframes = 0
+
+    def insert(self, frame: Frame, pastframe: int=0):
+        self.frames[0 - pastframe] = copyto(self.frames[0 - pastframe], frame)
+
+    def push_back_records(self):
+        for i in range(min(self.nframes + 1, self.capacity) - 1, 0, -1):
+            self.frames[i] = copyto(self.frames[i], self.frames[i - 1])
+
+    def update(self, frame: Frame):
+        self.push_back_records()
+        self.insert(frame, 0)
+        self.nframes = min(self.nframes + 1, self.capacity)
 
 
 def frame_inbounds(rec: ListRecord, frame_index: int):

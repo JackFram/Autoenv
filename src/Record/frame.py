@@ -30,3 +30,10 @@ class Frame:
         self.n = 0
 
 
+def copyto(dest: Frame, src: Frame):
+    for i in range(src.n):
+        dest.entities[i] = src.entities[i]
+    dest.n = src.n
+    return dest
+
+
