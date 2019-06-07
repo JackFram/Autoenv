@@ -237,34 +237,52 @@ class MultiAgentAutoEnv:
 
     def _extract_rewards(self, infos: dict):
         # rewards design
-        r = 0
-        if infos["is_colliding"] == 1:
-            r -= 1
-        if infos["is_offroad"] == 1:
-            r -= 1
-        return r
+        rewards = [0 for _ in range(self.n_veh)]
+        for i in range(self.n_veh):
+            reward_col = infos["is_colliding"][i] * self.reward
+            reward_off = infos["is_offroad"][i] * self.reward
+            reward_brake = infos["hard_brake"][i] * self.reward * 0.5  # braking hard is not as bad as a collision
+            rewards[i] = -max(reward_col, reward_off, reward_brake)
+        return rewards
 
-    def _compute_feature_infos(self, features: list):
-        is_colliding = features[self.infos_cache["is_colliding_idx"]]
-        markerdist_left = features[self.infos_cache["markerdist_left_idx"]]
-        markerdist_right = features[self.infos_cache["markerdist_right_idx"]]
-        is_offroad = features[self.infos_cache["out_of_lane_idx"]]
-        return {
-            "is_colliding": is_colliding,
-            "markerdist_left": markerdist_left,
-            "markerdist_right": markerdist_right,
-            "is_offroad": is_offroad
+    def _compute_feature_infos(self, features: list, accel_thresh_min: float=-2.0, accel_thresh: float = -3.0,
+                               min_d_edge_thresh: float = 0.5, offroad_thresh: float = -0.1):
+        feature_infos = {
+            "is_colliding": [],
+            "is_offroad": [],
+            "hard_brake": []
         }
+        for i in range(self.n_veh):
+            is_colliding = features[i][self.infos_cache["is_colliding_idx"]]
+            feature_infos["is_colliding"].append(is_colliding)
+            accel = features[i][self.infos_cache["accel_idx"]]
+            if accel <= accel_thresh_min:
+                normalized_accel = abs((accel - accel_thresh_min) / (accel_thresh - accel_thresh_min))
+                # linearly increase penalty up to accel_thresh
+                feature_infos["hard_brake"].append(min(1, normalized_accel))
+            else:
+                feature_infos["hard_brake"].append(0)
+
+            is_offroad = features[i][self.infos_cache["out_of_lane_idx"]]
+            if is_offroad < 1:
+                d_left = features[i][self.infos_cache["distance_road_edge_left_idx"]]
+                d_right = features[i][self.infos_cache["distance_road_edge_right_idx"]]
+                closest_d = min(d_left, d_right)
+                if closest_d <= min_d_edge_thresh:  # meaning too close
+                    is_offroad = abs((closest_d - min_d_edge_thresh) / (offroad_thresh - min_d_edge_thresh))
+            feature_infos["is_offroad"].append(is_offroad)
+
+        return feature_infos
 
     def step(self, action: list):
 
-        # action[0] is `a::Float64` longitudinal acceleration [m/s^2]
-        # action[1] is `ω::Float64` desired turn rate [rad/sec]
+        # action is a list of actions, length equals to self.n_veh
         step_infos = self._step(action)
 
         # compute features and feature_infos
         features = self.get_features()
         feature_infos = self._compute_feature_infos(features)
+
         # combine infos
         infos = dict(**step_infos, **feature_infos)
 
@@ -272,26 +290,27 @@ class MultiAgentAutoEnv:
         self.t += 1
 
         # compute terminal
-        if self.t >= self.h:
-            terminal = True
-        elif self.terminate_on_collision and infos["is_colliding"] == 1:
-            terminal = True
-        elif self.terminate_on_off_road and (abs(infos["markerdist_left"]) > 3 and abs(infos["markerdist_right"]) > 3):
+        if self.t > self.h:
             terminal = True
         else:
             terminal = False
 
-        reward = self._extract_rewards(infos)
-        return features, reward, terminal, infos
+        terminal = [terminal for _ in range(self.n_veh)]
+
+        # vectorized sampler does not call reset on the environment
+        # but expects the environment to handle resetting, so do that here
+        # note: this mutates env.features in order to return the correct obs when resetting
+        self.reset(terminal)
+
+        rewards = self._extract_rewards(infos)
+        return copy.deepcopy(features), rewards, terminal, infos
 
     def get_features(self):
-        veh_idx = self.scene.findfirst(self.egoid)
-        self.ext.pull_features(
-            self.rec,
-            self.roadway,
-            veh_idx
-        )
-        return copy.deepcopy(self.ext.features)
+        for (i, egoid) in enumerate(self.egoids):
+            veh_idx = self.scene.findfirst(egoid)
+            self.ext.pull_features(self.rec, self.roadway, veh_idx)
+            self.features[i] = copy.deepcopy(self.ext.features)
+        return copy.deepcopy(self.features)
 
     def observation_space_spec(self):
         low = [0 for i in range(len(self.ext))]
