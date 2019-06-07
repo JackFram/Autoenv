@@ -25,12 +25,12 @@ class ForeForeFeatureExtractor:
         vtpf = "Front"
         vtpr = "Rear"
         fore_M = get_neighbor_fore_along_lane_2(scene, veh_idx, roadway, vtpf, vtpr, vtpf)
-        if fore_M.ind != 0:
+        if fore_M.ind is not None:
             fore_fore_M = get_neighbor_fore_along_lane_2(scene, fore_M.ind, roadway, vtpr, vtpf, vtpr)
         else:
             fore_fore_M = NeighborLongitudinalResult(0, 0.)
 
-        if fore_fore_M.ind != 0:
+        if fore_fore_M.ind is not None:
             # total distance from ego vehicle
             self.features[0] = fore_fore_M.delta_s + fore_M.delta_s
             # relative velocity to ego vehicle

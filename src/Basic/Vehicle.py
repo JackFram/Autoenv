@@ -46,7 +46,7 @@ class AgentClass:
 
 
 class VehicleDef:
-    def __init__(self, class_: int = AgentClass.CAR, length_: int = 4.0, width_: int = 1.8):
+    def __init__(self, class_: int = AgentClass.CAR, length_: float = 4.0, width_: float = 1.8):
         self.class_ = class_
         self.length_ = length_
         self.width_ = width_
@@ -58,8 +58,8 @@ class VehicleDef:
 def read_def(fp):
     tokens = fp.readline().strip().split(' ')
     class_ = int(tokens[0])
-    length_ = int(tokens[1])
-    width_ = int(tokens[2])
+    length_ = float(tokens[1])
+    width_ = float(tokens[2])
     return VehicleDef(class_, length_, width_)
 
 
@@ -128,7 +128,7 @@ class Vehicle:
 
     @property
     def get_footpoint(self):
-        return self.state.posG + VecE2.polar(self.state.posF.t, self.state.posG.theta-self.state.posF.phi-math.pi/2)
+        return self.state.posG.add_E2(VecE2.polar(self.state.posF.t, self.state.posG.theta-self.state.posF.phi-math.pi/2))
 
     def get_targetpoint_delta(self, part: str):
         if part == "Front":

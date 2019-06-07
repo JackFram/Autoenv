@@ -102,7 +102,7 @@ def cyclic_shift_left(arr: list, d: int, n: int):
         j = i
         while True:
             k = j + d
-            if k > n:
+            if k >= n:
                 k = k - n
             if k == i:
                 break
@@ -238,11 +238,11 @@ def minkowksi_sum(retval: ConvexPolygon, P: ConvexPolygon, Q: ConvexPolygon):
             index_P += 1
             theta_p = get_polar_angle(get_edge(P.pts, index_P, P.npts)) if index_P < len(P) else math.inf
         else:
-            seg_q = get_edge(Q.pts, index_Q, Q.npts)
+            seg = get_edge(Q.pts, index_Q, Q.npts)
             O = (P.pts[0] + Q.pts[0]) if isempty(retval) else retval.pts[retval.npts - 1]
             retval.set(push(retval, O + seg.B - seg.A))
             index_Q += 1
-            theta_Q = get_polar_angle(get_edge(Q.pts, index_Q, Q.npts)) if index_Q < len(Q) else math.inf
+            theta_q = get_polar_angle(get_edge(Q.pts, index_Q, Q.npts)) if index_Q < len(Q) else math.inf
 
     retval.set(ensure_pts_sorted_by_min_polar_angle(retval))
 
@@ -293,7 +293,8 @@ def get_first_collision(scene: Frame, target_index: int, mem: CPAMemory = CPAMem
     vehA = scene[A]
     mem.vehA.set(to_oriented_bounding_box_2(mem.vehA, vehA))
 
-    for (B, vehB) in enumerate(scene):
+    for B in range(scene.n):
+        vehB = scene[B]
         if B != A:
             mem.vehB.set(to_oriented_bounding_box_2(mem.vehB, vehB))
             if is_potentially_colliding(vehA, vehB) and is_colliding_1(mem):

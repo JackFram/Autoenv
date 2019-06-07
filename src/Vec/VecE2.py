@@ -30,6 +30,12 @@ class VecE2:
     def __sub__(self, other):
         return VecE2(self.x - other.x, self.y - other.y)
 
+    def __add__(self, other):
+        return VecE2(self.x + other.x, self.y + other.y)
+
+    def __neg__(self):
+        return VecE2(-self.x, -self.y)
+
 
 def polar(r, theta):
     return VecE2(r*math.cos(theta), r*math.sin(theta))

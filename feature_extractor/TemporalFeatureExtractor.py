@@ -1,11 +1,11 @@
 from src.Roadway.roadway import Roadway
 from src.Record.record import SceneRecord
-from feature_extractor.interface import convert_2_float, get_Acc, get_Jerk, FeatureValue
+from feature_extractor.interface import convert_2_float, get_Acc, get_Jerk
 from feature_extractor.Get import get_TurnRateG, get_AngularRateG, get_TurnRateF, get_AngularRateF, get_TimeGap, \
     get_Inv_TTC
 from feature_extractor.neighbor_feature import get_neighbor_fore_along_lane_3
 from feature_extractor.feature_extractor import set_dual_feature
-from feature_extractor.utils import inverse_ttc_to_ttc
+from feature_extractor import FeatureState
 
 
 class TemporalFeatureExtractor:
@@ -38,7 +38,7 @@ class TemporalFeatureExtractor:
         neighborfore = get_neighbor_fore_along_lane_3(rec[pastframe], veh_idx, roadway)
         timegap = get_TimeGap(rec, roadway, veh_idx, pastframe, neighborfore=neighborfore, censor_hi=timegap_censor_hi)
         if timegap.v > timegap_censor_hi:
-            timegap = FeatureValue(timegap_censor_hi, timegap.i)
+            timegap = FeatureState.FeatureValue(timegap_censor_hi, timegap.i)
         self.features = set_dual_feature(self.features, idx, timegap, censor=timegap_censor_hi)
         idx += 2
 
@@ -48,7 +48,7 @@ class TemporalFeatureExtractor:
         # to TTC
         neighborfore = get_neighbor_fore_along_lane_3(rec[pastframe], veh_idx, roadway)
         inv_ttc = get_Inv_TTC(rec, roadway, veh_idx, pastframe, neighborfore=neighborfore)
-        ttc = inverse_ttc_to_ttc(inv_ttc, censor_hi=30.0)
+        ttc = FeatureState.inverse_ttc_to_ttc(inv_ttc, censor_hi=30.0)
         self.features = set_dual_feature(self.features, idx, ttc, censor=30.0)
         return self.features
 

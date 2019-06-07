@@ -51,7 +51,7 @@ class LaneConnection:
 
 def parse_lane_connection(line: str):
     cleanedline = re.sub(r"(\(|\))", "", line)
-    print(cleanedline)
+    # print(cleanedline)
     tokens = cleanedline.split()
     assert tokens[0] == "D" or tokens[0] == "U"
     downstream = (tokens[0] == "D")
@@ -337,12 +337,12 @@ def proj_2(posG: VecSE2.VecSE2, roadway: Roadway):
 
 
 def n_lanes_right(lane: Lane, roadway: Roadway):
-    return lane.tag.lane - 1
+    return lane.tag.lane
 
 
 def n_lanes_left(lane: Lane, roadway: Roadway):
     seg = roadway.get_by_id(lane.tag.segment)
-    return len(seg.lanes) - lane.tag.lane
+    return len(seg.lanes) - lane.tag.lane - 1
 
 
 def is_between_segments_lo(ind: CurvePt.CurveIndex):

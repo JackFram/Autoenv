@@ -28,7 +28,8 @@ def get_neighbor_fore_along_lane_1(scene: Frame, roadway: Roadway, tag_start: La
     dist_searched = 0.0
     while dist_searched < max_distance_fore:
         lane = roadway.get_by_tag(tag_target)
-        for (i, veh) in enumerate(scene):
+        for i in range(scene.n):
+            veh = scene[i]
             if i != index_to_ignore:
                 s_adjust = None
                 if veh.state.posF.roadind.tag == tag_target:

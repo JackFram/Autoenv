@@ -83,7 +83,8 @@ def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: i
 
     in_range_ids = set()
 
-    for veh in scene:
+    for i in range(scene.n):
+        veh = scene[i]
         if veh.id != egoid:
             a = state_ego.posG - veh.state.posG
             distance = VecE2.norm(VecE2.VecE2(a.x, a.y))
@@ -101,7 +102,8 @@ def observe(lidar: LidarSensor, scene: Frame, roadway: Roadway, vehicle_index: i
 
         range_ = lidar.max_range
         range_rate = 0.0
-        for veh in scene:
+        for j in range(scene.n):
+            veh = scene[j]
             # only consider the set of potentially in range vehicles
             if veh.id in in_range_ids:
                 lidar.poly.set(to_oriented_bounding_box_2(lidar.poly, veh))

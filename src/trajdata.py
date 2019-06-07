@@ -46,16 +46,16 @@ def symmetric_exponential_moving_average(arr: list, T: float, dt: float = 0.1):
 class FilterTrajectoryResult:
     def __init__(self, trajdata: ngsim_trajdata.NGSIMTrajdata, carid: int):
         dfstart = trajdata.car2start[carid]
-        N = trajdata.df.loc[dfstart, 'n_frames_in_dataset']
+        N = trajdata.df.at[dfstart, 'n_frames_in_dataset']
         x_arr = []
         y_arr = []
         theta_arr = []
         v_arr = []
         for i in range(N):
-            x_arr.append(trajdata.df.loc[dfstart + i, 'global_x'])
-            y_arr.append(trajdata.df.loc[dfstart + i, 'global_y'])
+            x_arr.append(trajdata.df.at[dfstart + i, 'global_x'])
+            y_arr.append(trajdata.df.at[dfstart + i, 'global_y'])
         theta_arr.append(math.atan2(y_arr[4] - y_arr[0], x_arr[4] - x_arr[0]))
-        v_arr.append(trajdata.df.loc[dfstart, 'speed'])
+        v_arr.append(trajdata.df.at[dfstart, 'speed'])
         # hypot(ftr.y_arr[lookahead] - y₀, ftr.x_arr[lookahead] - x₀)/ν.Δt
         if v_arr[0] < 1.0:  # small speed
             # estimate with greater lookahead
@@ -100,32 +100,32 @@ def filter_trajectory(ftr: FilterTrajectoryResult, v: trajectory_smoothing.Vehic
 
 def copy(trajdata: ngsim_trajdata.NGSIMTrajdata, ftr: FilterTrajectoryResult):
     dfstart = trajdata.car2start[ftr.carid]
-    N = trajdata.df.loc[dfstart, 'n_frames_in_dataset']
+    N = trajdata.df.at[dfstart, 'n_frames_in_dataset']
 
     # copy results back to trajdata
-    print("start copying: ")
+    # print("start copying: ")
     for i in range(N):
         #print(dfstart, i, N)
         #print('global_x')
-        trajdata.df.loc[dfstart + i, 'global_x'] = ftr.x_arr[i]
+        trajdata.df.at[dfstart + i, 'global_x'] = ftr.x_arr[i]
         #print('global_y')
-        trajdata.df.loc[dfstart + i, 'global_y'] = ftr.y_arr[i]
-        trajdata.df.loc[dfstart + i, 'speed'] = ftr.v_arr[i]
+        trajdata.df.at[dfstart + i, 'global_y'] = ftr.y_arr[i]
+        trajdata.df.at[dfstart + i, 'speed'] = ftr.v_arr[i]
         #print("speed")
         if i > 0:
             a = ftr.x_arr[i]
             b = ftr.x_arr[i-1]
             c = ftr.y_arr[i]
             d = ftr.y_arr[i-1]
-            trajdata.df.loc[dfstart + i, 'speed'] = math.hypot(a-b, c-d) / NGSIM_TIMESTEP
+            trajdata.df.at[dfstart + i, 'speed'] = math.hypot(a-b, c-d) / NGSIM_TIMESTEP
         else:
             a = ftr.x_arr[i + 1]
             b = ftr.x_arr[i]
             c = ftr.y_arr[i + 1]
             d = ftr.y_arr[i]
-            trajdata.df.loc[dfstart + i, 'speed'] = math.hypot(a-b, c-d) / NGSIM_TIMESTEP
+            trajdata.df.at[dfstart + i, 'speed'] = math.hypot(a-b, c-d) / NGSIM_TIMESTEP
         #print("global_heading")
-        trajdata.df.loc[dfstart + i, 'global_heading'] = ftr.theta_arr[i]
+        trajdata.df.at[dfstart + i, 'global_heading'] = ftr.theta_arr[i]
 
     return trajdata
 
@@ -142,18 +142,19 @@ def filter_given_trajectory(trajdata: ngsim_trajdata.NGSIMTrajdata, carid: int):
     ftr = filter_trajectory(ftr)
 
     trajdata = copy(trajdata, ftr)
+    # print("finish copy")
 
     return trajdata
 
 
-def load_ngsim_trajdata(filepath: str, autofilter: bool = False):
+def load_ngsim_trajdata(filepath: str, autofilter: bool = True):
     print("loading from file: ")
     tdraw = ngsim_trajdata.NGSIMTrajdata(filepath)
 
     if autofilter and os.path.splitext(filepath)[1] == ".txt":
         print("filtering:         ")
         for carid in tqdm(ngsim_trajdata.carid_set(tdraw)):
-            print(carid)
+            # print(carid)
             tdraw = filter_given_trajectory(tdraw, carid)
 
     return tdraw
@@ -168,9 +169,9 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
     print("convert: Vehicle definition")
 
     for id, dfind in tdraw.car2start.items():
-        vehdefs[id] = Vehicle.VehicleDef(df.loc[dfind, 'class'],
-                                        df.loc[dfind, 'length'] * METERS_PER_FOOT,
-                                        df.loc[dfind, 'width'] * METERS_PER_FOOT)
+        vehdefs[id] = Vehicle.VehicleDef(df.at[dfind, 'class'],
+                                         df.at[dfind, 'length'] * METERS_PER_FOOT,
+                                         df.at[dfind, 'width'] * METERS_PER_FOOT)
 
     state_ind = -1
     print("convert: frames and states")
@@ -182,14 +183,16 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
             dfind = ngsim_trajdata.car_df_index(tdraw, id, frame)
             assert dfind != -1
 
-            posG = VecSE2.VecSE2(df.loc[dfind, 'global_x'] * METERS_PER_FOOT,
-                                 df.loc[dfind, 'global_y'] * METERS_PER_FOOT,
-                                 df.loc[dfind, 'global_heading'])
-            speed = df.loc[dfind, 'speed'] * METERS_PER_FOOT
+            posG = VecSE2.VecSE2(df.at[dfind, 'global_x'] * METERS_PER_FOOT,
+                                 df.at[dfind, 'global_y'] * METERS_PER_FOOT,
+                                 df.at[dfind, 'global_heading'])
+            # print(df.at[dfind, 'global_heading'])
+            speed = df.at[dfind, 'speed'] * METERS_PER_FOOT
             state_ind += 1
-            #print(state_ind)
+            # print(state_ind)
             state = Vehicle.VehicleState()
-            states.append(record.RecordState(state.set(posG, roadway, speed), id))
+            state.set(posG, roadway, speed)
+            states.append(record.RecordState(state, id))
 
         frame_hi = state_ind
         frames.append(record.RecordFrame(frame_lo, frame_hi))

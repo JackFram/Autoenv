@@ -18,6 +18,16 @@ class Frame:
 
         return None
 
+    def deleteat(self, entity_index: int):
+        for i in range(entity_index, self.n - 1):
+            self.entities[i] = self.entities[i + 1]
+        self.n -= 1
+
+    def delete_by_id(self, id: int):
+        entity_index = self.findfirst(id)
+        if entity_index is not None:
+            self.deleteat(entity_index)
+
     def init(self, n: int):
         for i in range(n):
             self.entities.append(None)
@@ -28,6 +38,9 @@ class Frame:
 
     def empty(self):
         self.n = 0
+
+    def __setitem__(self, key, value):
+        self.entities[key] = value
 
 
 def copyto(dest: Frame, src: Frame):

@@ -3,7 +3,11 @@ import os
 from src.trajdata import load_trajdata, get_corresponding_roadway
 from src.Record.frame import Frame
 from src.Record.record import get_scene
-import pickle, random
+from src.const import NGSIM_FILENAME_TO_ID
+import numpy as np
+import pickle
+import random
+import h5py
 
 
 def dict_get(d: dict, key, default):
@@ -64,7 +68,8 @@ def index_ngsim_trajectory(filepath: str, minlength: int = 100, offset: int = 50
         scene = get_scene(scene, trajdata, frame)
 
         # add all the vehicles to the current set
-        for veh in scene:
+        for i in range(scene.n):
+            veh = scene[i]
             cur.add(veh.id)
             # insert previously unseen vehicles into the index
             if veh.id not in prev:
@@ -84,18 +89,32 @@ def index_ngsim_trajectory(filepath: str, minlength: int = 100, offset: int = 50
         index[id]["te"] = n_frames - offset
 
     # postprocess to remove undesirable trajectories
-    for (vehid, infos) in index:
+    del_items = []
+    for (vehid, infos) in index.items():
         # check for start and end frames
         if "ts" not in infos.keys() or "te" not in infos.keys():
             if verbose > 0:
                 print("delete vehid {} for missing keys".format(vehid))
-            index.pop(vehid)
+            del_items.append(vehid)
         elif infos["te"] - infos["ts"] < minlength:
             if verbose > 0:
                 print("delete vehid {} for below minlength".format(vehid))
-            index.pop(vehid)
+            del_items.append(vehid)
+
+    for i in del_items:
+        index.pop(i)
 
     return index
+
+
+def random_sample_from_set_without_replacement(s: set, n):
+    assert len(s) >= n
+    sampled = set()
+    for i in range(n):
+        cur = random.choice(s)
+        sampled.add(cur)
+        s.discard(cur)
+    return list(sampled)
 
 
 def sample_trajdata_vehicle(trajinfos, offset: int = 0, traj_idx: int = None, egoid: int = None,
@@ -111,6 +130,64 @@ def sample_trajdata_vehicle(trajinfos, offset: int = 0, traj_idx: int = None, eg
         te = start + offset
 
     return traj_idx, egoid, ts, te
+
+
+def sample_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_resamples: int = 100, egoid: int = None,
+                                     traj_idx: int = None, verbose: bool = True, rseed: int = None):
+    if rseed is not None:
+        random.seed(rseed)
+    # if passed in egoid and traj_idx, use those, otherwise, sample
+    if egoid is None or traj_idx is None:
+        traj_idx = random.randint(0, len(trajinfos) - 1)
+        egoid = random.choice(list(trajinfos[traj_idx].keys()))
+
+    ts = trajinfos[traj_idx][egoid]["ts"]
+    te = trajinfos[traj_idx][egoid]["te"]
+    # this sampling assumes ts:te-offset is a valid range
+    # this is enforced by the initial computation of the index / trajinfo
+    ts = random.randint(ts, te - offset)
+    # after setting the start timestep randomly from the valid range, next
+    # update the end timestep to be offset timesteps following it
+    # this assume that we just want to simulate for offset timesteps
+    te = ts + offset
+    # find all other vehicles that have at least 'offset' many steps in common
+    # with the first sampled egoid starting from ts. If the number of such
+    # vehicles is fewer than n_veh, then resample
+    # start with the set containing the first egoid so we don't double count it
+    egoids = set()
+    egoids.add(1)
+    for othid in trajinfos[traj_idx].keys():
+        oth_ts = trajinfos[traj_idx][othid]["ts"]
+        oth_te = trajinfos[traj_idx][othid]["te"]
+        # other vehicle must start at or before ts and must end at or after te
+        if oth_ts <= ts and te <= oth_te:
+            egoids.add(othid)
+
+    # check that there are enough valid ids from which to sample
+    if len(egoids) < n_veh:
+        # if not, resample
+        # this is not ideal, but dramatically simplifies the multiagent env
+        # if it becomes a problem, implement a version of the multiagent env
+        # with asynchronous resets
+        if verbose:
+            print(
+                "WARNING: insuffcient sampling ids in sample_multiple_trajdata_vehicle,\
+                 resamples remaining: {}".format(max_resamples)
+            )
+        if max_resamples == 0:
+            raise ValueError("ERROR: reached maximum resamples in sample_multiple_trajdata_vehicle")
+        else:
+            return sample_multiple_trajdata_vehicle(
+                n_veh,
+                trajinfos,
+                offset,
+                max_resamples=max_resamples - 1,
+                verbose=verbose
+            )
+
+    # reaching this point means there are sufficient ids, sample the ones to use
+    egoids = random_sample_from_set_without_replacement(egoids, n_veh)
+    return traj_idx, egoids, ts, te
 
 
 def load_ngsim_trajdatas(filepaths, minlength: int=100):
@@ -146,6 +223,132 @@ def load_ngsim_trajdatas(filepaths, minlength: int=100):
 
     return trajdatas, indexes, roadways
 
+
+def str2bool(v):
+    if v.lower() == 'true':
+        return True
+    return False
+
+
+def load_x_feature_names(filepath, ngsim_filename):
+    f = h5py.File(filepath, 'r')
+    xs = []
+    traj_id = NGSIM_FILENAME_TO_ID[ngsim_filename]
+    # in case this nees to allow for multiple files in the future
+    traj_ids = [traj_id]
+    for i in traj_ids:
+        if str(i) in f.keys():
+            xs.append(f[str(i)])
+        else:
+            raise ValueError('invalid key to trajectory data: {}'.format(i))
+    x = np.concatenate(xs)
+    feature_names = f.attrs['feature_names']
+    return x, feature_names
+
+
+def compute_lengths(arr):
+    sums = np.sum(np.array(arr), axis=2)
+    lengths = []
+    for sample in sums:
+        zero_idxs = np.where(sample == 0.)[0]
+        if len(zero_idxs) == 0:
+            lengths.append(len(sample))
+        else:
+            lengths.append(zero_idxs[0])
+    return np.array(lengths)
+
+
+def normalize(x, clip_std_multiple=np.inf):
+    mean = np.mean(x, axis=0, keepdims=True)
+    x = x - mean
+    std = np.std(x, axis=0, keepdims=True) + 1e-8
+    up = std * clip_std_multiple
+    lb = - std * clip_std_multiple
+    x = np.clip(x, lb, up)
+    x = x / std
+    return x, mean, std
+
+
+def normalize_range(x, low, high):
+    low = np.array(low)
+    high = np.array(high)
+    mean = (high + low) / 2.
+    half_range = (high - low) / 2.
+    x = (x - mean) / half_range
+    x = np.clip(x, -1, 1)
+    return x
+
+
+def load_data(
+        filepath,
+        act_keys=['accel', 'turn_rate_global'],
+        ngsim_filename='trajdata_i101_trajectories-0750am-0805am.txt',
+        debug_size=None,
+        min_length=50,
+        normalize_data=True,
+        shuffle=False,
+        act_low=-1,
+        act_high=1,
+        clip_std_multiple=np.inf):
+    # loading varies based on dataset type
+    x, feature_names = load_x_feature_names(filepath, ngsim_filename)
+
+    # optionally keep it to a reasonable size
+    if debug_size is not None:
+        x = x[:debug_size]
+
+    if shuffle:
+        idxs = np.random.permutation(len(x))
+        x = x[idxs]
+
+    # compute lengths of the samples before anything else b/c this is fragile
+    lengths = compute_lengths(x)
+
+    # flatten the dataset to (n_samples, n_features)
+    # taking only the valid timesteps from each sample
+    # i.e., throw out timeseries information
+    xs = []
+    for i, l in enumerate(lengths):
+        # enforce minimum length constraint
+        if l >= min_length:
+            xs.append(x[i, :l])
+    x = np.concatenate(xs)
+
+    # split into observations and actions
+    # redundant because the environment is not able to extract actions
+    obs = x
+    act_idxs = [i for (i, n) in enumerate(feature_names) if n in act_keys]
+    act = x[:, act_idxs]
+
+    if normalize_data:
+
+        # normalize it all, _no_ test / val split
+        obs, obs_mean, obs_std = normalize(obs, clip_std_multiple)
+        # normalize actions to between -1 and 1
+        act = normalize_range(act, act_low, act_high)
+
+    else:
+        obs_mean = None
+        obs_std = None
+
+    return dict(
+        observations=obs,
+        actions=act,
+        obs_mean=obs_mean,
+        obs_std=obs_std,
+    )
+
+
+def keep_vehicle_subset(scene: Frame, ids: list):
+    keep_ids = set(ids)
+    scene_ids = []
+    for i in range(scene.n):
+        scene_ids.append(scene[i].id)
+    scene_ids = set(scene_ids)
+    remove_ids = scene_ids - keep_ids
+    for id in remove_ids:
+        scene.delete_by_id(id)
+    return scene
 
 
 

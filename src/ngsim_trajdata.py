@@ -2,7 +2,6 @@
 # NGSIM dataset processor dataloader
 
 import pandas as pd
-import numpy as np
 import os
 from tqdm import tqdm
 

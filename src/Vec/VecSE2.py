@@ -3,7 +3,6 @@
 
 import math
 from src.Vec.VecE2 import VecE2
-from src.Vec.geom.geom import lerp_angle, clamp
 
 
 class VecSE2:
@@ -45,6 +44,9 @@ class VecSE2:
 
     def __rsub__(self, other: VecE2):
         return VecSE2(self.x - other.x, self.y - other.y, self.theta)  # we have some problems here
+
+    def add_E2(self, other: VecE2):
+        return VecSE2(self.x + other.x, self.y + other.y, self.theta)
     # Base.:-(a::VecSE2, b::VecE2) = VecSE2(a.x-b.x, a.y-b.y, a.θ)
     # Base.:-(a::VecE2,  b::VecSE2) = VecSE2(a.x-b.x, a.y-b.y, -b.θ)
 
@@ -87,6 +89,28 @@ def rot(a: VecSE2, theta: float):
 
 def convert(a: VecSE2):
     return VecE2(a.x, a.y)
+
+
+def lerp_angle(a, b, t):
+    return a + deltaangle(a, b) * t
+
+
+def clamp(n, smallest, largest):
+    return max(smallest, min(n, largest))
+
+
+'''
+deltaangle(a::Real, b::Real)
+Return the minimum δ such that
+    a + δ = mod(b, 2π)
+'''
+
+
+def deltaangle(a, b):
+    assert isinstance(a, int) or isinstance(a, float)
+    assert isinstance(b, int) or isinstance(b, float)
+
+    return math.atan2(math.sin(b-a), math.cos(b-a))
 
 
 
