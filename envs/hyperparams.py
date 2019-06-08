@@ -32,7 +32,7 @@ def parse_args(arglist=None):
     parser.add_argument('--params_filepath', type=str, default='')
     parser.add_argument('--expert_filepath', type=str, default='../../data/trajectories/ngsim.h5')
     parser.add_argument('--vectorize', type=str2bool, default=False)
-    parser.add_argument('--n_envs', type=int, default=50)
+    parser.add_argument('--n_envs', type=int, default=2)
     parser.add_argument('--normalize_clip_std_multiple', type=float, default=10.)
 
     # env

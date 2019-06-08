@@ -111,7 +111,7 @@ def random_sample_from_set_without_replacement(s: set, n):
     assert len(s) >= n
     sampled = set()
     for i in range(n):
-        cur = random.choice(s)
+        cur = random.choice(list(s))
         sampled.add(cur)
         s.discard(cur)
     return list(sampled)

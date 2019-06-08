@@ -1,5 +1,5 @@
 import os
-from envs.base import AutoEnv
+from envs.make import make_env
 
 
 def build_ngsim_env(
@@ -32,10 +32,14 @@ def build_ngsim_env(
     # order matters here because multiagent is a subset of vectorized
     # i.e., if you want to run with multiagent = true, then vectorize must
     # also be true
-    env_id = 'NGSIMEnv'
+    if args.env_multiagent:
+        env_id = "MultiAgentAutoEnv"
+    else:
+        env_id = "NGSIMEnv"
 
-    env = AutoEnv(params=env_params)
+    env = make_env(env_id=env_id, env_params=env_params)
 
     # get low and high values for normalizing _real_ actions
     low, high = env.action_space["low"], env.action_space["high"]
     return env, low, high
+
