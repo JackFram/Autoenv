@@ -7,6 +7,7 @@ from feature_extractor.utils import build_feature_extractor
 from envs.action import AccelTurnrate, propagate
 from src.Vec.VecE2 import norm
 import copy
+import numpy as np
 
 
 class MultiAgentAutoEnv:
@@ -243,7 +244,7 @@ class MultiAgentAutoEnv:
             reward_off = infos["is_offroad"][i] * self.reward
             reward_brake = infos["hard_brake"][i] * self.reward * 0.5  # braking hard is not as bad as a collision
             rewards[i] = -max(reward_col, reward_off, reward_brake)
-        return rewards
+        return np.array(rewards)
 
     def _compute_feature_infos(self, features: list, accel_thresh_min: float=-2.0, accel_thresh: float = -3.0,
                                min_d_edge_thresh: float = 0.5, offroad_thresh: float = -0.1):
@@ -271,6 +272,7 @@ class MultiAgentAutoEnv:
                 if closest_d <= min_d_edge_thresh:  # meaning too close
                     is_offroad = abs((closest_d - min_d_edge_thresh) / (offroad_thresh - min_d_edge_thresh))
             feature_infos["is_offroad"].append(is_offroad)
+        # print(feature_infos)
 
         return feature_infos
 
@@ -303,6 +305,7 @@ class MultiAgentAutoEnv:
         self.reset(terminal)
 
         rewards = self._extract_rewards(infos)
+        # print(rewards)
         return copy.deepcopy(features), rewards, terminal, infos
 
     def get_features(self):
@@ -310,7 +313,7 @@ class MultiAgentAutoEnv:
             veh_idx = self.scene.findfirst(egoid)
             self.ext.pull_features(self.rec, self.roadway, veh_idx)
             self.features[i] = copy.deepcopy(self.ext.features)
-        return copy.deepcopy(self.features)
+        return np.array(copy.deepcopy(self.features))
 
     def observation_space_spec(self):
         low = [0 for i in range(len(self.ext))]
@@ -327,6 +330,12 @@ class MultiAgentAutoEnv:
 
     def obs_names(self):
         return self.ext.feature_names()
+
+    def vectorized(self):
+        return True
+
+    def num_envs(self):
+        return self.n_veh
 
     @property
     def action_space(self):

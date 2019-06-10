@@ -1,10 +1,10 @@
 import h5py, os, pdb
 import numpy as np
-import utils
+from envs import utils
 import tensorflow as tf
 from envs import hyperparams
-from julia_env.julia_env import JuliaEnv
-from my_gaussian_gru_policy import myGaussianGRUPolicy
+from envs.make import make_env
+from algorithms.AGen.my_gaussian_gru_policy import myGaussianGRUPolicy
 
 NGSIM_FILENAME_TO_ID = {
     'trajdata_i101_trajectories-0750am-0805am.txt': 1,
@@ -99,7 +99,7 @@ def get_ground_truth():
     act_low = np.array([-4, -0.15])
     act_high = np.array([4, 0.15])
     data = load_validate_data(
-        '../../data/trajectories/ngsim.h5',
+        '/Users/zhangzhihao/ngsim_env/data/trajectories/ngsim.h5',
         act_low=act_low,
         act_high=act_high,
         min_length=200 + 50,
@@ -126,7 +126,7 @@ def get_multiagent_ground_truth():
     act_low = np.array([-4, -0.15])
     act_high = np.array([4, 0.15])
     data = load_validate_data(
-        '../../data/trajectories/ngsim_22agents.h5',
+        '/Users/zhangzhihao/ngsim_env/data/trajectories/ngsim_22agents.h5',
         act_low=act_low,
         act_high=act_high,
         min_length=200 + 50,
@@ -174,13 +174,12 @@ def build_ngsim_env(
     # order matters here because multiagent is a subset of vectorized
     # i.e., if you want to run with multiagent = true, then vectorize must
     # also be true
-    env_id = 'MultiagentNGSIMEnv'
+    if args.env_multiagent:
+        env_id = "MultiAgentAutoEnv"
+    else:
+        env_id = "NGSIMEnv"
 
-    env = JuliaEnv(
-        env_id=env_id,
-        env_params=env_params,
-        using='AutoEnvs'
-    )
+    env = make_env(env_id=env_id, env_params=env_params)
     # get low and high values for normalizing _real_ actions
     low, high = env.action_space.low, env.action_space.high
     env = None

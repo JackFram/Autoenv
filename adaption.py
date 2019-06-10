@@ -6,6 +6,7 @@ import os
 import sys
 import tensorflow as tf
 import time
+import random
 
 backend = 'TkAgg'
 import matplotlib
@@ -19,12 +20,12 @@ from contexttimer import Timer
 import hgail.misc.simulation
 import hgail.misc.utils
 
-from envs import hyperparams
-import envs.utils as utils
+from envs import hyperparams, utils, build_env
+
 from envs.utils import str2bool
-import algorithms.AGen.rls as rls
+from algorithms.AGen import rls, validate_utils
 import pdb
-import validate_utils
+
 
 plt.style.use("ggplot")
 
@@ -43,7 +44,7 @@ def online_adaption(
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
 
-    theta = np.load('theta.npy')
+    theta = np.load('/Users/zhangzhihao/ngsim_env/scripts/imitation/theta.npy')
     theta = np.mean(theta)
 
     x = env.reset(**env_kwargs)
@@ -84,6 +85,7 @@ def online_adaption(
             adapnets[i].draw.append(adapnets[i].theta[6, 1])
 
         prev_actions, prev_hiddens = a, hidden_vec
+        # print(obs[:, step + 1, :])
 
         traj = prediction(env_kwargs, obs[:, step + 1, :], adapnets, env, policy, prev_hiddens, n_agents, adapt_steps)
 
@@ -180,7 +182,7 @@ def collect_trajectories(
         kwargs = dict()
         if args.env_multiagent:
             # I add not because single simulation has no orig_x etc.
-
+            egoid = random.choice(egoids)
             if random_seed:
                 kwargs = dict(random_seed=random_seed + egoid)
 
@@ -220,7 +222,7 @@ def parallel_collect_trajectories(
         egoids,
         starts,
         n_proc,
-        env_fn=utils.build_ngsim_env,
+        env_fn=build_env.build_ngsim_env,
         max_steps=200,
         use_hgail=False,
         random_seed=None,
@@ -231,7 +233,7 @@ def parallel_collect_trajectories(
     trajlist = manager.list()
 
     # set policy function
-    policy_fn = utils.build_hierarchy if use_hgail else validate_utils.build_policy
+    policy_fn = build_env.build_hierarchy if use_hgail else validate_utils.build_policy
 
     # partition egoids
     proc_egoids = utils.partition_list(egoids, n_proc)
@@ -276,7 +278,7 @@ def single_process_collect_trajectories(
         egoids,
         starts,
         n_proc,
-        env_fn=utils.build_ngsim_env,
+        env_fn=build_env.build_ngsim_env,
         max_steps=200,
         use_hgail=False,
         random_seed=None):
@@ -287,7 +289,7 @@ def single_process_collect_trajectories(
     trajlist = []
 
     # set policy function
-    policy_fn = utils.build_hierarchy if use_hgail else validate_utils.build_policy
+    policy_fn = build_env.build_hierarchy if use_hgail else validate_utils.build_policy
     tf.reset_default_graph()
 
     # collect trajectories in a single process
@@ -318,7 +320,7 @@ def collect(
         max_steps=200,
         collect_fn=parallel_collect_trajectories,
         random_seed=None,
-        lbd=0.99,
+        lbd = 0.99,
         adapt_steps=1):
     '''
     Description:
@@ -330,10 +332,10 @@ def collect(
     params_filepath = os.path.join(exp_dir, 'imitate/log/{}'.format(params_filename))
     params = hgail.misc.utils.load_params(params_filepath)
     # validation setup
-    validation_dir = os.path.join(exp_dir, 'imitate', 'validation')
+    validation_dir = os.path.join(exp_dir, 'imitate', 'test')
     utils.maybe_mkdir(validation_dir)
-    output_filepath = os.path.join(validation_dir, '{}_AGen.npz'.format(
-        args.ngsim_filename.split('.')[0]))
+    output_filepath = os.path.join(validation_dir, '{}_AGen_{}_{}.npz'.format(
+        args.ngsim_filename.split('.')[0], adapt_steps, args.env_multiagent))
 
     with Timer():
         trajs = collect_fn(
@@ -345,14 +347,14 @@ def collect(
             max_steps=max_steps,
             use_hgail=use_hgail,
             random_seed=random_seed,
-            lbd=0.99,
-            adapt_steps=1
+            lbd=lbd,
+            adapt_steps=adapt_steps
         )
 
     utils.write_trajectories(output_filepath, trajs)
 
 
-def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=utils.build_ngsim_env):
+def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngsim_env):
     offset = args.env_H + args.env_primesteps
     basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data/')
     ids_filename = filename.replace('.txt', '-index-{}-ids.h5'.format(offset))
@@ -398,7 +400,7 @@ def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=utils.build_ngsim_e
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='validation settings')
     parser.add_argument('--n_proc', type=int, default=1)
-    parser.add_argument('--exp_dir', type=str, default='../../data/experiments/gail/')
+    parser.add_argument('--exp_dir', type=str, default='/Users/zhangzhihao/ngsim_env/data/experiments/multiagent_curr')
     parser.add_argument('--params_filename', type=str, default='itr_2000.npz')
     parser.add_argument('--n_runs_per_ego_id', type=int, default=10)
     parser.add_argument('--use_hgail', type=str2bool, default=False)
@@ -413,8 +415,11 @@ if __name__ == '__main__':
 
     run_args = parser.parse_args()
 
-    args_filepath = os.path.join(run_args.exp_dir, 'imitate/log/args.npz')
-    args = hyperparams.load_args(args_filepath)
+    args_filepath = "./args/params.npz"
+    if os.path.isfile(args_filepath):
+        args = hyperparams.load_args(args_filepath)
+    else:
+        raise ValueError("No such params file")
 
     if run_args.use_multiagent:
         args.env_multiagent = True

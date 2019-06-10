@@ -4,10 +4,30 @@ from src.trajdata import load_trajdata, get_corresponding_roadway
 from src.Record.frame import Frame
 from src.Record.record import get_scene
 from src.const import NGSIM_FILENAME_TO_ID
+import hgail.misc.utils
+import rllab.spaces
 import numpy as np
 import pickle
 import random
 import h5py
+
+
+def build_space(shape, space_type, info={}):
+    if space_type == 'Box':
+        if 'low' in info and 'high' in info:
+            low = np.array(info['low'])
+            high = np.array(info['high'])
+            msg = 'shape = {}\tlow.shape = {}\thigh.shape={}'.format(
+                shape, low.shape, high.shape)
+            assert shape == low.shape and shape == high.shape, msg
+            return rllab.spaces.Box(low=low, high=high)
+        else:
+            return rllab.spaces.Box(low=-np.inf, high=np.inf, shape=shape)
+    elif space_type == 'Discrete':
+        assert len(shape) == 1, 'invalid shape for Discrete space'
+        return rllab.spaces.Discrete(shape)
+    else:
+        raise(ValueError('space type not implemented: {}'.format(space_type)))
 
 
 def dict_get(d: dict, key, default):
@@ -155,7 +175,7 @@ def sample_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_res
     # vehicles is fewer than n_veh, then resample
     # start with the set containing the first egoid so we don't double count it
     egoids = set()
-    egoids.add(1)
+    egoids.add(egoid)
     for othid in trajinfos[traj_idx].keys():
         oth_ts = trajinfos[traj_idx][othid]["ts"]
         oth_te = trajinfos[traj_idx][othid]["te"]
@@ -222,12 +242,6 @@ def load_ngsim_trajdatas(filepaths, minlength: int=100):
         roadways.append(roadway)
 
     return trajdatas, indexes, roadways
-
-
-def str2bool(v):
-    if v.lower() == 'true':
-        return True
-    return False
 
 
 def load_x_feature_names(filepath, ngsim_filename):
@@ -349,6 +363,56 @@ def keep_vehicle_subset(scene: Frame, ids: list):
     for id in remove_ids:
         scene.delete_by_id(id)
     return scene
+
+'''
+This is about as hacky as it gets, but I want to avoid editing the rllab 
+source code as much as possible, so it will have to do for now.
+Add a reset(self, kwargs**) function to the normalizing environment
+https://stackoverflow.com/questions/972/adding-a-method-to-an-existing-object-instance
+'''
+
+
+def normalize_env_reset_with_kwargs(self, **kwargs):
+    ret = self._wrapped_env.reset(**kwargs)
+    if self._normalize_obs:
+        return self._apply_normalize_obs(ret)
+    else:
+        return ret
+
+
+def add_kwargs_to_reset(env):
+    normalize_env = hgail.misc.utils.extract_normalizing_env(env)
+    if normalize_env is not None:
+        normalize_env.reset = normalize_env_reset_with_kwargs.__get__(normalize_env)
+
+'''end of hack, back to our regularly scheduled programming'''
+
+
+'''
+Common 
+'''
+
+
+def maybe_mkdir(dirpath):
+    if not os.path.exists(dirpath):
+        os.mkdir(dirpath)
+
+
+def str2bool(v):
+    if v.lower() == 'true':
+        return True
+    return False
+
+
+def write_trajectories(filepath, trajs):
+    np.savez(filepath, trajs=trajs)
+
+
+def partition_list(lst, n):
+    sublists = [[] for _ in range(n)]
+    for i, v in enumerate(lst):
+        sublists[i % n].append(v)
+    return sublists
 
 
 
