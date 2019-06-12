@@ -7,6 +7,7 @@ import sys
 import tensorflow as tf
 import time
 import random
+import pickle
 
 backend = 'TkAgg'
 import matplotlib
@@ -39,7 +40,9 @@ def online_adaption(
         render=False,
         env_kwargs=dict(),
         lbd=0.99,
-        adapt_steps=1):
+        adapt_steps=1,
+        nids = 1):
+
     if len(obs.shape) == 2:
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
@@ -47,6 +50,9 @@ def online_adaption(
     theta = np.load('/Users/zhangzhihao/ngsim_env/scripts/imitation/theta.npy')
     theta = np.mean(theta)
 
+    primesteps = 5
+
+    env_kwargs['start'] = primesteps
     x = env.reset(**env_kwargs)
 
     n_agents = x.shape[0]
@@ -55,8 +61,9 @@ def online_adaption(
     policy.reset(dones)
     prev_actions, prev_hiddens = None, None
 
-    max_steps = min(1000, obs.shape[1])
-
+    max_steps = min(200, obs.shape[1] - primesteps - 2)
+    print("max_steps")
+    print(max_steps)
     mean = np.expand_dims(mean, axis=2)
     prev_hiddens = np.zeros([n_agents, 64])
 
@@ -66,17 +73,19 @@ def online_adaption(
         adapnets.append(rls.rls(lbd, theta, param_length, 2))
 
     avg = 0
-    for step in range(max_steps - 1):
-        if step % 100 == 0:
-            print(step)
+    for step in range(primesteps - 1, max_steps + primesteps - 1):
+        print("step = ", step)
 
         start = time.time()
         a, a_info, hidden_vec = policy.get_actions_with_prev(obs[:, step, :], mean[:, step, :], prev_hiddens)
 
         if adapt_steps == 1:
             adap_vec = hidden_vec
-        else:
+        elif adapt_steps == 2:
             adap_vec = np.concatenate((hidden_vec, prev_hiddens, obs[:, step, :]), axis=1)
+        else:
+            print('Adapt steps can only be 1 and 2 for now.')
+            exit(0)
 
         adap_vec = np.expand_dims(adap_vec, axis=1)
 
@@ -87,25 +96,32 @@ def online_adaption(
         prev_actions, prev_hiddens = a, hidden_vec
         # print(obs[:, step + 1, :])
 
-        traj = prediction(env_kwargs, obs[:, step + 1, :], adapnets, env, policy, prev_hiddens, n_agents, adapt_steps)
+        traj = prediction(env_kwargs, obs[:, step + 1, :], adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids)
 
         predicted_trajs.append(traj)
         d = np.stack([adapnets[i].draw for i in range(n_agents)])
         end = time.time()
         avg += (start - end)
 
+        env_kwargs['start'] += 1
+        x = env.reset(**env_kwargs)
+
     print(avg / (max_steps - 1))
-    for i in range(n_agents):
-        plt.plot(range(step + 1), d[i, :])
-    plt.show()
+    # for i in range(n_agents):
+    #     plt.plot(range(step + 1), d[i, :])
+    # plt.show()
+
+    print('obs.shape')
+    print(obs.shape)
 
     return predicted_trajs
 
 
-def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps):
+def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids):
     traj = hgail.misc.simulation.Trajectory()
-    predict_span = 200
-    for i in range(predict_span):
+    predict_span = 50
+    gts = np.zeros((2, predict_span))
+    for j in range(predict_span):
         a, a_info, hidden_vec = policy.get_actions(x)
 
         if adapt_steps == 1:
@@ -126,11 +142,13 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
 
         nx, r, dones, e_info = env.step(actions)
         traj.add(x, actions, r, a_info, e_info)
+        gts[0, j] = e_info['orig_x']
+        gts[1, j] = e_info['orig_y']
         if any(dones): break
         x = nx
 
     # this should be delete and replaced
-    y = env.reset(**env_kwargs)
+    # y = env.reset(**env_kwargs)
 
     return traj.flatten()
 
@@ -149,7 +167,10 @@ def collect_trajectories(
         random_seed,
         lbd,
         adapt_steps):
+    print('args')
+    print(args)
     env, _, _ = env_fn(args, alpha=0.)
+
     policy = policy_fn(args, env)
 
     with tf.Session() as sess:
@@ -170,6 +191,7 @@ def collect_trajectories(
             normalized_env._obs_var = params['normalzing']['obs_var']
 
         # collect trajectories
+        egoids = np.unique(egoids)
         nids = len(egoids)
 
         if args.env_multiagent:
@@ -194,11 +216,13 @@ def collect_trajectories(
                 mean=data['actions'],
                 env_kwargs=kwargs,
                 lbd=lbd,
-                adapt_steps=adapt_steps
+                adapt_steps=adapt_steps,
+                nids=nids
             )
             trajlist.append(traj)
         else:
-            for i in sample:
+            # for i in sample:
+            for i, egoid in enumerate(egoids):
                 sys.stdout.write('\rpid: {} traj: {} / {}'.format(pid, i, nids))
 
                 traj = online_adaption(
@@ -207,11 +231,14 @@ def collect_trajectories(
                     max_steps=max_steps,
                     obs=data['observations'][i, :, :],
                     mean=data['actions'][i, :, :],
-                    env_kwargs=kwargs,
+                    env_kwargs=dict(egoid = [egoid], traj_idx=[1]),
                     lbd=lbd,
-                    adapt_steps=adapt_steps
+                    adapt_steps=adapt_steps,
+                    nids=nids
                 )
                 trajlist.append(traj)
+
+        print('finish online adaption')
 
     return trajlist
 
@@ -356,10 +383,13 @@ def collect(
 
 def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngsim_env):
     offset = args.env_H + args.env_primesteps
-    basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data/')
+    basedir = os.path.expanduser('~/Autoenv/data/')
     ids_filename = filename.replace('.txt', '-index-{}-ids.h5'.format(offset))
+    print("ids_filename")
+    print(ids_filename)
     ids_filepath = os.path.join(basedir, ids_filename)
     if not os.path.exists(ids_filepath):
+        print("creating ids file")
         # this should create the ids file
         env_fn(args)
         if not os.path.exists(ids_filepath):
@@ -402,7 +432,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_proc', type=int, default=1)
     parser.add_argument('--exp_dir', type=str, default='/Users/zhangzhihao/ngsim_env/data/experiments/multiagent_curr')
     parser.add_argument('--params_filename', type=str, default='itr_2000.npz')
-    parser.add_argument('--n_runs_per_ego_id', type=int, default=10)
+    parser.add_argument('--n_runs_per_ego_id', type=int, default=1)
     parser.add_argument('--use_hgail', type=str2bool, default=False)
     parser.add_argument('--use_multiagent', type=str2bool, default=False)
     parser.add_argument('--n_multiagent_trajs', type=int, default=10000)
@@ -431,7 +461,14 @@ if __name__ == '__main__':
         collect_fn = parallel_collect_trajectories
 
     filenames = [
-        "trajdata_i101_trajectories-0750am-0805am.txt"
+        "trajdata_i101_trajectories-0750am-0805am.txt" # TODO: change the data name accordingly.
+        # "trajdata_i101-22agents-0750am-0805am.txt"
+        # "trajdata_holo_trajectories.txt"
+    ]
+
+    h5names = [
+        # '../../data/trajectories/ngsim_22agents.h5'
+        '../../data/trajectories/ngsim_holo.h5'  # TODO: change the data name accordingly.
     ]
 
     if run_args.n_envs:
@@ -439,16 +476,26 @@ if __name__ == '__main__':
     # args.env_H should be 200
     sys.stdout.write('{} vehicles with H = {}'.format(args.n_envs, args.env_H))
 
-    for fn in filenames:
+    for i in range(len(filenames)):
+        fn = filenames[i]
+        hn = h5names[i]
         args.ngsim_filename = fn
+        args.h5_filename = hn
         if args.env_multiagent:
             # args.n_envs gives the number of simultaneous vehicles
             # so run_args.n_multiagent_trajs / args.n_envs gives the number
             # of simulations to run overall
-            egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
-            starts = dict()
+            # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
+            # starts = dict()
+            egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
         else:
             egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+
+        print("egoids")
+        print(egoids)
+        print("starts")
+        print(starts)
+
         collect(
             egoids,
             starts,

@@ -7,7 +7,6 @@ from src.const import NGSIM_FILENAME_TO_ID
 import hgail.misc.utils
 import rllab.spaces
 import numpy as np
-import pickle
 import random
 import h5py
 
@@ -217,19 +216,33 @@ def load_ngsim_trajdatas(filepaths, minlength: int=100):
     # the index is just a collection of metadata that is saved with the
     # trajdatas to allow for a more efficient environment implementation
 
-    indexes_filepaths = [f.replace(".txt", "-index-{}.pkl".format(minlength)) for f in filepaths]
+    indexes_filepaths = [f.replace(".txt", "-index-{}.h5".format(minlength)) for f in filepaths]
     indexes = []
 
     for (i, index_filepath) in enumerate(indexes_filepaths):
+        print(index_filepath)
         if not os.path.isfile(index_filepath):
             index = index_ngsim_trajectory(filepaths[i], minlength=minlength)
-            # TODO: finish save pickle file
-            with open(index_filepath, "wb") as fp:
-                pickle.dump(index, fp)
+            # TODO: finish save h5 file
+            ids = list(index.keys())
+            ts = []
+            te = []
+            for id in ids:
+                ts.append(index[id]["ts"])
+                te.append(index[id]["te"])
+            file = h5py.File(index_filepath, 'w')
+            file.create_dataset('ids', data = ids)
+            file.create_dataset('ts', data = ts)
+            file.create_dataset('te', data = te)
+            file.close()
         else:
-            with open(index_filepath, "rb") as fp:
-                index = pickle.load(fp)
-
+            ids_file = h5py.File(index_filepath, 'r')
+            index = {}
+            ids = ids_file['ids'].value
+            ts = ids_file['ts'].value
+            te = ids_file['te'].value
+            for j, id in enumerate(ids):
+                index[id] = {"ts": ts[j], "te": te[j]}
         indexes.append(index)
 
     trajdatas = []  # list of Records.ListRecord

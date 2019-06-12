@@ -33,6 +33,6 @@ def run(args):
 # setup
 if __name__ == '__main__':
     params = hyperparams.parse_args()
-    # np.savez("./args/params.npz", args=params)
-    run(params)
+    np.savez("./args/params.npz", args=params)
+    # run(params)
 

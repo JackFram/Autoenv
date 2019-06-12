@@ -121,7 +121,8 @@ class MultiAgentAutoEnv:
         
     '''
 
-    def reset(self, dones: list = None, offset: int = None, random_seed: int = None):
+    def reset(self, dones: list = None, offset: int = None, random_seed: int = None,
+              egoid: int = None, traj_idx: int = None, start: int = None):
         if offset is None:
             offset = self.H + self.primesteps
         if dones is None:
@@ -283,7 +284,7 @@ class MultiAgentAutoEnv:
 
         # compute features and feature_infos
         features = self.get_features()
-        feature_infos = self._compute_feature_infos(features)
+        feature_infos = self._compute_feature_infos(list(features))
 
         # combine infos
         infos = dict(**step_infos, **feature_infos)
