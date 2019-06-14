@@ -196,9 +196,9 @@ def collect_trajectories(
 
         if args.env_multiagent:
 
-            data = validate_utils.get_multiagent_ground_truth()
+            data = validate_utils.get_multiagent_ground_truth(args.ngsim_filename, args.h5_filename)
         else:
-            data = validate_utils.get_ground_truth()
+            data = validate_utils.get_ground_truth(args.ngsim_filename, args.h5_filename)
             sample = np.random.choice(data['observations'].shape[0], 2)
 
         kwargs = dict()
@@ -231,7 +231,7 @@ def collect_trajectories(
                     max_steps=max_steps,
                     obs=data['observations'][i, :, :],
                     mean=data['actions'][i, :, :],
-                    env_kwargs=dict(egoid = [egoid], traj_idx=[1]),
+                    env_kwargs=dict(egoid=egoid, traj_idx=0),
                     lbd=lbd,
                     adapt_steps=adapt_steps,
                     nids=nids
@@ -461,20 +461,20 @@ if __name__ == '__main__':
         collect_fn = parallel_collect_trajectories
 
     filenames = [
-        "trajdata_i101_trajectories-0750am-0805am.txt" # TODO: change the data name accordingly.
+        #"trajdata_i101_trajectories-0750am-0805am.txt" # TODO: change the data name accordingly.
         # "trajdata_i101-22agents-0750am-0805am.txt"
-        # "trajdata_holo_trajectories.txt"
+        "trajdata_holo_trajectories.txt"
     ]
 
     h5names = [
         # '../../data/trajectories/ngsim_22agents.h5'
-        '../../data/trajectories/ngsim_holo.h5'  # TODO: change the data name accordingly.
+        '/Users/zhangzhihao/ngsim_env/data/trajectories/ngsim_holo.h5'  # TODO: change the data name accordingly.
     ]
 
     if run_args.n_envs:
         args.n_envs = run_args.n_envs
     # args.env_H should be 200
-    sys.stdout.write('{} vehicles with H = {}'.format(args.n_envs, args.env_H))
+    sys.stdout.write('{} vehicles with H = {}\n'.format(args.n_envs, args.env_H))
 
     for i in range(len(filenames)):
         fn = filenames[i]

@@ -60,7 +60,8 @@ class AutoEnv:
                 params["trajectory_filepaths"],
                 minlength=primesteps + H
             )
-
+        print("traj_data_len: ", len(trajdatas))
+        print("trajinfos: ", trajinfos)
         # build components
         scene_length = max_n_objects(trajdatas)
         scene = Frame()
@@ -110,9 +111,13 @@ class AutoEnv:
         # prime
         for t in range(self.t, (self.t + self.primesteps + 1)):
             self.scene = get_scene(self.scene, self.trajdatas[self.traj_idx], t)
+            # print("step {}:".format(t))
+            # for i in range(self.scene.n):
+            #     print(self.scene[i].id)
             self.rec.update(self.scene)
 
         # set the ego vehicle
+        print("egoid: ", egoid)
         self.ego_veh = self.scene[self.scene.findfirst(self.egoid)]
         # set the roadway
         self.roadway = self.roadways[self.traj_idx]

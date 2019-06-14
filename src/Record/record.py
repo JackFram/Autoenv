@@ -89,7 +89,7 @@ class ListRecord:
 
 def read_trajdata(fp):
     lines = fp.readline()  # skip first line
-    lines = fp.readline()  # skip second line
+    # lines = fp.readline()  # skip second line
 
     timestep = float(fp.readline())
     defs = dict()
@@ -190,7 +190,8 @@ def get_scene(frame: Frame, rec: ListRecord, frame_index: int):
 
     if frame_inbounds(rec, frame_index):
         recframe = rec.frames[frame_index]
-        for stateindex in range(recframe.lo, recframe.hi):
+        print(recframe.lo, recframe.hi)
+        for stateindex in range(recframe.lo, recframe.hi + 1):
             frame.push(get_vehicle(rec, stateindex))
 
     return frame

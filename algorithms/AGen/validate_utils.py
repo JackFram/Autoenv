@@ -25,6 +25,9 @@ def load_validate_data(
         clip_std_multiple=np.inf):
     # loading varies based on dataset type
     x, feature_names = utils.load_x_feature_names(filepath, ngsim_filename)
+    print('Load validate data')
+    print(x.shape)
+    print(x[0, 0, :10])
 
     # no need to flatten
     obs = x
@@ -82,7 +85,7 @@ def build_policy(args, env, latent_sampler=None):
     return policy
 
 
-def get_ground_truth():
+def get_ground_truth(ngsim_filename: str, h5_filename: str):
     # filepath = '../../data/trajectories/ngsim_22agents.h5'
     # ngsim_filename='trajdata_i101-22agents-0750am-0805am.txt'
     # filepath = '../../data/trajectories/ngsim.h5'
@@ -99,17 +102,17 @@ def get_ground_truth():
     act_low = np.array([-4, -0.15])
     act_high = np.array([4, 0.15])
     data = load_validate_data(
-        '/Users/zhangzhihao/ngsim_env/data/trajectories/ngsim.h5',
+        h5_filename,
         act_low=act_low,
         act_high=act_high,
         min_length=200 + 50,
         clip_std_multiple=10.0,
-        ngsim_filename='trajdata_i101_trajectories-0750am-0805am.txt'
+        ngsim_filename=ngsim_filename
     )
     return data
 
 
-def get_multiagent_ground_truth():
+def get_multiagent_ground_truth(ngsim_filename: str, h5_filename: str):
     # filepath = '../../data/trajectories/ngsim_22agents.h5'
     # ngsim_filename='trajdata_i101-22agents-0750am-0805am.txt'
     # filepath = '../../data/trajectories/ngsim.h5'

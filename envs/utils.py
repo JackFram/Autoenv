@@ -67,32 +67,36 @@ def fill_infos_cache(ext: MultiFeatureExtractor):
     return cache
 
 
-def index_ngsim_trajectory(filepath: str, minlength: int = 100, offset: int = 500, verbose: int = 1):
+def index_ngsim_trajectory(filepath: str, minlength: int = 100, offset: int = 0, verbose: int = 1):
 
     # setup
     index = dict()
     trajdata = load_trajdata(filepath)
     n_frames = trajdata.nframes
+    print("n_frames: ", n_frames)
     scene_length = max(trajdata.n_objects_in_frame(i) for i in range(trajdata.nframes))
     scene = Frame()
     scene.init(scene_length)
     prev, cur = set(), set()
 
     # iterate each frame collecting info about the vehicles
-    for frame in range(offset - 1, n_frames - offset):
-        if verbose > 0:
-            print("\rframe {} / {}".format(frame, n_frames - offset))
+    for frame in range(offset, n_frames - offset):
+        # if verbose > 0:
+        #     print("\rframe {} / {}".format(frame, n_frames - offset))
 
         cur = set()
         scene = get_scene(scene, trajdata, frame)
 
         # add all the vehicles to the current set
+        print("=======frame {}: vehicle num: {}==========\n".format(frame, scene.n))
         for i in range(scene.n):
             veh = scene[i]
             cur.add(veh.id)
+            print("vehicle id: {}".format(veh.id))
             # insert previously unseen vehicles into the index
             if veh.id not in prev:
                 index[veh.id] = {"ts": frame}
+                print("vehicle {} start from {}".format(veh.id, frame))
 
         # find vehicles in the previous but not the current frame
         missing = prev - cur
@@ -216,7 +220,7 @@ def load_ngsim_trajdatas(filepaths, minlength: int=100):
     # the index is just a collection of metadata that is saved with the
     # trajdatas to allow for a more efficient environment implementation
 
-    indexes_filepaths = [f.replace(".txt", "-index-{}.h5".format(minlength)) for f in filepaths]
+    indexes_filepaths = [f.replace(".txt", "-index-{}-ids.h5".format(minlength)) for f in filepaths]
     indexes = []
 
     for (i, index_filepath) in enumerate(indexes_filepaths):
@@ -225,15 +229,16 @@ def load_ngsim_trajdatas(filepaths, minlength: int=100):
             index = index_ngsim_trajectory(filepaths[i], minlength=minlength)
             # TODO: finish save h5 file
             ids = list(index.keys())
+            print("index ids: ", ids)
             ts = []
             te = []
             for id in ids:
                 ts.append(index[id]["ts"])
                 te.append(index[id]["te"])
             file = h5py.File(index_filepath, 'w')
-            file.create_dataset('ids', data = ids)
-            file.create_dataset('ts', data = ts)
-            file.create_dataset('te', data = te)
+            file.create_dataset('ids', data=ids)
+            file.create_dataset('ts', data=ts)
+            file.create_dataset('te', data=te)
             file.close()
         else:
             ids_file = h5py.File(index_filepath, 'r')
