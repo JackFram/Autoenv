@@ -56,6 +56,7 @@ def online_adaption(
     x = env.reset(**env_kwargs)
 
     n_agents = x.shape[0]
+    print("n_agents: {}".format(n_agents))
     dones = [True] * n_agents
     predicted_trajs, adapnets = [], []
     policy.reset(dones)
@@ -223,7 +224,7 @@ def collect_trajectories(
         else:
             # for i in sample:
             for i, egoid in enumerate(egoids):
-                sys.stdout.write('\rpid: {} traj: {} / {}'.format(pid, i, nids))
+                sys.stdout.write('\rpid: {} traj: {} / {}\n'.format(pid, i, nids))
 
                 traj = online_adaption(
                     env,

@@ -191,7 +191,7 @@ def get_scene(frame: Frame, rec: ListRecord, frame_index: int):
     if frame_inbounds(rec, frame_index):
         recframe = rec.frames[frame_index]
         print(recframe.lo, recframe.hi)
-        for stateindex in range(recframe.lo, recframe.hi + 1):
+        for stateindex in range(recframe.lo - 1, recframe.hi):
             frame.push(get_vehicle(rec, stateindex))
 
     return frame

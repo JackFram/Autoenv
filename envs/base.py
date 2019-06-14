@@ -5,6 +5,7 @@ from src.Basic.Vehicle import Vehicle
 from feature_extractor.utils import build_feature_extractor
 from envs.action import AccelTurnrate, propagate
 from src.Vec.VecE2 import norm
+import numpy as np
 import copy
 
 
@@ -131,6 +132,7 @@ class AutoEnv:
         # convert action into form
         # action[0] is `a::Float64` longitudinal acceleration [m/s^2]
         # action[1] is `ω::Float64` desired turn rate [rad/sec]
+        action = action[0]  # input should be a (n_agents,n_actions) size array
         ego_action = AccelTurnrate(action[0], action[1])
 
         # propagate the ego vehicle
@@ -159,6 +161,8 @@ class AutoEnv:
         step_infos["rmse_t"] = abs((orig_veh.state.posF.t - self.ego_veh.state.posF.t))
         step_infos["x"] = self.ego_veh.state.posG.x
         step_infos["y"] = self.ego_veh.state.posG.y
+        step_infos["orig_x"] = orig_veh.state.posG.x
+        step_infos["orig_y"] = orig_veh.state.posG.y
         step_infos["s"] = self.ego_veh.state.posF.s
         step_infos["phi"] = self.ego_veh.state.posF.phi
         return step_infos
@@ -170,9 +174,10 @@ class AutoEnv:
             r -= 1
         if infos["is_offroad"] == 1:
             r -= 1
-        return r
+        return np.array([r]).reshape(1, -1)
 
     def _compute_feature_infos(self, features: list):
+        features = features[0]  # features size is (n_agent, n_features), so here is (1, 66)
         is_colliding = features[self.infos_cache["is_colliding_idx"]]
         markerdist_left = features[self.infos_cache["markerdist_left_idx"]]
         markerdist_right = features[self.infos_cache["markerdist_right_idx"]]
@@ -208,6 +213,7 @@ class AutoEnv:
             terminal = True
         else:
             terminal = False
+        terminal = [terminal]
 
         reward = self._extract_rewards(infos)
         return features, reward, terminal, infos
@@ -219,7 +225,7 @@ class AutoEnv:
             self.roadway,
             veh_idx
         )
-        return copy.deepcopy(self.ext.features)
+        return np.array(copy.deepcopy(self.ext.features)).reshape(1, -1)
 
     def observation_space_spec(self):
         low = [0 for i in range(len(self.ext))]
