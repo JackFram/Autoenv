@@ -5,6 +5,14 @@ from src.Vec.geom import geom
 
 class CurvePt:
     def __init__(self, pos: VecSE2.VecSE2, s: float, k=None, kd=None):
+        """
+            CurvePt
+        describes a point on a curve, associated with a curvature and the derivative of the curvature
+        - `pos::VecSE2` # global position and orientation
+        - `s`  # distance along the curve
+        - `k` # curvature
+        - `kd` # derivative of curvature
+        """
         self.pos = pos
         self.s = s
         self.k = k
@@ -20,6 +28,15 @@ def lerp(a: CurvePt, b: CurvePt, t: float):
 
 
 class CurveIndex:
+    """
+        CurveIndex{I <: Integer, T <: Real}
+    Given a `Curve` object `curve` one can call `curve[ind]`
+    where `ind` is a `CurveIndex`. The field `t` can be used to interpolate between two
+    points in the curve.
+    # Fields
+    - `i`::I` index in the curve , ∈ [0:length(curve)-2]
+    - `t::T` ∈ [0,1] for linear interpolation
+    """
     def __init__(self, i: int, t: float):
         self.i = i
         self.t = t
@@ -43,6 +60,14 @@ CURVEINDEX_START = CurveIndex(0, 0.0)
 
 
 class CurveProjection:
+    """
+        CurveProjection{I <: Integer, T <: Real}
+    The result of a point projected to a Curve
+    # Fields
+    - `ind::CurveIndex{I, T}`
+    - `t::T` lane offset
+    - `ϕ::T` lane-relative heading [rad]
+    """
     def __init__(self, ind: CurveIndex, t: float, phi: float):
         self.ind = ind
         self.t = t
@@ -54,6 +79,11 @@ def div(a, b):
 
 
 def index_closest_to_point(curve: list, target: VecSE2.VecSE2):  # curve: list(CurvePt)
+    """
+        index_closest_to_point(curve::Curve, target::posG(VecSE2))
+    returns the curve index closest to the point described by `target`.
+    `target` must be [x, y].
+    """
 
     a = 1
     b = len(curve)
@@ -154,7 +184,11 @@ def get_curve_projection(posG: VecSE2.VecSE2, footpoint: VecSE2.VecSE2, ind: Cur
     return CurveProjection(ind, F.y, F.theta)
 
 
-def proj(posG: VecSE2.VecSE2, curve: list):  # TODO: adjust list index
+def proj(posG: VecSE2.VecSE2, curve: list):
+    """
+        Vec.proj(posG::VecSE2, curve::list of CurvePt)
+    Return a CurveProjection obtained by projecting posG onto the curve
+    """
     ind = index_closest_to_point(curve, posG)
     curveind = CurveIndex(-1, 0)
     footpoint = VecSE2.VecSE2(0, 0, 0)

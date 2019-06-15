@@ -10,12 +10,20 @@ import warnings
 
 class LaneBoundary:
     def __init__(self, style: str, color: str):
+        '''
+        :param style: LaneBoundary style
+        :param color: LaneBoundary color
+        '''
         self.style = style
         self.color = color
 
 
 class SpeedLimit:
     def __init__(self, lo: float, hi: float):
+        '''
+        :param lo: the lowest speed allowed
+        :param hi: the highest speed allowed
+        '''
         self.lo = lo
         self.hi = hi
 
@@ -26,25 +34,45 @@ DEFAULT_LANE_WIDTH = 3.0
 
 class LaneTag:
     def __init__(self, segment: int, lane: int):
+        '''
+        :param segment: the segment which this lane belongs to
+        :param lane: which lane it belongs to
+        '''
         self.segment = segment
         self.lane = lane
 
 
-NULL_LANETAG = LaneTag(0,0)
+NULL_LANETAG = LaneTag(0, 0)
 
 
 class RoadIndex:
+    """
+        RoadIndex{I <: Integer, T <: Real}
+    A data structure to index points in a roadway. Calling `roadway[roadind]` will return the point
+    associated to the road index.
+    # Fields
+    - `ind::CurveIndex{I,T}` the index of the point in the curve
+    - `tag::LaneTag` the lane tag of the point
+    """
     def __init__(self, ind: CurvePt.CurveIndex, tag: LaneTag):
         self.ind = ind
         self.tag = tag
 
 
-NULL_ROADINDEX = RoadIndex(CurvePt.CurveIndex(-1, None), LaneTag(-1,-1))
+NULL_ROADINDEX = RoadIndex(CurvePt.CurveIndex(-1, None), LaneTag(-1, -1))
 
 
 class LaneConnection:
+    """
+        LaneConnection{I <: Integer, T <: Real}
+    Data structure to specify the connection of a lane. It connects `mylane` to the point `target`.
+    `target` would typically be the starting point of a new lane.
+    - `downstream::Bool`
+    - `mylane::CurveIndex{I,T}`
+    - `target::RoadIndex{I,T}`
+    """
     def __init__(self, downstream: bool, mylane: CurvePt.CurveIndex, target: RoadIndex):
-        self.downstream = downstream
+        self.downstream = downstream  # if true, mylane → target, else target → mylane
         self.mylane = mylane
         self.target = target
 
@@ -64,11 +92,27 @@ def parse_lane_connection(line: str):
 
 
 class Lane:
+    """
+        Lane
+    A driving lane on a roadway. It identified by a `LaneTag`. A lane is defined by a curve which
+    represents a center line and a width. In addition it has attributed like speed limit.
+    A lane can be connected to other lane in the roadway, the connection are specified in the exits
+    and entrances fields.
+    # Fields
+    - `tag::LaneTag`
+    - `curve::List{CurvePt}`
+    - `width::float`  [m]
+    - `speed_limit::SpeedLimit`
+    - `boundary_left::LaneBoundary`
+    - `boundary_right::LaneBoundary`
+    - `exits::List{LaneConnection} # list of exits; put the primary exit (at end of lane) first`
+    - `entrances::List{LaneConnection} # list of entrances; put the primary entrance (at start of lane) first`
+    """
     def __init__(self, tag: LaneTag, curve: list, width: float = DEFAULT_LANE_WIDTH, speed_limit: SpeedLimit = DEFAULT_SPEED_LIMIT,
                  boundary_left: LaneBoundary = NULL_BOUNDARY, boundary_right: LaneBoundary = NULL_BOUNDARY, exits: list = [], entrances: list = [],
                  next: RoadIndex = NULL_ROADINDEX, prev: RoadIndex = NULL_ROADINDEX):
         self.tag = tag
-        self.curve = curve  # Array of Curve
+        self.curve = curve  # Array of CurvePt
         self.width = width
         self.speed_limit = speed_limit
         self.boundary_left = boundary_left
@@ -109,12 +153,20 @@ def has_prev(lane: Lane):
 
 class RoadSegment:
     def __init__(self, id: int, lanes: list):
+        '''
+        :param id: the identification number of the corresponding road segment
+        :param lanes: list of lane in this segment
+        '''
         self.id = id  # integer
         self.lanes = lanes  # Array of Lane
 
 
 class Roadway:
     def __init__(self, segments: list = []):
+        '''
+        This is the Roadway class
+        :param segments: A list of RoadSegment
+        '''
         self.segments = segments  # Array of RoadSegment
 
     def get_by_tag(self, tag: LaneTag):
@@ -134,6 +186,9 @@ class Roadway:
 
 
 def read_roadway(fp):
+    '''
+    parse roadway file
+    '''
     lines = fp.readlines()
     fp.close()
     line_index = 0
@@ -277,6 +332,13 @@ def get_closest_perpendicular_point_between_points(A: VecSE2.VecSE2, B: VecSE2.V
         c = (a+b)/2  # should not happen
         return c, VecSE2.lerp(A, B, c)
 
+"""
+    proj(posG::VecSE2, lane::Lane, roadway::Roadway; move_along_curves::Bool=true)
+Return the RoadProjection for projecting posG onto the lane.
+This will automatically project to the next or prev curve as appropriate.
+if `move_along_curves` is false, will only project to lane.curve
+"""
+
 
 def proj_1(posG: VecSE2.VecSE2, lane: Lane, roadway: Roadway, move_along_curves: bool = True):
     curveproj = CurvePt.proj(posG, lane.curve)
@@ -315,6 +377,12 @@ def proj_1(posG: VecSE2.VecSE2, lane: Lane, roadway: Roadway, move_along_curves:
             curveproj = CurvePt.get_curve_projection(posG, footpoint, ind)
     #print(rettag.segment, rettag.lane)
     return RoadProjection(curveproj, rettag)
+
+"""
+    proj(posG::VecSE2, seg::RoadSegment, roadway::Roadway)
+Return the RoadProjection for projecting posG onto the roadway.
+Tries all of the lanes and gets the closest one
+"""
 
 
 def proj_2(posG: VecSE2.VecSE2, roadway: Roadway):
