@@ -6,12 +6,26 @@ from src.Vec.VecSE2 import VecSE2
 
 class AccelTurnrate:
     def __init__(self, a: float, omega: float):
+        '''
+
+        :param a: acceleration
+        :param omega: turning rate
+        '''
         self.a = a
         self.omega = omega
 
 
 def propagate(veh: Vehicle, action: AccelTurnrate, roadway: Roadway, delta_t: float,
               n_integration_steps: int = 4):
+    '''
+    propagate the vehicle state according to the specific action
+    :param veh:
+    :param action:
+    :param roadway: 
+    :param delta_t:
+    :param n_integration_steps:
+    :return:
+    '''
     a = action.a  # accel
     omega = action.omega  # turnrate
 

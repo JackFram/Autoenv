@@ -24,7 +24,7 @@ def read_frame(fp):
 
 class RecordState:
     def __init__(self, state: Vehicle.VehicleState, id: int):
-        self.state = state  # Dict
+        self.state = state
         self.id = id
 
 

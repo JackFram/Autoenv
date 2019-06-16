@@ -131,6 +131,11 @@ def copy(trajdata: ngsim_trajdata.NGSIMTrajdata, ftr: FilterTrajectoryResult):
 
 
 def filter_given_trajectory(trajdata: ngsim_trajdata.NGSIMTrajdata, carid: int):
+    '''
+    :param trajdata:
+    :param carid:
+    :return: a smoothed trajectory
+    '''
     # Filters the given vehicle's trajectory using an Extended Kalman Filter
 
     ftr = FilterTrajectoryResult(trajdata, carid)
@@ -148,6 +153,12 @@ def filter_given_trajectory(trajdata: ngsim_trajdata.NGSIMTrajdata, carid: int):
 
 
 def load_ngsim_trajdata(filepath: str, autofilter: bool = True):
+    '''
+
+    :param filepath: the path of the raw trajectory data file
+    :param autofilter: indicates do the filter or not
+    :return: the filtered(or not) data class
+    '''
     print("loading from file: ")
     tdraw = ngsim_trajdata.NGSIMTrajdata(filepath)
 
@@ -161,6 +172,12 @@ def load_ngsim_trajdata(filepath: str, autofilter: bool = True):
 
 
 def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
+    '''
+
+    :param tdraw: trajectory raw data
+    :param roadway: roadway class
+    :return: ListRecord(), a preprocessed and integrated version of tdraw and roadway
+    '''
     df = tdraw.df
     vehdefs = {}
     states = []
@@ -201,6 +218,10 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
 
 
 def get_corresponding_roadway(filename: str):
+    '''
+    :param filename: the path of the saved roadway file
+    :return: the roadway class object
+    '''
     if "i101" in filename:
         return const.ROADWAY_101
     else:
@@ -208,6 +229,10 @@ def get_corresponding_roadway(filename: str):
 
 
 def convert_raw_ngsim_to_trajdatas():
+    '''
+    convert the raw trajectory data and roadway to a integrated version and save to a file
+    :return:
+    '''
     for filepath in const.NGSIM_TRAJDATA_PATHS:
         filename = os.path.split(filepath)[1]
         print("converting " + filename)
