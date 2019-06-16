@@ -21,7 +21,7 @@ def propagate(veh: Vehicle, action: AccelTurnrate, roadway: Roadway, delta_t: fl
     propagate the vehicle state according to the specific action
     :param veh:
     :param action:
-    :param roadway: 
+    :param roadway:
     :param delta_t:
     :param n_integration_steps:
     :return:
