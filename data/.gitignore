@@ -2,5 +2,5 @@
 *.dxf
 *.pkl
 *.h5
-experiments/
+experiments/*
 trajectories/
