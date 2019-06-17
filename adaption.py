@@ -47,7 +47,7 @@ def online_adaption(
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
 
-    theta = np.load('/Users/zhangzhihao/ngsim_env/scripts/imitation/theta.npy')  # TODO: change the file path
+    theta = np.load('./data/theta.npy')  # TODO: change the file path
     theta = np.mean(theta)
 
     primesteps = 5
@@ -431,7 +431,7 @@ def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngs
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='validation settings')
     parser.add_argument('--n_proc', type=int, default=1)
-    parser.add_argument('--exp_dir', type=str, default='/Users/zhangzhihao/ngsim_env/data/experiments/multiagent_curr')
+    parser.add_argument('--exp_dir', type=str, default='./data/experiments/multiagent_curr')
     parser.add_argument('--params_filename', type=str, default='itr_2000.npz')
     parser.add_argument('--n_runs_per_ego_id', type=int, default=1)
     parser.add_argument('--use_hgail', type=str2bool, default=False)
@@ -462,14 +462,14 @@ if __name__ == '__main__':
         collect_fn = parallel_collect_trajectories
 
     filenames = [
-        #"trajdata_i101_trajectories-0750am-0805am.txt"
+        # "trajdata_i101_trajectories-0750am-0805am.txt"
         # "trajdata_i101-22agents-0750am-0805am.txt"
         "trajdata_holo_trajectories.txt" #  TODO: change the data name accordingly.
     ]
 
     h5names = [
-        # '../../data/trajectories/ngsim_22agents.h5'
-        '/Users/zhangzhihao/ngsim_env/data/trajectories/ngsim_holo.h5'  # TODO: change the data name accordingly.
+        # './data/trajectories/ngsim_22agents.h5'
+        './data/trajectories/ngsim_holo.h5'  # TODO: change the data name accordingly.
     ]
 
     if run_args.n_envs:

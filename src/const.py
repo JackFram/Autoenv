@@ -27,6 +27,10 @@ with open(os.path.join(DIR, "../data/ngsim_101.txt"), "r") as fp_101:
     ROADWAY_101 = roadway.read_roadway(fp_101)
     fp_101.close()
 
+with open(os.path.join(DIR, "../data/ngsim_HOLO.txt"), "r") as fp_holo:
+    ROADWAY_HOLO = roadway.read_roadway(fp_holo)
+    fp_holo.close()
+
 TRAJDATA_PATHS = [os.path.join( DIR, "../data/trajdata_i101_trajectories-0750am-0805am.txt"),
                 os.path.join( DIR, "../data/trajdata_i101_trajectories-0805am-0820am.txt"),
                 os.path.join( DIR, "../data/trajdata_i101_trajectories-0820am-0835am.txt"),

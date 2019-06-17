@@ -224,8 +224,13 @@ def get_corresponding_roadway(filename: str):
     '''
     if "i101" in filename:
         return const.ROADWAY_101
-    else:
+    elif "i80" in filename:
         return const.ROADWAY_80
+    elif "holo" in filename:
+        print("hihihihihihihihi")
+        return const.ROADWAY_HOLO
+    else:
+        raise ValueError("no such roadway file, check your file name")
 
 
 def convert_raw_ngsim_to_trajdatas():
