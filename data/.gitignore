@@ -2,3 +2,5 @@
 *.dxf
 *.pkl
 *.h5
+experiments/
+trajectories/
