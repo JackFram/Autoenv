@@ -27,7 +27,7 @@ conda env update
 # If hdf5 is not installed, install it as it is required by AutoEnvs later in the process
 conda install hdf5
 # activate the rllab environment
-source activate rllab3
+conda activate rllab3
 python setup.py develop
 cd ..
 ```
@@ -36,7 +36,7 @@ cd ..
 ```bash
 cd ~
 git clone https://github.com/sisl/hgail.git
-source activate rllab3
+conda activate rllab3
 cd hgail
 python setup.py develop
 # run the test
