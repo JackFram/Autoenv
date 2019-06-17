@@ -46,8 +46,6 @@ cd hgail
 python setup.py develop
 # if you have errors indicating you should upgrade your numpy
 conda upgrade numpy
-# run the test
-cd tests python runtests.py
 
 
 ```
