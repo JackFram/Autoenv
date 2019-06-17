@@ -39,14 +39,21 @@ git clone https://github.com/sisl/hgail.git
 source activate rllab3
 cd hgail
 python setup.py develop
+# run the test
 cd tests python runtests.py
+
+
+```
+### installation instructions for AutoEnv
+```bash
+git clone https://github.com/JackFram/Autoenv.git
 cd ~/Autoenv
 mkdir data
 mkdir data/trajectories
 mkdir data/experiments
 
-
 ```
+
 
 ### Downloading required data file
 
@@ -56,6 +63,7 @@ After downloading the file, unzip it and save all the files in data directory.
 
 ## Run test
 ```bash
+conda activate rllab3
 cd ~/Autoenv/
 python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent False --n_envs 1 --adapt_steps 1
 
