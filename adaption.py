@@ -47,7 +47,7 @@ def online_adaption(
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
 
-    theta = np.load('/Users/zhangzhihao/ngsim_env/scripts/imitation/theta.npy')
+    theta = np.load('/Users/zhangzhihao/ngsim_env/scripts/imitation/theta.npy')  # TODO: change the file path
     theta = np.mean(theta)
 
     primesteps = 5
@@ -384,7 +384,7 @@ def collect(
 
 def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngsim_env):
     offset = args.env_H + args.env_primesteps
-    basedir = os.path.expanduser('~/Autoenv/data/')
+    basedir = os.path.expanduser('~/Autoenv/data/')  # TODO: change the file path
     ids_filename = filename.replace('.txt', '-index-{}-ids.h5'.format(offset))
     print("ids_filename")
     print(ids_filename)
@@ -462,9 +462,9 @@ if __name__ == '__main__':
         collect_fn = parallel_collect_trajectories
 
     filenames = [
-        #"trajdata_i101_trajectories-0750am-0805am.txt" # TODO: change the data name accordingly.
+        #"trajdata_i101_trajectories-0750am-0805am.txt"
         # "trajdata_i101-22agents-0750am-0805am.txt"
-        "trajdata_holo_trajectories.txt"
+        "trajdata_holo_trajectories.txt" #  TODO: change the data name accordingly.
     ]
 
     h5names = [
