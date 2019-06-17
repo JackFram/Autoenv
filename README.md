@@ -30,6 +30,7 @@ conda env create -f environment.yml
 conda env update
 # If hdf5 is not installed, install it as it is required by AutoEnvs later in the process
 conda install hdf5
+conda install tensorflow
 # activate the rllab environment
 conda activate rllab3
 python setup.py develop
@@ -76,11 +77,8 @@ cp -r /path/to/data ./
 ## Run test
 ```bash
 conda activate rllab3
-pip install contexttimer
-pip install tqdm
-# if theano import error occurs run
-pip install theano
 cd ~/Autoenv/
+pip install -r requirements
 python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent False --n_envs 1 --adapt_steps 1
 
 ```
