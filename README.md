@@ -78,7 +78,7 @@ cp -r /path/to/data ./
 ```bash
 conda activate rllab3
 cd ~/Autoenv/
-pip install -r requirements
+pip install -r requirements.txt
 python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent False --n_envs 1 --adapt_steps 1
 
 ```
