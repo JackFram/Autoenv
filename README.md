@@ -14,8 +14,12 @@ data source, feature extraction, action propagation, reward definition.
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh # Linux
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh # Mac
 # answer yes to everything
-sh ./Miniconda3-latest-Linux-x86_64.sh
-rm Miniconda3-latest-Linux-x86_64.sh
+sh ./Miniconda3-latest-Linux-x86_64.sh # Linux
+sh ./Miniconda3-latest-MacOSX-x86_64.sh # Mac
+# remove sh files
+rm Miniconda3-latest-Linux-x86_64.sh # Linux
+rm Miniconda3-latest-MacOSX-x86_64.sh  # Mac
+
 source ~/.bashrc
 
 # install rllab
@@ -39,6 +43,8 @@ git clone https://github.com/sisl/hgail.git
 conda activate rllab3
 cd hgail
 python setup.py develop
+# if you have errors indicating you should upgrade your numpy
+conda upgrade numpy
 # run the test
 cd tests python runtests.py
 
@@ -46,6 +52,7 @@ cd tests python runtests.py
 ```
 ### installation instructions for AutoEnv
 ```bash
+cd ~
 git clone https://github.com/JackFram/Autoenv.git
 cd ~/Autoenv
 mkdir data
@@ -57,13 +64,22 @@ mkdir data/experiments
 
 ### Downloading required data file
 
-you can get the data from [here](https://drive.google.com/file/d/1CcPVu9sBsBa6SIRecLEXW16h72I1kHZU/view?usp=sharing).
+you can get the data from [here](https://drive.google.com/file/d/1nAj563dl4bETWfDqPZqTwriYqQ7BkLWR/view?usp=sharing).
 After downloading the file, unzip it and save all the files in data directory.
+
+```bash
+cd ~/Autoenv/
+cp -r /path/to/data ./
+```
 
 
 ## Run test
 ```bash
 conda activate rllab3
+pip install contexttimer
+pip install tqdm
+# if theano import error occurs run
+pip install theano
 cd ~/Autoenv/
 python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent False --n_envs 1 --adapt_steps 1
 
