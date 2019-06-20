@@ -1,3 +1,4 @@
 data/*
 final_data/*
 processed_data/*
+*.csv
