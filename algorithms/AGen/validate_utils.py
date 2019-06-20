@@ -129,12 +129,12 @@ def get_multiagent_ground_truth(ngsim_filename: str, h5_filename: str):
     act_low = np.array([-4, -0.15])
     act_high = np.array([4, 0.15])
     data = load_validate_data(
-        '/Users/zhangzhihao/ngsim_env/data/trajectories/ngsim_22agents.h5',
+        h5_filename,
         act_low=act_low,
         act_high=act_high,
         min_length=200 + 50,
         clip_std_multiple=10.0,
-        ngsim_filename='trajdata_i101-22agents-0750am-0805am.txt'
+        ngsim_filename=ngsim_filename
     )
 
     return data
