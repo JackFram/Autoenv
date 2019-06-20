@@ -7,9 +7,9 @@ mkdir processed_data
 python clean_holo.py --traj_path "your raw trajectory data" --lane_path "your lane data if applicable"
 
 cd ~/.julia/packages/NGSIM/OX1F/data  # OX1F maybe replaced by other version control number
-cp ./centerlinesHOLO.txt ./
-cp ./boundariesHOLO.txt ./
-cp ./final_data/holo_trajectories.txt ./
+cp ~/AutoEnv/preprocessing/centerlinesHOLO.txt ./
+cp ~/AutoEnv/preprocessing/boundariesHOLO.txt ./
+cp ~/AutoEnv/preprocessing/final_data/holo_trajectories.txt ./
 
 # use julia to do lane conversion
 julia
@@ -35,7 +35,10 @@ cd ~/ngsim_env/scripts/imitation
 
 # change the file path in each python file accordingly
 
+# if you have ids file and starts file in ~/.julia/packages/NGSIM/OX1F/data remove the ids and starts files.
+
 python adaption.py --n_proc 1 --exp_dir ../../data/experiments/multiagent_curr/ --params_filename itr_200.npz --use_multiagent False --n_envs 1 --adapt_steps 1
+# if occurs segmentation fault, use ctrl+c -.-
 
 python psgail_holo.py --n_proc 1 --exp_dir ../../data/experiments/multiagent_curr/ --params_filename itr_200.npz --use_multiagent False --n_envs 1 --adapt_steps 1
 
