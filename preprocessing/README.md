@@ -1,5 +1,8 @@
 ## Preprocessing holo data guideline:
 ```bash
+mkdir data
+mkdir final_data
+mkdir processed_data
 
 python clean_holo.py --traj_path "your raw trajectory data" --lane_path "your lane data if applicable"
 
