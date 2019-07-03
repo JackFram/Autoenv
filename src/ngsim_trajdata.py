@@ -39,7 +39,11 @@ class NGSIMTrajdata:
                      'local_y', 'global_x', 'global_y', 'length', 'width', 'class',
                      'speed', 'acc', 'lane', 'carind_front', 'carind_rear',
                      'dist_headway', 'time_headway', 'global_heading']
-        self.df.columns = col_names
+        if len(self.df.columns) == 19:
+            self.df.columns = col_names
+        elif len(self.df.columns) == 18:
+            self.df[18] = None
+            self.df.columns = col_names
         for (dfind, carid) in tqdm(enumerate(self.df['id'])):
             if carid not in self.car2start:
                 self.car2start[carid] = dfind

@@ -190,13 +190,15 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
                                          df.at[dfind, 'length'] * METERS_PER_FOOT,
                                          df.at[dfind, 'width'] * METERS_PER_FOOT)
 
-    state_ind = -1
+    state_ind = 0
     print("convert: frames and states")
-    for frame in tqdm(range(0, tdraw.nframes)):  # change from 1 to 0
+    for frame in tqdm(range(1, tdraw.nframes + 1)):  # change from 1 to 0
 
         frame_lo = state_ind + 1
+        # print("frame: {}".format(frame))
 
         for id in ngsim_trajdata.carsinframe(tdraw, frame):
+            # print("id: {}".format(id))
             dfind = ngsim_trajdata.car_df_index(tdraw, id, frame)
             assert dfind != -1
 

@@ -142,6 +142,7 @@ class MultiAgentAutoEnv:
             offset,
             rseed=random_seed
         )
+        # TODO: add selecting
 
         self.epid += 1
 
