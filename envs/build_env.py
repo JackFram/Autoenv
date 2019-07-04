@@ -28,6 +28,7 @@ import hgail.misc.utils
 def build_ngsim_env(
         args,
         exp_dir='/tmp',
+        n_veh=1,
         alpha=0.001,
         vectorize=False,
         render_params=None,
@@ -48,7 +49,7 @@ def build_ngsim_env(
         terminate_on_off_road=False,
         # render_params=render_params,
         n_envs=args.n_envs,
-        n_veh=args.n_envs,
+        n_veh=n_veh,
         remove_ngsim_veh=args.remove_ngsim_veh,
         reward=args.env_reward
     )

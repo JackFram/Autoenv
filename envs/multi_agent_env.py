@@ -1,5 +1,5 @@
 from envs.utils import dict_get, max_n_objects, fill_infos_cache, sample_multiple_trajdata_vehicle, load_ngsim_trajdatas,\
-    keep_vehicle_subset
+    keep_vehicle_subset, select_multiple_trajdata_vehicle
 from src.Record.frame import Frame
 from src.Record.record import SceneRecord, get_scene
 from src.Basic.Vehicle import Vehicle
@@ -136,13 +136,30 @@ class MultiAgentAutoEnv:
 
         # sample multiple ego vehicles
         # as stated above, these will all end at the same timestep
-        self.traj_idx, self.egoids, self.t, self.h = sample_multiple_trajdata_vehicle(
-            self.n_veh,
-            self.trajinfos,
-            offset,
-            rseed=random_seed
-        )
-        # TODO: add selecting
+        if traj_idx is None or egoid is None or start is None:
+            print("===sampling===")
+            self.traj_idx, self.egoids, self.t, self.h = sample_multiple_trajdata_vehicle(
+                self.n_veh,
+                self.trajinfos,
+                offset,
+                rseed=random_seed
+            )
+        else:
+            print("===selecting===")
+            self.traj_idx, self.egoids, self.t, self.h = select_multiple_trajdata_vehicle(
+                self.n_veh,
+                self.trajinfos,
+                offset,
+                egoid=egoid,
+                traj_idx=traj_idx,
+                period_start=start,
+                rseed=random_seed
+            )
+        print("==========")
+        print("env.egoid:", self.egoids)
+        print("env.t:", self.t)
+        print("env.h:", self.h)
+        print("env.primesteps:", self.primesteps)
 
         self.epid += 1
 
@@ -304,7 +321,7 @@ class MultiAgentAutoEnv:
         # vectorized sampler does not call reset on the environment
         # but expects the environment to handle resetting, so do that here
         # note: this mutates env.features in order to return the correct obs when resetting
-        self.reset(terminal)
+        # self.reset(terminal)
 
         rewards = self._extract_rewards(infos)
         # print(rewards)

@@ -26,9 +26,19 @@ from envs import hyperparams, utils, build_env
 from envs.utils import str2bool
 from algorithms.AGen import rls, validate_utils
 import pdb
+import math
 
 
 plt.style.use("ggplot")
+
+# TODO: change this accordingly
+EGOID_TO_INDEX = {}
+EGO_START_FRAME = 1106
+N_VEH = 1
+EGO_ID = 1978
+DATA_INDEX = [64]
+N_ITERATION = 1
+MAX_STEP = 150
 
 
 def online_adaption(
@@ -47,24 +57,26 @@ def online_adaption(
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
 
+    start_time = time.time()
     theta = np.load('./data/theta.npy')  # TODO: change the file path
     theta = np.mean(theta)
 
-    primesteps = 5
+    ego_start_frame = EGO_START_FRAME
+    maxstep = MAX_STEP
 
-    env_kwargs['start'] = primesteps
+    env_kwargs['start'] = ego_start_frame
     x = env.reset(**env_kwargs)
 
     n_agents = x.shape[0]
-    print("n_agents: {}".format(n_agents))
+    print("Agent number: {}".format(n_agents))
     dones = [True] * n_agents
     predicted_trajs, adapnets = [], []
     policy.reset(dones)
     prev_actions, prev_hiddens = None, None
 
-    max_steps = min(200, obs.shape[1] - primesteps - 2)
+    # max_steps = min(200, obs.shape[1] - primesteps - 2)
     print("max_steps")
-    print(max_steps)
+    print(maxstep)
     mean = np.expand_dims(mean, axis=2)
     prev_hiddens = np.zeros([n_agents, 64])
 
@@ -74,10 +86,21 @@ def online_adaption(
         adapnets.append(rls.rls(lbd, theta, param_length, 2))
 
     avg = 0
-    for step in range(primesteps - 1, max_steps + primesteps - 1):
+    end_time = time.time()
+    print(('Reset env Running time: %s Seconds' % (end_time - start_time)))
+    lx = x
+    error = []  # size is (maxstep, predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
+    action_time = 0
+    step_time = 0
+    adaption_time = 0
+    predict_time = 0
+    reset_time = 0
+    for step in range(ego_start_frame - 1, maxstep + ego_start_frame - 1):
+
         print("step = ", step)
 
         start = time.time()
+        start_time = time.time()
         a, a_info, hidden_vec = policy.get_actions_with_prev(obs[:, step, :], mean[:, step, :], prev_hiddens)
 
         if adapt_steps == 1:
@@ -91,26 +114,61 @@ def online_adaption(
         adap_vec = np.expand_dims(adap_vec, axis=1)
 
         for i in range(n_agents):
-            adapnets[i].update(adap_vec[i], mean[i, step + 1, :])
-            adapnets[i].draw.append(adapnets[i].theta[6, 1])
-
+            for _ in range(N_ITERATION):
+                adapnets[i].update(adap_vec[i], mean[i, step+1, :])
+                adapnets[i].draw.append(adapnets[i].theta[6, 1])
+        end_time = time.time()
+        adaption_time += end_time - start_time
         prev_actions, prev_hiddens = a, hidden_vec
-        # print(obs[:, step + 1, :])
-
-        traj = prediction(env_kwargs, obs[:, step + 1, :], adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids)
-
+        start_time = time.time()
+        traj, error_per_step, time_info = prediction(env_kwargs, obs[:, step + 1, :], adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids)
+        end_time = time.time()
+        predict_time += (end_time - start_time)
+        action_time += time_info["action"]
+        step_time += time_info["step"]
+        error.append(error_per_step)
         predicted_trajs.append(traj)
         d = np.stack([adapnets[i].draw for i in range(n_agents)])
         end = time.time()
         avg += (start - end)
-
         env_kwargs['start'] += 1
+        lx = x
+        start_time = time.time()
         x = env.reset(**env_kwargs)
+        end_time = time.time()
+        reset_time += end_time - start_time
+        # print(('Step %d reset env Running time: %s Seconds' % (step, end_time - start_time)))
+    # print(('predict trajectory time: %s Seconds' % (predict_time / maxstep)))
+    # print(('env reset time: %s Seconds' % (reset_time / maxstep)))
+    # print(('adaption time: %s Seconds' % (adaption_time / maxstep)))
+    # print(('action time: %s Seconds' % (action_time / maxstep)))
+    # print(('env step time: %s Seconds' % (step_time / maxstep)))
 
-    print(avg / (max_steps - 1))
-    # for i in range(n_agents):
-    #     plt.plot(range(step + 1), d[i, :])
-    # plt.show()
+    # test
+    m_stability = utils.cal_m_stability(error, T=150)
+    with open("./m_stability.pkl", "wb") as fp:
+        pickle.dump(m_stability, fp)
+        print("finish saving M stability matrix.")
+    utils.cal_overall_rmse(error, verbose=True)
+    rmse_over_lookahead_dx = []
+    rmse_over_lookahead_dy = []
+    rmse_over_lookahead_dist = []
+    for j in range(50):  # this should be the span you want to test
+        dx, dy, dist = utils.cal_lookahead_rmse(error, j)
+        rmse_over_lookahead_dx.append(dx)
+        rmse_over_lookahead_dy.append(dy)
+        rmse_over_lookahead_dist.append(dist)
+    print("======================================")
+    print("RMSE over look ahead score:\n")
+    print("rmse over look ahead dx:")
+    print(rmse_over_lookahead_dx[:10])
+    print("rmse over look ahead dy:")
+    print(rmse_over_lookahead_dy[:10])
+    print("rmse over look ahead dist:")
+    print(rmse_over_lookahead_dist[:10])
+
+    for i in range(n_agents):
+        utils.cal_agent_rmse(error, i, verbose=True)
 
     print('obs.shape')
     print(obs.shape)
@@ -121,8 +179,11 @@ def online_adaption(
 def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids):
     traj = hgail.misc.simulation.Trajectory()
     predict_span = 50
-    gts = np.zeros((2, predict_span))
+    error_per_step = []  # size is (predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
+    get_action_time = 0
+    env_step_time = 0
     for j in range(predict_span):
+        start_time = time.time()
         a, a_info, hidden_vec = policy.get_actions(x)
 
         if adapt_steps == 1:
@@ -140,18 +201,34 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
 
         rnd = np.random.normal(size=means.shape)
         actions = rnd * np.exp(log_std) + means
-
+        end_time = time.time()
+        get_action_time += (end_time - start_time)
+        start_time = time.time()
         nx, r, dones, e_info = env.step(actions)
         traj.add(x, actions, r, a_info, e_info)
-        gts[0, j] = e_info['orig_x']
-        gts[1, j] = e_info['orig_y']
+        end_time = time.time()
+        env_step_time += (end_time - start_time)
+        error_per_agent = []  # length is n_agent, each element is a dict(dx: , dy: ,dist: )
+
+        for i in range(n_agents):
+            print("orig x: ", e_info["orig_x"][i])
+            print("orig y: ", e_info["orig_y"][i])
+            print("predicted x: ", e_info["x"][i])
+            print("predicted y: ", e_info["y"][i])
+            dx = abs(e_info["orig_x"][i] - e_info["x"][i])
+            dy = abs(e_info["orig_y"][i] - e_info["y"][i])
+            dist = math.hypot(dx, dy)
+            print("{}-----> dx: {} dy: {} dist: {}".format(j, dx, dy, dist))
+            error_per_agent.append({"dx": dx, "dy": dy, "dist": dist})
+        error_per_step.append(error_per_agent)
         if any(dones): break
         x = nx
 
+    time_info = {"action": (get_action_time / predict_span), "step": (env_step_time / predict_span)}
     # this should be delete and replaced
     # y = env.reset(**env_kwargs)
 
-    return traj.flatten()
+    return traj.flatten(), error_per_step, time_info
 
 
 def collect_trajectories(
@@ -170,12 +247,15 @@ def collect_trajectories(
         adapt_steps):
     print('args')
     print(args)
-    env, _, _ = env_fn(args, alpha=0.)
+    start_time = time.time()
+    env, _, _ = env_fn(args, n_veh=N_VEH, alpha=0.)
 
     policy = policy_fn(args, env)
-
+    end_time = time.time()
+    print(('Initializing env Running time: %s Seconds' % (end_time - start_time)))
     with tf.Session() as sess:
         # initialize variables
+        start_time = time.time()
         sess.run(tf.global_variables_initializer())
 
         # then load parameters
@@ -203,18 +283,23 @@ def collect_trajectories(
             sample = np.random.choice(data['observations'].shape[0], 2)
 
         kwargs = dict()
+        end_time = time.time()
+        print(('Loading obs data Running time: %s Seconds' % (end_time - start_time)))
         if args.env_multiagent:
             # I add not because single simulation has no orig_x etc.
-            egoid = random.choice(egoids)
+            # egoid = random.choice(egoids)
             if random_seed:
-                kwargs = dict(random_seed=random_seed + egoid)
+                kwargs = dict(random_seed=random_seed + egoids[0])
+
+            kwargs['egoid'] = EGO_ID  # TODO: change egoid
+            kwargs['traj_idx'] = 1
 
             traj = online_adaption(
                 env,
                 policy,
                 max_steps=max_steps,
-                obs=data['observations'],
-                mean=data['actions'],
+                obs=data['observations'][DATA_INDEX, :, :],
+                mean=data['actions'][DATA_INDEX, :, :],
                 env_kwargs=kwargs,
                 lbd=lbd,
                 adapt_steps=adapt_steps,
@@ -225,14 +310,14 @@ def collect_trajectories(
             # for i in sample:
             for i, egoid in enumerate(egoids):
                 sys.stdout.write('\rpid: {} traj: {} / {}\n'.format(pid, i, nids))
-
+                index = EGOID_TO_INDEX[egoid]
                 traj = online_adaption(
                     env,
                     policy,
                     max_steps=max_steps,
-                    obs=data['observations'][i, :, :],
-                    mean=data['actions'][i, :, :],
-                    env_kwargs=dict(egoid=egoid, traj_idx=0),
+                    obs=data['observations'][index, :, :],
+                    mean=data['actions'][index, :, :],
+                    env_kwargs=dict(egoid=egoid, traj_idx=[0]),
                     lbd=lbd,
                     adapt_steps=adapt_steps,
                     nids=nids
@@ -257,6 +342,7 @@ def parallel_collect_trajectories(
         lbd=0.99,
         adapt_steps=1):
     # build manager and dictionary mapping ego ids to list of trajectories
+    start_time = time.time()
     manager = mp.Manager()
     trajlist = manager.list()
 
@@ -268,7 +354,8 @@ def parallel_collect_trajectories(
 
     # pool of processes, each with a set of ego ids
     pool = mp.Pool(processes=n_proc)
-
+    end_time = time.time()
+    print(('Creating parallel env Running time: %s Seconds' % (end_time - start_time)))
     # run collection
     results = []
     for pid in range(n_proc):

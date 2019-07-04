@@ -213,6 +213,50 @@ def sample_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_res
     return traj_idx, egoids, ts, te
 
 
+def select_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_resamples: int = 100, egoid: int = None,
+                                     traj_idx: int = None, verbose: bool = True, period_start: int = 0, period_end: int = 100000,
+                                     rseed: int = None):
+    assert traj_idx is not None
+    assert egoid is not None
+    if rseed is not None:
+        random.seed(rseed)
+
+    ts = max(trajinfos[traj_idx][egoid]["ts"], period_start)
+    te = min(trajinfos[traj_idx][egoid]["te"], period_end)
+    # find all other vehicles that have at least 'offset' many steps in common
+    # with the first sampled egoid starting from ts. If the number of such
+    # vehicles is fewer than n_veh, then resample
+    # start with the set containing the first egoid so we don't double count it
+    print("id ts te")
+    print("egoid: ")
+    print("{} {} {}".format(egoid, ts, te))
+    egoids = set([egoid])
+    print("egoids: ")
+    for othid in trajinfos[traj_idx].keys():
+        oth_ts = trajinfos[traj_idx][othid]["ts"]
+        oth_te = trajinfos[traj_idx][othid]["te"]
+        print("{} {} {}".format(othid, oth_ts, oth_te))
+        ts_ = trajinfos[traj_idx][egoid]["ts"]
+        te_ = trajinfos[traj_idx][egoid]["te"]
+        # other vehicle must start at or before ts and must end at or after te
+        if oth_ts <= ts_ and te_ <= oth_te:
+            print("pushing " + othid + " into egoids")
+            egoids.update(othid)
+    n_veh = len(egoids)
+    print("n_veh: ", n_veh)
+    # check that there are enough valid ids from which to select
+    if len(egoids) < n_veh:
+        if verbose:
+            print(
+                "WARNING: insuffcient sampling ids in sample_multiple_trajdata_vehicle, \
+                resamples remaining: $(max_resamples)")
+
+    # This should be based on relative distance or something.
+    egoids = list(egoids)
+    egoids = sorted(egoids)
+    return traj_idx, egoids, ts, te
+
+
 def load_ngsim_trajdatas(filepaths, minlength: int=100):
 
     # check that indexes exist for the relevant trajdatas
@@ -431,6 +475,168 @@ def partition_list(lst, n):
     for i, v in enumerate(lst):
         sublists[i % n].append(v)
     return sublists
+
+
+def cal_overall_rmse(error, verbose=False):
+    totalStep = len(error)
+    predict_span = len(error[0])
+    n_agent = len(error[0][0])
+    if verbose:
+        print("======================================")
+        print("Calculating overall RMSE:\n")
+        print("total step: ", totalStep)
+        print("predict span: ", predict_span)
+        print("n_agent: ", n_agent)
+    sum_dx = 0
+    sum_dy = 0
+    sum_dist = 0
+    step = 0
+    for i in range(len(error)):
+        for j in range(len(error[i])):
+            for k in range(len(error[i][j])):
+                sum_dx += error[i][j][k]["dx"]
+                sum_dy += error[i][j][k]["dy"]
+                sum_dist += error[i][j][k]["dist"]
+                step += 1
+    avg_dx = sum_dx / step
+    avg_dy = sum_dy / step
+    avg_dist = sum_dist / step
+    if verbose:
+        print("avg dx: ", avg_dx)
+        print("avg dy: ", avg_dy)
+        print("avg dist: ", avg_dist)
+    return avg_dx, avg_dy, avg_dist
+
+
+def cal_step_rmse(error, i, verbose=False):
+    totalStep = len(error)
+    predict_span = len(error[0])
+    n_agent = len(error[0][0])
+    if verbose:
+        print("Calculating step RMSE at step {}:".format(i))
+        print("total step: ", totalStep)
+        print("predict span: ", predict_span)
+        print("n_agent: ", n_agent)
+    sum_dx = 0
+    sum_dy = 0
+    sum_dist = 0
+    for j in range(predict_span):
+        for k in range(n_agent):
+            sum_dx += error[i][j][k]["dx"]
+            sum_dy += error[i][j][k]["dy"]
+            sum_dist += error[i][j][k]["dist"]
+    avg_dx = sum_dx / (predict_span * n_agent)
+    avg_dy = sum_dy / (predict_span * n_agent)
+    avg_dist = sum_dist / (predict_span * n_agent)
+    if verbose:
+        print("avg dx: ", avg_dx)
+        print("avg dy: ", avg_dy)
+        print("avg dist: ", avg_dist)
+    return avg_dx, avg_dy, avg_dist
+
+
+def cal_lookahead_rmse(error, j, verbose=False):
+    totalStep = len(error)
+    predict_span = len(error[0])
+    n_agent = len(error[0][0])
+    if verbose:
+        print("======================================")
+        print("Calculating look ahead RMSE at step {}:\n".format(j))
+        print("total step: ", totalStep)
+        print("predict span: ", predict_span)
+        print("n_agent: ", n_agent)
+    sum_dx = 0
+    sum_dy = 0
+    sum_dist = 0
+    step = 0
+    for i in range(totalStep):
+        if j >= len(error[i]):
+            break
+        for k in range(n_agent):
+            sum_dx += error[i][j][k]["dx"]
+            sum_dy += error[i][j][k]["dy"]
+            sum_dist += error[i][j][k]["dist"]
+            step += 1
+    avg_dx = sum_dx / step
+    avg_dy = sum_dy / step
+    avg_dist = sum_dist / step
+    if verbose:
+        print("avg dx: ", avg_dx)
+        print("avg dy: ", avg_dy)
+        print("avg dist: ", avg_dist)
+    return avg_dx, avg_dy, avg_dist
+
+
+def cal_agent_rmse(error, k, verbose=False, lookahead_span=10):
+    totalStep = len(error)
+    predict_span = len(error[0])
+    n_agent = len(error[0][0])
+    if verbose:
+        print("======================================")
+        print("Calculating agent {} RMSE:\n".format(k))
+        print("total step: ", totalStep)
+        print("predict span: ", predict_span)
+        print("n_agent: ", n_agent)
+    sum_dx = 0
+    sum_dy = 0
+    sum_dist = 0
+    step = 0
+    for i in range(len(error)):
+        for j in range(len(error[i])):
+            sum_dx += error[i][j][k]["dx"]
+            sum_dy += error[i][j][k]["dy"]
+            sum_dist += error[i][j][k]["dist"]
+            step += 1
+    avg_dx = sum_dx / step
+    avg_dy = sum_dy / step
+    avg_dist = sum_dist / step
+    if verbose:
+        print("avg dx: ", avg_dx)
+        print("avg dy: ", avg_dy)
+        print("avg dist: ", avg_dist)
+    step_error_dx = []
+    step_error_dy = []
+    step_error_dist = []
+    for j in range(lookahead_span):
+        per_step = 0
+        per_sum_dx = 0
+        per_sum_dy = 0
+        per_sum_dist = 0
+        for i in range(len(error)):
+            if j >= len(error[i]):
+                break
+            per_sum_dx += error[i][j][k]["dx"]
+            per_sum_dy += error[i][j][k]["dy"]
+            per_sum_dist += error[i][j][k]["dist"]
+            per_step += 1
+        step_error_dx.append(per_sum_dx / per_step)
+        step_error_dy.append(per_sum_dy / per_step)
+        step_error_dist.append(per_sum_dist / per_step)
+    print("look ahead avg dx: ", step_error_dx)
+    print("look ahead avg dy: ", step_error_dy)
+    print("look ahead avg dist: ", step_error_dist)
+    return avg_dx, avg_dy, avg_dist
+
+
+def cal_m_stability(error, h=50, T=150, e=0.1, verbose=False):
+    # error (step, predicted_span, n_agent)
+    n_agent = len(error[0][0])
+    error_time = []
+
+    for k in range(h, T):
+        step = h
+        for j in range(0, h):
+            flag = 0
+            for i in range(n_agent):
+                if error[k-j][j][i]["dist"] > error[k-j-1][j+1][i]["dist"] and error[k-j][j][i]["dist"] > e:
+                    flag = 1
+
+            if flag:
+                step = j
+                break
+        error_time.append(step)
+    return error_time
+
 
 
 
