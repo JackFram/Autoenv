@@ -187,10 +187,10 @@ def get_vehicle(rec: ListRecord, stateindex: int):
 
 def get_scene(frame: Frame, rec: ListRecord, frame_index: int):
     frame.empty()
-
+    frame_index -= 1  # different index for julia and python
     if frame_inbounds(rec, frame_index):
         recframe = rec.frames[frame_index]
-        print(recframe.lo, recframe.hi)
+        # print(recframe.lo, recframe.hi)
         for stateindex in range(recframe.lo - 1, recframe.hi):
             frame.push(get_vehicle(rec, stateindex))
 

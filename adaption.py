@@ -276,7 +276,6 @@ def collect_trajectories(
         nids = len(egoids)
 
         if args.env_multiagent:
-
             data = validate_utils.get_multiagent_ground_truth(args.ngsim_filename, args.h5_filename)
         else:
             data = validate_utils.get_ground_truth(args.ngsim_filename, args.h5_filename)
@@ -291,8 +290,8 @@ def collect_trajectories(
             if random_seed:
                 kwargs = dict(random_seed=random_seed + egoids[0])
 
-            kwargs['egoid'] = EGO_ID  # TODO: change egoid
-            kwargs['traj_idx'] = 1
+            kwargs['egoid'] = EGO_ID
+            kwargs['traj_idx'] = 0
 
             traj = online_adaption(
                 env,
@@ -556,7 +555,7 @@ if __name__ == '__main__':
 
     h5names = [
         # './data/trajectories/ngsim_22agents.h5'
-        './data/trajectories/ngsim_holo.h5'  # TODO: change the data name accordingly.
+        './data/trajectories/ngsim_holo_new.h5'  # TODO: change the data name accordingly.
     ]
 
     if run_args.n_envs:

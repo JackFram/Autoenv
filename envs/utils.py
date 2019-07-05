@@ -88,15 +88,15 @@ def index_ngsim_trajectory(filepath: str, minlength: int = 100, offset: int = 0,
         scene = get_scene(scene, trajdata, frame)
 
         # add all the vehicles to the current set
-        print("=======frame {}: vehicle num: {}==========\n".format(frame, scene.n))
+        # print("=======frame {}: vehicle num: {}==========\n".format(frame, scene.n))
         for i in range(scene.n):
             veh = scene[i]
             cur.add(veh.id)
-            print("vehicle id: {}".format(veh.id))
+            # print("vehicle id: {}".format(veh.id))
             # insert previously unseen vehicles into the index
             if veh.id not in prev:
                 index[veh.id] = {"ts": frame}
-                print("vehicle {} start from {}".format(veh.id, frame))
+                # print("vehicle {} start from {}".format(veh.id, frame))
 
         # find vehicles in the previous but not the current frame
         missing = prev - cur
@@ -240,8 +240,8 @@ def select_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_res
         te_ = trajinfos[traj_idx][egoid]["te"]
         # other vehicle must start at or before ts and must end at or after te
         if oth_ts <= ts_ and te_ <= oth_te:
-            print("pushing " + othid + " into egoids")
-            egoids.update(othid)
+            print("pushing " + str(othid) + " into egoids")
+            egoids.add(othid)
     n_veh = len(egoids)
     print("n_veh: ", n_veh)
     # check that there are enough valid ids from which to select
@@ -307,6 +307,7 @@ def load_ngsim_trajdatas(filepaths, minlength: int=100):
 
 
 def load_x_feature_names(filepath, ngsim_filename):
+    print("obs feature: h5 file path: {}, ngsim file name: {}".format(filepath, ngsim_filename))
     f = h5py.File(filepath, 'r')
     xs = []
     traj_id = NGSIM_FILENAME_TO_ID[ngsim_filename]
