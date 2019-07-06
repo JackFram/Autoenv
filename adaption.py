@@ -98,6 +98,7 @@ def online_adaption(
     for step in range(ego_start_frame - 1, maxstep + ego_start_frame - 1):
 
         print("step = ", step)
+        print("feature: ", x)
 
         start = time.time()
         start_time = time.time()
@@ -183,6 +184,7 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
     get_action_time = 0
     env_step_time = 0
     for j in range(predict_span):
+        print("feature {}".format(j), x)
         start_time = time.time()
         a, a_info, hidden_vec = policy.get_actions(x)
 

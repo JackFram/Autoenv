@@ -229,7 +229,6 @@ def get_corresponding_roadway(filename: str):
     elif "i80" in filename:
         return const.ROADWAY_80
     elif "holo" in filename:
-        print("hihihihihihihihi")
         return const.ROADWAY_HOLO
     else:
         raise ValueError("no such roadway file, check your file name")
