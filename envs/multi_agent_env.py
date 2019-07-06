@@ -168,7 +168,7 @@ class MultiAgentAutoEnv:
 
         # prime
         for t in range(self.t, (self.t + self.primesteps + 1)):
-            self.scene = get_scene(self.scene, self.trajdatas[self.traj_idx], t)  # index problem
+            self.scene = get_scene(self.scene, self.trajdatas[self.traj_idx], t)
             if self.remove_ngsim_veh:
                 self.scene = keep_vehicle_subset(self.scene, self.egoids)
             self.rec.update(self.scene)
