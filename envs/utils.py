@@ -319,7 +319,9 @@ def load_x_feature_names(filepath, ngsim_filename):
         else:
             raise ValueError('invalid key to trajectory data: {}'.format(i))
     x = np.concatenate(xs)
-    feature_names = f.attrs['feature_names']
+    feature_names = []
+    for feature_name in f.attrs['feature_names']:
+        feature_names.append(feature_name.decode())
     return x, feature_names
 
 

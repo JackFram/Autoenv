@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import h5py
+import tqdm
 
 from feature_extractor.utils import build_feature_extractor
 from src import const
@@ -20,7 +21,7 @@ def extract_features(ext, trajdata, roadway, timestep_delta, record_length, offs
     features = dict()
     ctr = 0
     n_frames = trajdata.nframes
-    for frame in range(offset - prime - 1, offset - 1):
+    for frame in range(offset - prime, offset):
         scene = get_scene(scene, trajdata, frame)
         rec.update(scene)
     veh_features = ext.pull_features(rec, roadway, 1)
@@ -32,18 +33,19 @@ def extract_features(ext, trajdata, roadway, timestep_delta, record_length, offs
 
     veh_list = dict()
 
-    for frame in range(offset - 1, (n_frames - offset)):
+    for frame in range(offset, (n_frames - offset)):
         scene = get_scene(scene, trajdata, frame)
-        for (vidx, veh) in enumerate(scene):
+        for vidx in range(scene.n):
+            veh = scene[vidx]
             veh_list[veh.id] = 0
 
     print(list(veh_list.keys()))
 
-    for frame in range(offset - 1, (n_frames - offset)):
+    for frame in tqdm.tqdm(range(offset, (n_frames - offset))):
         ctr += 1
         if maxframes is not None and ctr >= maxframes:
             break
-        print("\rframe {} / {}\n".format(frame, (n_frames - offset)))
+        # print("\rframe {} / {}\n".format(frame, (n_frames - offset)))
 
         # update the rec
         scene = get_scene(scene, trajdata, frame)
@@ -51,16 +53,19 @@ def extract_features(ext, trajdata, roadway, timestep_delta, record_length, offs
 
         # every timestep_delta step, extract features
         if frame % timestep_delta == 0:
-            for (vidx, veh) in enumerate(scene):
+            for vidx in range(scene.n):
+                veh = scene[vidx]
                 # extract features
                 veh_features = ext.pull_features(rec, roadway, vidx)
+                veh_features = np.array(veh_features)
                 if veh.id not in features.keys():
                     features[veh.id] = np.zeros((n_features, 0))
                 features[veh.id] = np.concatenate((features[veh.id], veh_features.reshape(n_features, 1)), axis=1)
             for veh_id in veh_list.keys():
                 if scene.findfirst(veh_id) is None:
-                    features[veh_id] = np.zeros((n_features, 0))
-                features[veh_id] = np.concatenate((features[veh_id], np.zeros((n_features, 1))), axis=1)
+                    if veh_id not in features.keys():
+                        features[veh_id] = np.zeros((n_features, 0))
+                    features[veh_id] = np.concatenate((features[veh_id], np.zeros((n_features, 1))), axis=1)
 
     return features
 
@@ -69,20 +74,25 @@ def write_features(features, output_filepath, ext):
     n_features = len(ext)
     # compute max length across samples
     maxlen = 0
-    for (traj_idx, feature_dict) in features:
-        for (veh_id, veh_features) in feature_dict:
+    for (traj_idx, feature_dict) in features.items():
+        for (veh_id, veh_features) in feature_dict.items():
             maxlen = max(maxlen, veh_features.shape[1])
     print("max length across samples: {}".format(maxlen))
     # write trajectory features
     h5file = h5py.File(output_filepath, "w")
-    for (traj_idx, feature_dict) in features:
+    for (traj_idx, feature_dict) in features.items():
         feature_array = np.zeros((n_features, maxlen, len(feature_dict)))
-        for (idx, (veh_id, veh_features)) in enumerate(feature_dict):
+        for (idx, (veh_id, veh_features)) in enumerate(feature_dict.items()):
             print("idx: {} veh_id: {}".format(idx, veh_id))
-            feature_array[:, 0:veh_features.shape[1], idx] = veh_features.reshape(n_features, veh_features.shape[1], 1)
+            feature_array[:, 0:veh_features.shape[1], [idx]] = veh_features.reshape(n_features, veh_features.shape[1], 1)
         h5file["{}".format(traj_idx)] = feature_array
     # write feature names
-    h5file.attrs["feature_names"] = ext.feature_names()
+    feature_names_encode = []
+    for subext in ext.feature_names():
+        subext_encode = []
+        for feature_name in subext:
+            feature_names_encode.append(feature_name.encode())
+    h5file.attrs["feature_names"] = feature_names_encode
     h5file.close()
 
 
@@ -120,6 +130,6 @@ def extract_ngsim_features(timestep_delta=1, record_length=10, offset=50, prime=
             prime,
             maxframes
         )
-    output_filepath = os.path.join("../data/trajectories/", output_filename)
+    output_filepath = os.path.join(const.DIR, "../data/trajectories/", output_filename)
     print("output filepath: {}".format(output_filepath))
     write_features(features, output_filepath, ext)
