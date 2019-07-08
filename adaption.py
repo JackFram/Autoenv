@@ -6,7 +6,7 @@ import os
 import sys
 import tensorflow as tf
 import time
-import random
+# import random
 import pickle
 
 backend = 'TkAgg'
@@ -25,8 +25,9 @@ from envs import hyperparams, utils, build_env
 
 from envs.utils import str2bool
 from algorithms.AGen import rls, validate_utils
-import pdb
+# import pdb
 import math
+import tqdm
 
 
 plt.style.use("ggplot")
@@ -36,7 +37,7 @@ EGOID_TO_INDEX = {}
 EGO_START_FRAME = 1106
 N_VEH = 1
 EGO_ID = 1978
-DATA_INDEX = [64]
+DATA_INDEX = [96]
 N_ITERATION = 1
 MAX_STEP = 150
 
@@ -95,10 +96,10 @@ def online_adaption(
     adaption_time = 0
     predict_time = 0
     reset_time = 0
-    for step in range(ego_start_frame - 1, maxstep + ego_start_frame - 1):
+    for step in tqdm.tqdm(range(ego_start_frame - 1, maxstep + ego_start_frame - 1)):
 
-        print("step = ", step)
-        print("feature: ", x)
+        # print("step = ", step)
+        # print("feature: ", x)
 
         start = time.time()
         start_time = time.time()
@@ -184,7 +185,8 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
     get_action_time = 0
     env_step_time = 0
     for j in range(predict_span):
-        print("feature {}".format(j), x)
+        # if j == 0:
+        #     print("feature {}".format(j), x)
         start_time = time.time()
         a, a_info, hidden_vec = policy.get_actions(x)
 
@@ -213,14 +215,14 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
         error_per_agent = []  # length is n_agent, each element is a dict(dx: , dy: ,dist: )
 
         for i in range(n_agents):
-            print("orig x: ", e_info["orig_x"][i])
-            print("orig y: ", e_info["orig_y"][i])
-            print("predicted x: ", e_info["x"][i])
-            print("predicted y: ", e_info["y"][i])
+            # print("orig x: ", e_info["orig_x"][i])
+            # print("orig y: ", e_info["orig_y"][i])
+            # print("predicted x: ", e_info["x"][i])
+            # print("predicted y: ", e_info["y"][i])
             dx = abs(e_info["orig_x"][i] - e_info["x"][i])
             dy = abs(e_info["orig_y"][i] - e_info["y"][i])
             dist = math.hypot(dx, dy)
-            print("{}-----> dx: {} dy: {} dist: {}".format(j, dx, dy, dist))
+            # print("{}-----> dx: {} dy: {} dist: {}".format(j, dx, dy, dist))
             error_per_agent.append({"dx": dx, "dy": dy, "dist": dist})
         error_per_step.append(error_per_agent)
         if any(dones): break

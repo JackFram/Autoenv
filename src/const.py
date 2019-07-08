@@ -35,12 +35,6 @@ SMOOTHING_WIDTH_POS = 0.5 # [s]
 Const
 '''
 NGSIM_FILENAME_TO_ID = {
-    'trajdata_i101_trajectories-0750am-0805am.txt': 1,
-    'trajdata_i101_trajectories-0805am-0820am.txt': 2,
-    'trajdata_i101_trajectories-0820am-0835am.txt': 3,
-    'trajdata_i80_trajectories-0400-0415.txt': 4,
-    'trajdata_i80_trajectories-0500-0515.txt': 5,
-    'trajdata_i80_trajectories-0515-0530.txt': 6,
-    'trajdata_i101-22agents-0750am-0805am.txt': 1,
-    'trajdata_holo_trajectories.txt': 1
+    'trajdata_i101-22agents-0750am-0805am.txt': 0,
+    'trajdata_holo_trajectories.txt': 0
 }

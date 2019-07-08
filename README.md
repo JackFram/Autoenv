@@ -63,7 +63,7 @@ mkdir data/experiments
 
 ### Downloading required data file
 
-you can get the data from [here](https://drive.google.com/file/d/1nAj563dl4bETWfDqPZqTwriYqQ7BkLWR/view?usp=sharing).
+you can get the data from [here](https://drive.google.com/file/d/15LORpr9HRQTNKFZYibAFqOV5wKLYVUXJ/view?usp=sharing).
 After downloading the file, unzip it and save all the files in data directory.
 
 ```bash
@@ -77,7 +77,7 @@ cp -r /path/to/data ./
 conda activate rllab3
 cd ~/Autoenv/
 pip install -r requirements.txt
-python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent False --n_envs 1 --adapt_steps 1
+python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent True --n_envs 1 --adapt_steps 1
 
 ```
 

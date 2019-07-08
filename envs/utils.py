@@ -227,23 +227,23 @@ def select_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_res
     # with the first sampled egoid starting from ts. If the number of such
     # vehicles is fewer than n_veh, then resample
     # start with the set containing the first egoid so we don't double count it
-    print("id ts te")
-    print("egoid: ")
-    print("{} {} {}".format(egoid, ts, te))
+    # print("id ts te")
+    # print("egoid: ")
+    # print("{} {} {}".format(egoid, ts, te))
     egoids = set([egoid])
-    print("egoids: ")
+    # print("egoids: ")
     for othid in trajinfos[traj_idx].keys():
         oth_ts = trajinfos[traj_idx][othid]["ts"]
         oth_te = trajinfos[traj_idx][othid]["te"]
-        print("{} {} {}".format(othid, oth_ts, oth_te))
+        # print("{} {} {}".format(othid, oth_ts, oth_te))
         ts_ = trajinfos[traj_idx][egoid]["ts"]
         te_ = trajinfos[traj_idx][egoid]["te"]
         # other vehicle must start at or before ts and must end at or after te
         if oth_ts <= ts_ and te_ <= oth_te:
-            print("pushing " + str(othid) + " into egoids")
+            # print("pushing " + str(othid) + " into egoids")
             egoids.add(othid)
     n_veh = len(egoids)
-    print("n_veh: ", n_veh)
+    # print("n_veh: ", n_veh)
     # check that there are enough valid ids from which to select
     if len(egoids) < n_veh:
         if verbose:

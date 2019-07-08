@@ -27,10 +27,10 @@ def load_validate_data(
     x, feature_names = utils.load_x_feature_names(filepath, ngsim_filename)
     print('Load validate data')
     print(x.shape)
-    print(x[0, 0, :10])
 
     # no need to flatten
     obs = x
+    print(feature_names)
     act_idxs = [i for (i, n) in enumerate(feature_names) if n in act_keys]
     act = x[:, :, act_idxs]
 

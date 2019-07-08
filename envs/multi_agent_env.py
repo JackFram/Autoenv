@@ -145,7 +145,7 @@ class MultiAgentAutoEnv:
                 rseed=random_seed
             )
         else:
-            print("===selecting===")
+            # print("===selecting===")
             self.traj_idx, self.egoids, self.t, self.h = select_multiple_trajdata_vehicle(
                 self.n_veh,
                 self.trajinfos,
@@ -155,11 +155,11 @@ class MultiAgentAutoEnv:
                 period_start=start,
                 rseed=random_seed
             )
-        print("==========")
-        print("env.egoid:", self.egoids)
-        print("env.t:", self.t)
-        print("env.h:", self.h)
-        print("env.primesteps:", self.primesteps)
+        # print("==========")
+        # print("env.egoid:", self.egoids)
+        # print("env.t:", self.t)
+        # print("env.h:", self.h)
+        # print("env.primesteps:", self.primesteps)
 
         self.epid += 1
 
