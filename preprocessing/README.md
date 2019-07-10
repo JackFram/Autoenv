@@ -19,25 +19,27 @@ julia
 >> exit()
 
 # Notice: replace const NGSIM_TRAJDATA_PATHS in ~/.julia/packages/NGSIM/OX1F/src/ngsim_trajdata.jl with the right one(holo_trajectories.txt)
-
-julia
+```
+in ~/Autoenv directory
+```bash
+python
 >> using NGSIM
+>> from src.trajdata import convert_raw_ngsim_to_trajdatas
 >> convert_raw_ngsim_to_trajdatas()
 ```
 
-Notice: in ~/.julia/packages/NGSIM/OX1F/src/trajdata.jl change file path accordingly
+Notice: in ~/Autoenv/src/const.py change file path accordingly
 ```bash
-cd ~/ngsim_env/scripts
 
-julia extract_ngsim_demonstrations.jl
-
-cd ~/ngsim_env/scripts/imitation
+python
+>> from preprocessing import extract_feature
+>> extract_feature.extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
 
 # change the file path in each python file accordingly
 
 # if you have ids file and starts file in ~/.julia/packages/NGSIM/OX1F/data remove the ids and starts files.
 
-python adaption.py --n_proc 1 --exp_dir ../../data/experiments/multiagent_curr/ --params_filename itr_200.npz --use_multiagent False --n_envs 1 --adapt_steps 1
+python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent True --n_envs 1 --adapt_steps 1
 # if occurs segmentation fault, use ctrl+c -.-
 
 python psgail_holo.py --n_proc 1 --exp_dir ../../data/experiments/multiagent_curr/ --params_filename itr_200.npz --use_multiagent False --n_envs 1 --adapt_steps 1
