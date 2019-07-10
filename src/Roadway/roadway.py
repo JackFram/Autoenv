@@ -58,6 +58,9 @@ class RoadIndex:
         self.ind = ind
         self.tag = tag
 
+    def write(self, fp):
+        fp.write("%d %.6f %d %d\n" % (self.ind.i, self.ind.t, self.tag.segment, self.tag.lane))
+
 
 NULL_ROADINDEX = RoadIndex(CurvePt.CurveIndex(-1, None), LaneTag(-1, -1))
 
@@ -75,6 +78,10 @@ class LaneConnection:
         self.downstream = downstream  # if true, mylane → target, else target → mylane
         self.mylane = mylane
         self.target = target
+
+    def write(self, fp):
+        fp.write("%s (%d %.6f) " % ("D" if self.downstream else "U", self.mylane.i, self.mylane.t))
+        self.target.write(fp)
 
 
 def parse_lane_connection(line: str):
@@ -151,8 +158,16 @@ def has_prev(lane: Lane):
     return (not len(lane.entrances) == 0) and lane.entrances[0].mylane == CurvePt.CURVEINDEX_START
 
 
+def connect(source: Lane, dest: Lane):
+    cindS = CurvePt.curveindex_end(source.curve)
+    cindD = CurvePt.CURVEINDEX_START
+    source.exits.insert(0, LaneConnection(True,  cindS, RoadIndex(cindD, dest.tag)))
+    dest.entrances.insert(0, LaneConnection(False, cindD, RoadIndex(cindS, source.tag)))
+    return source, dest
+
+
 class RoadSegment:
-    def __init__(self, id: int, lanes: list):
+    def __init__(self, id: int, lanes: list = []):
         '''
         :param id: the identification number of the corresponding road segment
         :param lanes: list of lane in this segment
@@ -171,7 +186,7 @@ class Roadway:
 
     def get_by_tag(self, tag: LaneTag):
         seg = self.get_by_id(tag.segment)
-        #print(seg.id, len(seg.lanes), tag.lane)
+        # print(seg.id, len(seg.lanes), tag.lane)
         return seg.lanes[tag.lane]
 
     def get_by_id(self, segid: int):
@@ -183,6 +198,41 @@ class Roadway:
     def get_by_roadindex(self, roadindex: RoadIndex):
         lane = self.get_by_tag(roadindex.tag)
         return lane.get_by_ind_roadway(roadindex.ind, self)
+
+    def has_segment(self, segid: int):
+        for seg in self.segments:
+            if seg.id == segid:
+                return True
+        return False
+
+    def write(self, filepath: str):
+        # writes to a text file
+        with open(filepath, "w") as fp:
+            fp.write("ROADWAY\n")
+            fp.write("{}\n".format(len(self.segments)))
+            for seg in self.segments:
+                fp.write("{}\n".format(seg.id))
+                fp.write("\t{}\n".format(len(seg.lanes)))
+                for (i, lane) in enumerate(seg.lanes):
+                    assert (lane.tag.lane == i + 1)
+                    fp.write("\t%d\n" % (i + 1))
+                    fp.write("\t\t%.3f\n" % lane.width)
+                    fp.write("\t\t%.3f %.3f\n" % (lane.speed_limit.lo, lane.speed_limit.hi))
+                    fp.write("\t\t{} {}\n".format(lane.boundary_left.style, lane.boundary_left.color))
+                    fp.write("\t\t{} {}\n".format(lane.boundary_right.style, lane.boundary_right.color))
+                    fp.write("\t\t{}\n".format(len(lane.exits) + len(lane.entrances)))
+                    for conn in lane.exits:
+                        fp.write("\t\t\t")
+                        conn.write(fp)
+                        fp.write("\n")
+                    for conn in lane.entrances:
+                        fp.write("\t\t\t")
+                        conn.write(fp)
+                        fp.write("\n")
+                    fp.write("\t\t{}\n".format(len(lane.curve)))
+                    for pt in lane.curve:
+                        fp.write("\t\t\t(%.4f %.4f %.6f) %.4f %.8f %.8f\n" % (pt.pos.x, pt.pos.y, pt.pos.theta,
+                                                                              pt.s, pt.k, pt.kd))
 
 
 def read_roadway(fp):

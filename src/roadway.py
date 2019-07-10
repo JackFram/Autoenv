@@ -4,9 +4,12 @@
 import re
 import math
 import os
+import numpy as np
 from src.Vec import VecE2, VecSE2
 from src.curves import CurvePt
 from src.Roadway import roadway
+from src.splines import fit_cubic_spline, calc_curve_length_2, calc_curve_param_given_arclen, sample_spline_2, \
+    sample_spline_theta_2, sample_spline_curvature_2, sample_spline_derivative_of_curvature_2
 
 FLOATING_POINT_REGEX = r'[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?'
 METERS_PER_FOOT = 0.3048
@@ -105,99 +108,224 @@ def read_roadway(input_params: RoadwayInputParams):
     return NGSIMRoadway(name, boundaries, list(centerlines.values()))
 
 
-def write_lwpolyline(pts: list, handle_int: int, is_closed: bool = False):
-    N = len(pts)
-    print("  0")
-    print("LWPOLYLINE")
-    print("  5") # handle (increases)
-    print( "B{}".format(handle_int))
-    print("100") # subclass marker
-    print("AcDbEntity")
-    print("  8") # layer name
-    print("150")
-    print("  6") # linetype name
-    print("ByLayer")
-    print(" 62") # color number
-    print("  256")
-    print("370") # lineweight enum
-    print("   -1")
-    print("100") # subclass marker
-    print("AcDbPolyline")
-    print(" 90") # number of vertices
-    print("   {}".format(N))
-    print(" 70") # 0 is default, 1 is closed
-    print("    {}".format(1 if is_closed else 0))
-    print(" 43") # 0 is constant width
-    print("0")
-
-    for i in range(N):
-        print(" 10")
-        print("{:.3f}".format(pts[i].pos.x))
-        print(" 20")
-        print("{:.3f}".format(pts[i].pos.y))
+def get_segid(lane: list):
+    '''
+    :param lane: list of CurvePt
+    :return: get the segment id of corresponding lane
+    '''
+    return 1  # for now
 
 
-# function convert_curves_feet_to_meters!(roadway::Roadway)
-#     for seg in roadway.segments
-#         for lane in seg.lanes
-#             for (i,P) in enumerate(lane.curve)
-#                 lane.curve[i] = CurvePt(
-#                         VecSE2(P.pos.x*METERS_PER_FOOT, P.pos.y*METERS_PER_FOOT, P.pos.θ),
-#                         P.s*METERS_PER_FOOT, P.k/METERS_PER_FOOT, P.kd/METERS_PER_FOOT)
-#             end
-#         end
-#     end
-#     roadway
-# end
+def convert_curves_feet_to_meters(roadWay: roadway.Roadway):
+    for seg in roadWay.segments:
+        for lane in seg.lanes:
+            for (i, P) in enumerate(lane.curve):
+                lane.curve[i] = CurvePt.CurvePt(
+                    VecSE2.VecSE2(P.pos.x * METERS_PER_FOOT, P.pos.y * METERS_PER_FOOT, P.pos.θ),
+                    P.s * METERS_PER_FOOT, P.k / METERS_PER_FOOT, P.kd / METERS_PER_FOOT)
 
-# def write_dxf(roadway: NGSIMRoadway):
-#     dirname, filename = os.path.split(os.path.abspath(__file__))
-#     fp = open(os.path.join(dirname, "../data/template.dxf"), 'r')
-#     lines = fp.readlines()
-#     fp.close()
-#     i = "ENTITIES\n" in lines
-#     i != 0 || error("ENTITIES section not found")
-# 
-#     # write out header
-#     for j in 1 : i
-#         print(io, lines[j])
-#     end
-# 
-#     # write out the lanes
-#     for (handle_int, lane) in enumerate(roadway.centerlines)
-#         write_lwpolyline(io, lane, handle_int)
-#     end
-# 
-#     # write out tail
-#     for j in i+1 : length(lines)
-#         print(io, lines[j])
-#     end
-# end
+    return roadWay
 
-def write_roadways_to_dxf():
-    roadway_input_80 = RoadwayInputParams(os.path.join(DIR, "../data/boundaries80.txt"),
-                                          os.path.join(DIR, "../data/centerlines80.txt"))
-    roadway_input_101 = RoadwayInputParams(os.path.join(DIR, "../data/boundaries101.txt"),
-                                           os.path.join(DIR, "../data/centerlines101.txt"))
 
-    ngsimroadway_80 = read_roadway(roadway_input_80)
-    ngsimroadway_101 = read_roadway(roadway_input_101)
+def integrate(centerline_path: str, boundary_path: str,
+              dist_threshold_lane_connect: float = 2.0,
+              desired_distance_between_curve_samples: float = 1.0):
+    '''
+    :param centerline_path: center line file path
+    :param boundary_path: boundary file path
+    :param dist_threshold_lane_connect: [m]
+    :param desired_distance_between_curve_samples: [m]
+    :return:
+    '''
+    input_params = RoadwayInputParams(filepath_boundaries=boundary_path, filepath_centerlines=centerline_path)
+    roadway_data = read_roadway(input_params)
+    lane_pts_dict = dict()
+    for (handle_int, lane) in enumerate(roadway_data.centerlines):
+        segid = get_segid(lane)
+        N = len(lane)
+        pts = [None for _ in range(N)]  # VecE2 list
+        for i in range(N):
+            x = lane[i].pos.x
+            y = lane[i].pos.y
+            pts[i] = VecE2.VecE2(x, y)
+        laneid = 1
+        for tag in lane_pts_dict.keys():
+            if tag.segment == segid:
+                laneid += 1
+        lane_pts_dict[roadway.LaneTag(segid, laneid)] = pts
 
-    # open(io->write_dxf(io, ROADWAY_80), os.path.join(DIR, "../data/ngsim_80.dxf"), "w")
-    # open(io->write_dxf(io, ROADWAY_101), os.path.join(DIR, "../data/ngsim_101.dxf"), "w")
+    ###################################################
+    # Shift pts to connect to previous / next pts
 
-# def write_roadways_from_dxf():
-#
-    # roadway_80 = open(io->read_dxf(io, Roadway, dist_threshold_lane_connect=2.0), os.path.join(DIR, "../data/ngsim_80.dxf"), "r")
-    # roadway_101 = open(io->read_dxf(io, Roadway, dist_threshold_lane_connect=2.0), os.path.join(DIR, "../data/ngsim_101.dxf"), "r")
+    lane_next_dict = dict()
+    lane_prev_dict = dict()
 
-    # also converts to meters
-    # convert_curves_feet_to_meters!(roadway_80)
-    # convert_curves_feet_to_meters!(roadway_101)
+    for (tag, pts) in lane_pts_dict.items():
+        # see if can connect to next
+        best_tag = roadway.NULL_LANETAG
+        best_ind = -1
+        best_sq_dist = dist_threshold_lane_connect
+        for (tag2, pts2) in lane_pts_dict.items():
+            if tag2.segment != tag.segment:
+                for (ind, pt) in enumerate(pts2):
+                    sq_dist = VecE2.normsquared(VecE2.VecE2(pt - pts[-1]))
+                    if sq_dist < best_sq_dist:
+                        best_sq_dist = sq_dist
+                        best_ind = ind
+                        best_tag = tag2
+        if best_tag != roadway.NULL_LANETAG:
+            # remove our last pt and set next to pt to their pt
+            pts.pop()
+            lane_next_dict[tag] = (lane_pts_dict[best_tag][best_ind], best_tag)
+            if best_ind == 0:  # set connect prev as well
+                lane_prev_dict[best_tag] = (pts[-1], tag)
 
-    # open(io->write(io, roadway_80), os.path.join(DIR, "../data/ngsim_80.txt"), "w")
-    # open(io->write(io, roadway_101), os.path.join(DIR, "../data/ngsim_101.txt"), "w")
+    for (tag, pts) in lane_pts_dict.items():
+        # see if can connect to prev
+        if tag not in lane_prev_dict.keys():
+            best_tag = roadway.NULL_LANETAG
+            best_ind = -1
+            best_sq_dist = dist_threshold_lane_connect
+            for (tag2, pts2) in lane_pts_dict.items():
+                if tag2.segment != tag.segment:
+                    for (ind, pt) in enumerate(pts2):
+                        sq_dist = VecE2.normsquared(VecE2.VecE2(pt - pts[0]))
+                        if sq_dist < best_sq_dist:
+                            best_sq_dist = sq_dist
+                            best_ind = ind
+                            best_tag = tag2
+            if best_tag != roadway.NULL_LANETAG:
+                lane_prev_dict[tag] = (lane_pts_dict[best_tag][best_ind], best_tag)
 
-ROADWAY_80 = roadway.read_roadway(open(os.path.join(DIR, "../data/ngsim_80.txt"), "r"))
-ROADWAY_101 = roadway.read_roadway(open(os.path.join(DIR, "../data/ngsim_101.txt"), "r"))
+    ###################################################
+    # Build the roadway
+    retval = roadway.Roadway()
+    for (tag, pts) in lane_pts_dict.items():
+        if not retval.has_segment(tag.segment):
+            retval.segments.append(roadway.RoadSegment(tag.segment))
+    lane_new_dict = dict()  # old -> new tag
+    for seg in retval.segments:
+
+        # pull lanetags for this seg
+        lanetags = []  # LaneTag
+        for tag in lane_pts_dict.keys():
+            if tag.segment == seg.id:
+                lanetags.append(tag)
+
+        # sort the lanes such that the rightmost lane is lane 1
+        # do this by taking the first lane,
+        # then project each lane's midpoint to the perpendicular at the midpoint
+
+        assert len(lanetags) != 0
+        proj_positions = [None for _ in range(len(lanetags))]  # list of float
+        first_lane_pts = lane_pts_dict[lanetags[0]]
+        n = len(first_lane_pts)
+        lo = first_lane_pts[n//2 - 1]
+        hi = first_lane_pts[n//2]
+        midpt_orig = (lo + hi) / 2
+        dir = VecE2.polar(1.0, math.atan(hi - lo) + math.pi / 2)  # direction perpendicular (left) of lane
+
+        for (i, tag) in enumerate(lanetags):
+            pts = lane_pts_dict[tag]
+            n = len(pts)
+            midpt = (pts[n//2 - 1] + pts[n//2]) / 2
+            proj_positions[i] = VecE2.proj_(midpt - midpt_orig, dir)
+
+        for (i, j) in enumerate(sorted(range(len(proj_positions)), key=proj_positions.__getitem__)):
+            tag = lanetags[j]
+
+            boundary_left = roadway.LaneBoundary("solid", "white") if i == len(proj_positions) - 1 \
+                else roadway.LaneBoundary("broken", "white")
+
+            boundary_right = roadway.LaneBoundary("solid", "white") if i == 0 \
+                else roadway.LaneBoundary("broken", "white")
+
+            pts = lane_pts_dict[tag]
+            pt_matrix = np.zeros((2, len(pts)))
+            for (k, P) in enumerate(pts):
+                pt_matrix[0, k] = P.x
+                pt_matrix[1, k] = P.y
+            print("fitting curve ", len(pts), "  ")
+            curve = _fit_curve(pt_matrix, desired_distance_between_curve_samples)
+
+            tag_new = roadway.LaneTag(seg.id, len(seg.lanes) + 1)
+            lane = roadway.Lane(tag_new, curve,
+                                boundary_left=boundary_left,
+                                boundary_right=boundary_right)
+            seg.lanes.append(lane)
+            lane_new_dict[tag] = tag_new
+
+    ###################################################
+    # Connect the lanes
+    for (tag_old, tup) in lane_next_dict.items():
+        next_pt, next_tag_old = tup
+        lane = retval.get_by_tag(lane_new_dict[tag_old])
+        next_tag_new = lane_new_dict[next_tag_old]
+        dest = retval.get_by_tag(next_tag_new)
+        roadproj = roadway.proj_1(VecSE2.VecSE2(next_pt, 0.0), dest, retval)
+        print("connecting {} to {}".format(lane.tag, dest.tag))
+        cindS = CurvePt.curveindex_end(lane.curve)
+        cindD = roadproj.curveproj.ind
+
+        if cindD == CurvePt.CURVEINDEX_START:  # a standard connection
+            lane, dest = roadway.connect(lane, dest)
+            # remove any similar connection from lane_prev_dict
+            if next_tag_old in lane_prev_dict.keys() and lane_prev_dict[next_tag_old][1] == tag_old:
+                lane_prev_dict.pop(next_tag_old)
+        else:
+            lane.exits.insert(0, roadway.LaneConnection(True,  cindS, roadway.RoadIndex(cindD, dest.tag)))
+            dest.entrances.append(roadway.LaneConnection(False, cindD, roadway.RoadIndex(cindS, lane.tag)))
+
+    for (tag_old, tup) in lane_prev_dict.items():
+        prev_pt, prev_tag_old = tup
+        lane = retval.get_by_tag(lane_new_dict[tag_old])
+        prev_tag_new = lane_new_dict[prev_tag_old]
+        prev = retval.get_by_tag(prev_tag_new)
+        roadproj = roadway.proj_1(VecSE2.VecSE2(prev_pt, 0.0), prev, retval)
+        print("connecting {} from {}".format(lane.tag, prev.tag))
+        cindS = roadproj.curveproj.ind
+        cindD = CurvePt.CURVEINDEX_START
+        if cindS == CurvePt.curveindex_end(prev.curve):  # a standard connection
+            assert roadway.has_prev(prev)
+            prev, lane = roadway.connect(prev, lane)
+        else:
+            # a standard connection
+            prev.exits.append(roadway.LaneConnection(True,  cindS, roadway.RoadIndex(cindD, lane.tag)))
+            lane.entrances.insert(0, roadway.LaneConnection(False, cindD, roadway.RoadIndex(cindS, prev.tag)))
+
+    retval = convert_curves_feet_to_meters(retval)
+
+
+
+def _fit_curve(pts, desired_distance_between_samples: float, max_iterations: int = 50,
+               epsilon: float = 1e-4, n_intervals_in_arclen: int = 100):
+    assert pts.shape[0] == 2
+    spline_coeffs = fit_cubic_spline(pts)
+    L = calc_curve_length_2(spline_coeffs[0], spline_coeffs[1], n_intervals_per_segment=n_intervals_in_arclen)
+    n = round(L / desired_distance_between_samples) + 1
+    s_arr = np.array([0.0 + i*L/n for i in range(n)])
+    t_arr = calc_curve_param_given_arclen(spline_coeffs[0], spline_coeffs[1], s_arr,
+                                          curve_length=L, max_iterations=max_iterations, epsilon=epsilon,
+                                          n_intervals_in_arclen=n_intervals_in_arclen)
+
+    x_arr = sample_spline_2(spline_coeffs[0], t_arr)
+    y_arr = sample_spline_2(spline_coeffs[1], t_arr)
+    theta_arr = sample_spline_theta_2(spline_coeffs[0], spline_coeffs[1], t_arr)
+
+    k_arr = sample_spline_curvature_2(spline_coeffs[0], spline_coeffs[1], t_arr)
+    kd_arr = sample_spline_derivative_of_curvature_2(spline_coeffs[0], spline_coeffs[1], t_arr)
+
+    # assert(!any(s->isnan(s), s_arr))
+    # assert(!any(s->isnan(s), x_arr))
+    # assert(!any(s->isnan(s), y_arr))
+    # assert(!any(s->isnan(s), θ_arr))
+
+    curve = [None for _ in range(n)]
+    for i in range(n):
+        pos = VecSE2.VecSE2(x_arr[i], y_arr[i], theta_arr[i])
+        curve[i] = CurvePt.CurvePt(pos, s_arr[i], k_arr[i], kd_arr[i])
+
+    return curve
+
+
 
