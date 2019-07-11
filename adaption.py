@@ -576,7 +576,7 @@ if __name__ == '__main__':
     else:
         collect_fn = parallel_collect_trajectories
 
-    orig_traj_file = "2018-11-16-15-54-47_corrected_smoothed_section_6_9.csv"  # TODO: you can change this filename
+    orig_traj_file = "2018-11-16-15-37-21_corrected_smoothed_section_7_19.csv"  # TODO: you can change this filename
 
     lane_file = '{}_lane'.format(orig_traj_file[:19])
     processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
@@ -590,6 +590,8 @@ if __name__ == '__main__':
     j.write_roadways_from_dxf(base_dir)
     print("Finish generating roadway")
     convert_raw_ngsim_to_trajdatas()
+    time.sleep(2)
+    print("Start feature extraction")
     extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
     print("Finish converting and feature extraction")
 
