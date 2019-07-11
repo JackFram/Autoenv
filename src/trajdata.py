@@ -253,6 +253,7 @@ def convert_raw_ngsim_to_trajdatas():
         trajdata = convert(tdraw, roadway)
         print("finish converting")
         outpath = os.path.join(DIR, "../data/trajdata_" + filename)
+        print("save to {}".format(outpath))
         fp = open(outpath, "w")
         trajdata.write(fp)
         fp.close()

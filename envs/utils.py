@@ -215,7 +215,7 @@ def sample_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_res
 
 def select_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_resamples: int = 100, egoid: int = None,
                                      traj_idx: int = None, verbose: bool = True, period_start: int = 0, period_end: int = 100000,
-                                     rseed: int = None):
+                                     rseed: int = None, multiple: bool=False):
     assert traj_idx is not None
     assert egoid is not None
     if rseed is not None:
@@ -232,16 +232,17 @@ def select_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_res
     # print("{} {} {}".format(egoid, ts, te))
     egoids = set([egoid])
     # print("egoids: ")
-    for othid in trajinfos[traj_idx].keys():
-        oth_ts = trajinfos[traj_idx][othid]["ts"]
-        oth_te = trajinfos[traj_idx][othid]["te"]
-        # print("{} {} {}".format(othid, oth_ts, oth_te))
-        ts_ = trajinfos[traj_idx][egoid]["ts"]
-        te_ = trajinfos[traj_idx][egoid]["te"]
-        # other vehicle must start at or before ts and must end at or after te
-        if oth_ts <= ts_ and te_ <= oth_te:
-            # print("pushing " + str(othid) + " into egoids")
-            egoids.add(othid)
+    if multiple:
+        for othid in trajinfos[traj_idx].keys():
+            oth_ts = trajinfos[traj_idx][othid]["ts"]
+            oth_te = trajinfos[traj_idx][othid]["te"]
+            # print("{} {} {}".format(othid, oth_ts, oth_te))
+            ts_ = trajinfos[traj_idx][egoid]["ts"]
+            te_ = trajinfos[traj_idx][egoid]["te"]
+            # other vehicle must start at or before ts and must end at or after te
+            if oth_ts <= ts_ and te_ <= oth_te:
+                # print("pushing " + str(othid) + " into egoids")
+                egoids.add(othid)
     n_veh = len(egoids)
     # print("n_veh: ", n_veh)
     # check that there are enough valid ids from which to select
@@ -269,11 +270,11 @@ def load_ngsim_trajdatas(filepaths, minlength: int=100):
 
     for (i, index_filepath) in enumerate(indexes_filepaths):
         print(index_filepath)
-        if not os.path.isfile(index_filepath):
-            index = index_ngsim_trajectory(filepaths[i], minlength=minlength)
-            # TODO: finish save h5 file
+        # if not os.path.isfile(index_filepath):
+        if True:
+            index = index_ngsim_trajectory(filepaths[i], minlength=minlength, verbose=0)
             ids = list(index.keys())
-            print("index ids: ", ids)
+            # print("index ids: ", ids)
             ts = []
             te = []
             for id in ids:
@@ -306,6 +307,26 @@ def load_ngsim_trajdatas(filepaths, minlength: int=100):
     return trajdatas, indexes, roadways
 
 
+def create_index_file(filepaths, minlength: int=100):
+    indexes_filepaths = [f.replace(".txt", "-index-{}-ids.h5".format(minlength)) for f in filepaths]
+    for (i, index_filepath) in enumerate(indexes_filepaths):
+        print(index_filepath)
+        # if not os.path.isfile(index_filepath):
+        index = index_ngsim_trajectory(filepaths[i], minlength=minlength, verbose=0)
+        ids = list(index.keys())
+        print("index ids: ", ids)
+        ts = []
+        te = []
+        for id in ids:
+            ts.append(index[id]["ts"])
+            te.append(index[id]["te"])
+        file = h5py.File(index_filepath, 'w')
+        file.create_dataset('ids', data=ids)
+        file.create_dataset('ts', data=ts)
+        file.create_dataset('te', data=te)
+        file.close()
+
+
 def load_x_feature_names(filepath, ngsim_filename):
     print("obs feature: h5 file path: {}, ngsim file name: {}".format(filepath, ngsim_filename))
     f = h5py.File(filepath, 'r')
@@ -313,16 +334,23 @@ def load_x_feature_names(filepath, ngsim_filename):
     traj_id = NGSIM_FILENAME_TO_ID[ngsim_filename]
     # in case this nees to allow for multiple files in the future
     traj_ids = [traj_id]
+    veh_2_index = dict()
     for i in traj_ids:
-        if str(i) in f.keys():
-            xs.append(f[str(i)])
+        feature_name = str(i) + "_feature"
+        index_name = str(i) + "_index"
+        if feature_name in f.keys():
+            xs.append(f[feature_name])
         else:
-            raise ValueError('invalid key to trajectory data: {}'.format(i))
+            raise ValueError('invalid key to trajectory data: {}_feature'.format(i))
+        if index_name in f.keys():
+            veh_2_index[i] = f[index_name]
+        else:
+            raise ValueError('invalid key to trajectory index: {}_index'.format(i))
     x = np.concatenate(xs)
     feature_names = []
     for feature_name in f.attrs['feature_names']:
         feature_names.append(feature_name.decode())
-    return x, feature_names
+    return x, veh_2_index, feature_names
 
 
 def compute_lengths(arr):
@@ -508,7 +536,7 @@ def cal_overall_rmse(error, verbose=False):
         print("avg dx: ", avg_dx)
         print("avg dy: ", avg_dy)
         print("avg dist: ", avg_dist)
-    return avg_dx, avg_dy, avg_dist
+    return {"dx": avg_dx, "dy": avg_dy, "dist": avg_dist}
 
 
 def cal_step_rmse(error, i, verbose=False):
@@ -618,7 +646,7 @@ def cal_agent_rmse(error, k, verbose=False, lookahead_span=10):
     print("look ahead avg dx: ", step_error_dx)
     print("look ahead avg dy: ", step_error_dy)
     print("look ahead avg dist: ", step_error_dist)
-    return avg_dx, avg_dy, avg_dist
+    return {"dx": avg_dx, "dy": avg_dy, "dist": avg_dist}
 
 
 def cal_m_stability(error, h=50, T=150, e=0.1, verbose=False):
@@ -639,6 +667,35 @@ def cal_m_stability(error, h=50, T=150, e=0.1, verbose=False):
                 break
         error_time.append(step)
     return error_time
+
+
+def print_error(error: list):
+    n = len(error)
+    overall_rmse_dx = 0
+    overall_rmse_dy = 0
+    overall_rmse_dist = 0
+    lookahead_rmse_dx = [0 for _ in range(10)]
+    lookahead_rmse_dy = [0 for _ in range(10)]
+    lookahead_rmse_dist = [0 for _ in range(10)]
+
+    for i in range(n):
+        overall_rmse_dx += error[i]["overall_rmse"]["dx"]
+        overall_rmse_dy += error[i]["overall_rmse"]["dy"]
+        overall_rmse_dist += error[i]["overall_rmse"]["dist"]
+        for j in range(10):
+            lookahead_rmse_dx[j] += error[i]["lookahead_rmse"]["dx"][j]/n
+            lookahead_rmse_dy[j] += error[i]["lookahead_rmse"]["dy"][j]/n
+            lookahead_rmse_dist[j] += error[i]["lookahead_rmse"]["dist"][j]/n
+
+    print("Overall RMSE:")
+    print("dx: {} dy: {} dist: {}, [m]".format(overall_rmse_dx / n, overall_rmse_dy / n, overall_rmse_dist / n))
+    print("Lookahead RMSE:")
+    print("dx: ", lookahead_rmse_dx)
+    print("dy: ", lookahead_rmse_dy)
+    print("dist: ", lookahead_rmse_dist)
+
+
+
 
 
 

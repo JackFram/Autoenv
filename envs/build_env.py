@@ -67,10 +67,11 @@ def build_ngsim_env(
     print(env_params)
     env = Env(env_id=env_id, env_params=env_params)
     low, high = env.action_space.low, env.action_space.high
+    trajinfos = env.trajinfos
     env = TfEnv(normalize_wrapper(env, normalize_obs=True, obs_alpha=alpha))
     # get low and high values for normalizing _real_ actions
     add_kwargs_to_reset(env)
-    return env, low, high
+    return env, trajinfos, low, high
 
 
 def build_reward_handler(args, writer=None):

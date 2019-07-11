@@ -19,6 +19,7 @@ def make_env(env_id: str, env_params: dict):
 class Env:
     def __init__(self, env_id, env_params):
         self.env = make_env(env_id, env_params)
+        self.trajinfos = self.env.trajinfos
         self._observation_space = build_space(*(self.env.observation_space_spec()))
         self._action_space = build_space(*(self.env.action_space_spec()))
 

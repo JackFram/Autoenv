@@ -81,6 +81,16 @@ python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent Tru
 
 ```
 
+## Automated running ( data preprocessing included )
+- First put all of your raw trajectory.csv data and lane.csv data under directory
+~/Autoenv/preprocessing/data
+- Change orig_traj_file(variable) path in ~/Autoenv/adaption.py
+- Finally run one step code in project root directory ~/Autoenv
+```bash
+python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent True --n_envs 1 --adapt_steps 1
+```
+
+
 
 
 

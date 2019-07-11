@@ -13,6 +13,13 @@ class VecE2:
         print("VecE2({:.3f}, {:.3f})".format(self.x, self.y))
 
     def atan(self):
+        if self.x == 0:
+            if self.y > 0:
+                return math.pi/2
+            elif self.y < 0:
+                return -math.pi/2
+            else:
+                return 0
         return math.atan(self.y/self.x)
 
     def hypot(self):
@@ -35,6 +42,9 @@ class VecE2:
 
     def __neg__(self):
         return VecE2(-self.x, -self.y)
+
+    def __truediv__(self, scaler: int):
+        return VecE2(self.x/scaler, self.y/scaler)
 
 
 def polar(r, theta):

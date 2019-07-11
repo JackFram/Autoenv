@@ -3,10 +3,12 @@ import numpy as np
 import os
 import pickle as pk
 import argparse
+from src.const import DIR
 
-data_dir = "./data"
-processed_dir = "./processed_data"
-final_dir = "./final_data"
+data_dir = os.path.join(DIR, "../preprocessing/data")
+processed_dir = os.path.join(DIR, "../preprocessing/processed_data")
+final_dir = os.path.join(DIR, "../data")
+lane_dir = os.path.join(DIR, "../preprocessing/lane")
 
 
 def clean_data(filename: str):
@@ -23,8 +25,9 @@ def clean_data(filename: str):
     columnsTitles = ["Global_X", "Global_Y"]
     df[["Global_Y", "Global_X"]] = df.reindex(columns=columnsTitles)
     df = df.loc[df['Valid'] == True]
-    df.to_csv('holo_data_downsampled.csv', index=False)
-    df = pd.read_csv('holo_data_downsampled.csv')
+    down_sample_fn = os.path.join(data_dir, 'holo_data_downsampled.csv')
+    df.to_csv(down_sample_fn, index=False)
+    df = pd.read_csv(down_sample_fn)
 
     # Correct vehicle frames for continuity
     used_id = set(list(df['Vehicle_ID']))
@@ -67,8 +70,8 @@ def clean_data(filename: str):
             id_map[v_id] = id_cnt
             r_id_map[id_cnt] = v_id
             v_id = id_map[v_id]
-        if v_id != r.Vehicle_ID:
-            print(i, ' ', v_id, ' ', r.Vehicle_ID)
+        # if v_id != r.Vehicle_ID:
+        #     print(i, ' ', v_id, ' ', r.Vehicle_ID)
         df.at[i, 'Vehicle_ID'] = v_id
 
         if v_id not in vehicles.keys():
@@ -162,13 +165,12 @@ def create_lane(filename: str):
         # plt.savefig(file_name + '.png')
         #     plt.scatter(lane[:,0], lane[:,1])
         #     plt.savefig(file_name + '_original.png')
-
-        f = open('lane' + str(k) + '.pk', 'wb')
+        f = open(os.path.join(lane_dir, ('lane' + str(k) + '.pk')), 'wb')
         pk.dump(lane, f)
     # plt.show()
     lanes = dict()
     for i in range(lane_cnt):
-        f = open('lane' + str(i) + '.pk', 'rb')
+        f = open(os.path.join(lane_dir, ('lane' + str(i) + '.pk')), 'rb')
         lanes[i] = pk.load(f)
 
     centers = {}
@@ -198,8 +200,8 @@ def create_lane(filename: str):
     # plt.xlim(5300 + 1.453e7, 5600 + 1.453e7)
     # plt.ylim(1520000, 1522000)
     # plt.show()
-
-    f = open('boundariesHOLO.txt', 'wb')
+    boundary_fn = os.path.join(final_dir, 'boundariesHOLO.txt')
+    f = open(boundary_fn, 'wb')
     f.write(b'BOUNDARIES\n')
     f.write((str((lane_cnt - 1) * 2) + '\n').encode())
     for i in range(lane_cnt - 1):
@@ -210,9 +212,9 @@ def create_lane(filename: str):
         f.write((str(len(lanes[i + 1])) + '\n').encode())
         np.savetxt(f, lanes[i + 1], fmt=(' %.5f %.5f'))
     f.close()
-    print("boundariesHOLO.txt has been saved to current directory")
-
-    f = open('centerlinesHOLO.txt', 'wb')
+    print("boundariesHOLO.txt has been saved to {}".format(boundary_fn))
+    centerline_fn = os.path.join(final_dir, 'centerlinesHOLO.txt')
+    f = open(centerline_fn, 'wb')
     f.write(b'CENTERLINES\n')
     f.write((str(lane_cnt - 1) + '\n').encode())
     for i in range(lane_cnt - 1):
@@ -221,7 +223,7 @@ def create_lane(filename: str):
         f.write((str(len(lanes[i])) + '\n').encode())
         np.savetxt(f, centers[i], fmt=(' %.5f %.5f'))
     f.close()
-    print("centerlinesHOLO.txt has been saved to current directory")
+    print("centerlinesHOLO.txt has been saved to {}".format(centerline_fn))
 
 
 if __name__ == "__main__":

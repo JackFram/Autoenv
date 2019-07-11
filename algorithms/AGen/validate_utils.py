@@ -5,17 +5,19 @@ import tensorflow as tf
 from envs import hyperparams
 from envs.make import make_env
 from algorithms.AGen.my_gaussian_gru_policy import myGaussianGRUPolicy
+from src.const import NGSIM_FILENAME_TO_ID
 
-NGSIM_FILENAME_TO_ID = {
-    'trajdata_i101_trajectories-0750am-0805am.txt': 1,
-    'trajdata_i101-22agents-0750am-0805am.txt': 1
-}
+# NGSIM_FILENAME_TO_ID = {
+#     'trajdata_i101_trajectories-0750am-0805am.txt': 1,
+#     'trajdata_i101-22agents-0750am-0805am.txt': 1,
+#     'trajdata_holo_trajectories.txt': 0
+# }
 
 
 def load_validate_data(
         filepath,
         act_keys=['accel', 'turn_rate_global'],
-        ngsim_filename='trajdata_i101_trajectories-0750am-0805am.txt',
+        ngsim_filename='trajdata_holo_trajectories.txt',
         debug_size=None,
         min_length=50,
         normalize_data=True,
@@ -24,13 +26,14 @@ def load_validate_data(
         act_high=1,
         clip_std_multiple=np.inf):
     # loading varies based on dataset type
-    x, feature_names = utils.load_x_feature_names(filepath, ngsim_filename)
+    x, veh_2_index, feature_names = utils.load_x_feature_names(filepath, ngsim_filename)
     print('Load validate data')
     print(x.shape)
 
     # no need to flatten
     obs = x
     print(feature_names)
+    print(veh_2_index[0])
     act_idxs = [i for (i, n) in enumerate(feature_names) if n in act_keys]
     act = x[:, :, act_idxs]
 
@@ -48,7 +51,7 @@ def load_validate_data(
         actions=act,
         obs_mean=obs_mean,
         obs_std=obs_std,
-    )
+    ), veh_2_index
 
 
 def normalize(x, clip_std_multiple=np.inf):
@@ -128,7 +131,7 @@ def get_multiagent_ground_truth(ngsim_filename: str, h5_filename: str):
     # env, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=True)
     act_low = np.array([-4, -0.15])
     act_high = np.array([4, 0.15])
-    data = load_validate_data(
+    data, veh_2_index = load_validate_data(
         h5_filename,
         act_low=act_low,
         act_high=act_high,
@@ -137,7 +140,7 @@ def get_multiagent_ground_truth(ngsim_filename: str, h5_filename: str):
         ngsim_filename=ngsim_filename
     )
 
-    return data
+    return data, veh_2_index[NGSIM_FILENAME_TO_ID[ngsim_filename]]
 
 
 if __name__ == '__main__':

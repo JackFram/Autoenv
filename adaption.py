@@ -8,6 +8,7 @@ import tensorflow as tf
 import time
 # import random
 import pickle
+import julia
 
 backend = 'TkAgg'
 import matplotlib
@@ -25,6 +26,9 @@ from envs import hyperparams, utils, build_env
 
 from envs.utils import str2bool
 from algorithms.AGen import rls, validate_utils
+from preprocessing.clean_holo import clean_data, csv2txt, create_lane
+from preprocessing.extract_feature import extract_ngsim_features
+from src.trajdata import convert_raw_ngsim_to_trajdatas
 # import pdb
 import math
 import tqdm
@@ -33,7 +37,6 @@ import tqdm
 plt.style.use("ggplot")
 
 # TODO: change this accordingly
-EGOID_TO_INDEX = {}
 EGO_START_FRAME = 1106
 N_VEH = 1
 EGO_ID = 1978
@@ -52,18 +55,19 @@ def online_adaption(
         env_kwargs=dict(),
         lbd=0.99,
         adapt_steps=1,
-        nids = 1):
+        nids=1,
+        trajinfos=None):
 
     if len(obs.shape) == 2:
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
-
+    assert trajinfos is not None
     start_time = time.time()
     theta = np.load('./data/theta.npy')  # TODO: change the file path
     theta = np.mean(theta)
 
-    ego_start_frame = EGO_START_FRAME
-    maxstep = MAX_STEP
+    ego_start_frame = trajinfos[env_kwargs['egoid']]['ts']
+    maxstep = trajinfos[env_kwargs['egoid']]['te'] - trajinfos[env_kwargs['egoid']]['ts'] - 50
 
     env_kwargs['start'] = ego_start_frame
     x = env.reset(**env_kwargs)
@@ -151,7 +155,8 @@ def online_adaption(
     with open("./m_stability.pkl", "wb") as fp:
         pickle.dump(m_stability, fp)
         print("finish saving M stability matrix.")
-    utils.cal_overall_rmse(error, verbose=True)
+    error_info = dict()
+    error_info["overall_rmse"] = utils.cal_overall_rmse(error, verbose=True)
     rmse_over_lookahead_dx = []
     rmse_over_lookahead_dy = []
     rmse_over_lookahead_dist = []
@@ -168,14 +173,17 @@ def online_adaption(
     print(rmse_over_lookahead_dy[:10])
     print("rmse over look ahead dist:")
     print(rmse_over_lookahead_dist[:10])
+    error_info["lookahead_rmse"] = {"dx": rmse_over_lookahead_dx, "dy": rmse_over_lookahead_dy,
+                                    "dist": rmse_over_lookahead_dist}
 
+    error_info["agent_rmse"] = []
     for i in range(n_agents):
-        utils.cal_agent_rmse(error, i, verbose=True)
+        error_info["agent_rmse"].append(utils.cal_agent_rmse(error, i, verbose=True))
 
     print('obs.shape')
     print(obs.shape)
 
-    return predicted_trajs
+    return predicted_trajs, error_info
 
 
 def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids):
@@ -252,7 +260,8 @@ def collect_trajectories(
     print('args')
     print(args)
     start_time = time.time()
-    env, _, _ = env_fn(args, n_veh=N_VEH, alpha=0.)
+    env, trajinfos, _, _ = env_fn(args, n_veh=N_VEH, alpha=0.)
+    print(trajinfos[0])
 
     policy = policy_fn(args, env)
     end_time = time.time()
@@ -278,9 +287,11 @@ def collect_trajectories(
         # collect trajectories
         egoids = np.unique(egoids)
         nids = len(egoids)
-
+        veh_2_index = {}
         if args.env_multiagent:
-            data = validate_utils.get_multiagent_ground_truth(args.ngsim_filename, args.h5_filename)
+            data, index = validate_utils.get_multiagent_ground_truth(args.ngsim_filename, args.h5_filename)
+            for i, idx in enumerate(index):
+                veh_2_index[idx] = i
         else:
             data = validate_utils.get_ground_truth(args.ngsim_filename, args.h5_filename)
             sample = np.random.choice(data['observations'].shape[0], 2)
@@ -291,29 +302,39 @@ def collect_trajectories(
         if args.env_multiagent:
             # I add not because single simulation has no orig_x etc.
             # egoid = random.choice(egoids)
-            if random_seed:
-                kwargs = dict(random_seed=random_seed + egoids[0])
+            trajinfos = trajinfos[0]
+            error = []
+            for veh_id in trajinfos.keys():
+                if trajinfos[veh_id]["te"] - trajinfos[veh_id]["ts"] <= 50:
+                    break
+                if random_seed:
+                    kwargs = dict(random_seed=random_seed + veh_id)
+                print("egoid: {}, ts: {}, te: {}".format(veh_id, trajinfos[veh_id]["ts"], trajinfos[veh_id]["te"]))
+                print("data index is {}".format(veh_2_index[veh_id]))
+                kwargs['egoid'] = veh_id
+                kwargs['traj_idx'] = 0
 
-            kwargs['egoid'] = EGO_ID
-            kwargs['traj_idx'] = 0
+                traj, error_info = online_adaption(
+                    env,
+                    policy,
+                    max_steps=max_steps,
+                    obs=data['observations'][[veh_2_index[veh_id]], :, :],
+                    mean=data['actions'][[veh_2_index[veh_id]], :, :],
+                    env_kwargs=kwargs,
+                    lbd=lbd,
+                    adapt_steps=adapt_steps,
+                    nids=nids,
+                    trajinfos=trajinfos
+                )
 
-            traj = online_adaption(
-                env,
-                policy,
-                max_steps=max_steps,
-                obs=data['observations'][DATA_INDEX, :, :],
-                mean=data['actions'][DATA_INDEX, :, :],
-                env_kwargs=kwargs,
-                lbd=lbd,
-                adapt_steps=adapt_steps,
-                nids=nids
-            )
-            trajlist.append(traj)
+                trajlist.append(traj)
+                error.append(error_info)
+            utils.print_error(error)
         else:
             # for i in sample:
             for i, egoid in enumerate(egoids):
                 sys.stdout.write('\rpid: {} traj: {} / {}\n'.format(pid, i, nids))
-                index = EGOID_TO_INDEX[egoid]
+                index = veh_2_index[egoid]
                 traj = online_adaption(
                     env,
                     policy,
@@ -479,8 +500,8 @@ def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngs
     print("ids_filename")
     print(ids_filename)
     ids_filepath = os.path.join(basedir, ids_filename)
-    if not os.path.exists(ids_filepath):
-        print("creating ids file")
+    if True:
+        print("Creating ids file")
         # this should create the ids file
         env_fn(args)
         if not os.path.exists(ids_filepath):
@@ -494,11 +515,13 @@ def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngs
     start_times_filename = filename.replace('.txt', '-index-{}-starts.h5'.format(offset))
     start_times_filepath = os.path.join(basedir, start_times_filename)
     # check if start time filepath exists
-    if os.path.exists(start_times_filepath):
+    # if os.path.exists(start_times_filepath):
+    if False:
         # load them in
         starts = np.array(h5py.File(start_times_filepath, 'r')['starts'].value)
     # otherwise, sample the start times and save them
     else:
+        print("Creating starts file")
         ids_file = h5py.File(ids_filepath, 'r')
         ts = ids_file['ts'].value
         # subtract offset gives valid end points
@@ -535,6 +558,8 @@ if __name__ == '__main__':
     parser.add_argument('--adapt_steps', type=int, default=1)
 
     run_args = parser.parse_args()
+    j = julia.Julia()
+    j.using("NGSIM")
 
     args_filepath = "./args/params.npz"
     if os.path.isfile(args_filepath):
@@ -551,53 +576,60 @@ if __name__ == '__main__':
     else:
         collect_fn = parallel_collect_trajectories
 
-    filenames = [
-        # "trajdata_i101_trajectories-0750am-0805am.txt"
-        # "trajdata_i101-22agents-0750am-0805am.txt"
-        "trajdata_holo_trajectories.txt" #  TODO: change the data name accordingly.
-    ]
+    orig_traj_file = "2018-11-16-15-54-47_corrected_smoothed_section_6_9.csv"  # TODO: you can change this filename
 
-    h5names = [
-        # './data/trajectories/ngsim_22agents.h5'
-        './data/trajectories/ngsim_holo_new.h5'  # TODO: change the data name accordingly.
-    ]
+    lane_file = '{}_lane'.format(orig_traj_file[:19])
+    processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
+    clean_data(orig_traj_file)
+    csv2txt(processed_data_path)
+    create_lane(lane_file)
+    print("Finish cleaning the original data")
+    print("Start generating roadway")
+    base_dir = os.path.expanduser('~/Autoenv/data/')
+    j.write_roadways_to_dxf(base_dir)
+    j.write_roadways_from_dxf(base_dir)
+    print("Finish generating roadway")
+    convert_raw_ngsim_to_trajdatas()
+    extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
+    print("Finish converting and feature extraction")
+
+    fn = "trajdata_holo_trajectories.txt"
+
+    hn = './data/trajectories/ngsim_holo_new.h5'
 
     if run_args.n_envs:
         args.n_envs = run_args.n_envs
     # args.env_H should be 200
     sys.stdout.write('{} vehicles with H = {}\n'.format(args.n_envs, args.env_H))
 
-    for i in range(len(filenames)):
-        fn = filenames[i]
-        hn = h5names[i]
-        args.ngsim_filename = fn
-        args.h5_filename = hn
-        if args.env_multiagent:
-            # args.n_envs gives the number of simultaneous vehicles
-            # so run_args.n_multiagent_trajs / args.n_envs gives the number
-            # of simulations to run overall
-            # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
-            # starts = dict()
-            egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
-        else:
-            egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+    args.ngsim_filename = fn
+    args.h5_filename = hn
+    if args.env_multiagent:
+        # args.n_envs gives the number of simultaneous vehicles
+        # so run_args.n_multiagent_trajs / args.n_envs gives the number
+        # of simulations to run overall
+        # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
+        #  starts = dict()
+        egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+    else:
+        egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
 
-        print("egoids")
-        print(egoids)
-        print("starts")
-        print(starts)
+    print("egoids")
+    print(egoids)
+    print("starts")
+    print(starts)
 
-        collect(
-            egoids,
-            starts,
-            args,
-            exp_dir=run_args.exp_dir,
-            max_steps=200,
-            params_filename=run_args.params_filename,
-            use_hgail=run_args.use_hgail,
-            n_proc=run_args.n_proc,
-            collect_fn=collect_fn,
-            random_seed=run_args.random_seed,
-            lbd=run_args.lbd,
-            adapt_steps=run_args.adapt_steps
-        )
+    collect(
+        egoids,
+        starts,
+        args,
+        exp_dir=run_args.exp_dir,
+        max_steps=200,
+        params_filename=run_args.params_filename,
+        use_hgail=run_args.use_hgail,
+        n_proc=run_args.n_proc,
+        collect_fn=collect_fn,
+        random_seed=run_args.random_seed,
+        lbd=run_args.lbd,
+        adapt_steps=run_args.adapt_steps
+    )

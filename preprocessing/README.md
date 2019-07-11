@@ -9,6 +9,7 @@ python clean_holo.py --traj_path "your raw trajectory data" --lane_path "your la
 cd ~/.julia/packages/NGSIM/OX1F/data  # OX1F maybe replaced by other version control number
 cp ~/AutoEnv/preprocessing/centerlinesHOLO.txt ./
 cp ~/AutoEnv/preprocessing/boundariesHOLO.txt ./
+cd ~/Autoenv/data/
 cp ~/AutoEnv/preprocessing/final_data/holo_trajectories.txt ./
 
 # use julia to do lane conversion
@@ -23,7 +24,6 @@ julia
 in ~/Autoenv directory
 ```bash
 python
->> using NGSIM
 >> from src.trajdata import convert_raw_ngsim_to_trajdatas
 >> convert_raw_ngsim_to_trajdatas()
 ```
@@ -32,7 +32,7 @@ Notice: in ~/Autoenv/src/const.py change file path accordingly
 ```bash
 
 python
->> from preprocessing import extract_feature
+>> from preprocessing.extract_feature import extract_ngsim_features
 >> extract_feature.extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
 
 # change the file path in each python file accordingly

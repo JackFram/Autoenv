@@ -38,14 +38,13 @@ def extract_features(ext, trajdata, roadway, timestep_delta, record_length, offs
             veh = scene[vidx]
             veh_list[veh.id] = 0
 
-    print(list(veh_list.keys()))
+    # print(list(veh_list.keys()))
 
-    for frame in tqdm.tqdm(range(offset, (n_frames - offset + 1))):
+    for frame in tqdm.tqdm(range(offset, n_frames)):
         ctr += 1
         if maxframes is not None and ctr >= maxframes:
             break
         # print("\rframe {} / {}\n".format(frame, (n_frames - offset)))
-
         # update the rec
         scene = get_scene(scene, trajdata, frame)
         rec.update(scene)
@@ -82,11 +81,13 @@ def write_features(features, output_filepath, ext):
     h5file = h5py.File(output_filepath, "w")
     for (traj_idx, feature_dict) in features.items():
         feature_array = np.zeros((len(feature_dict), maxlen, n_features))
+        veh_2_index = list()
         for (idx, (veh_id, veh_features)) in enumerate(feature_dict.items()):
-            print("idx: {} veh_id: {}".format(idx, veh_id))
+            veh_2_index.append(veh_id)
             feature_array[[idx], 0:veh_features.shape[0], :] = veh_features.reshape(1, veh_features.shape[0], n_features)
-        h5file["{}".format(traj_idx)] = feature_array
-        print(feature_array[132, 3, :])
+        # print(veh_2_index)
+        h5file["{}_feature".format(traj_idx)] = feature_array
+        h5file["{}_index".format(traj_idx)] = np.array(veh_2_index)
     # write feature names
     feature_names_encode = []
     for subext in ext.feature_names():
@@ -96,7 +97,7 @@ def write_features(features, output_filepath, ext):
 
 
 def extract_ngsim_features(timestep_delta=1, record_length=10, offset=50, prime=10, maxframes=None,
-                           output_filename="ngsim.h5", n_expert_files=1):
+                           output_filename="ngsim_holo_new.h5", n_expert_files=1):
     '''
     :param timestep_delta: timesteps between feature extractions
     :param record_length: number of frames for record to track in the past

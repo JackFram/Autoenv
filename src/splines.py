@@ -1,11 +1,13 @@
 import numpy as np
 import math
+from scipy.sparse import linalg, lil_matrix
+import tqdm
 
 
 def _fit_open(pts):
     d, n = pts.shape
     n -= 1
-    Y = np.array([None for _ in range(n+1)])
+    Y = np.array([None for _ in range(n+1)], dtype='float')
     M = np.zeros((n+1, n+1))
     for i in range(n):
         M[i, i] = 4.0
@@ -13,14 +15,14 @@ def _fit_open(pts):
         M[i + 1, i] = 1.0
     M[n, n] = 2.0
     M[0, 0] = 2.0
+    M = lil_matrix(M)
     retval = [None for _ in range(d)]
     for k in range(d):
         for i in range(n+1):
             ind_hi = min(i + 1, n - 1)
             ind_lo = max(0, i - 1)
             Y[i] = 3 * (pts[k, ind_hi] - pts[k, ind_lo])
-
-        D = np.linalg.lstsq(M, Y)[0]
+        D = linalg.lsqr(M, Y)[0]
         spline_coeffs = np.zeros((4, n))
         spline_coeffs[0, :] = pts[k, :n]  # x₀
         spline_coeffs[1, :] = D[:n]  # x'₀
@@ -85,7 +87,9 @@ def calc_curve_length_2(spline_coeffs_x, spline_coeffs_y, n_intervals_per_segmen
     assert spline_coeffs_x.shape[0] == 4 and spline_coeffs_y.shape[0] == 4
     len = 0.0
     for i in range(n):
+        print("cal curve length: {}/{}".format(i, n))
         len += calc_curve_length_1(spline_coeffs_x[:, i], spline_coeffs_y[:, i], n_intervals=n_intervals_per_segment)
+    return len
 
 
 def calc_curve_param_given_arclen(spline_coeffs_x, spline_coeffs_y, s_arr, max_iterations: int = 50,
@@ -104,8 +108,7 @@ def calc_curve_param_given_arclen(spline_coeffs_x, spline_coeffs_y, s_arr, max_i
     lo = 0.0
     # print("L: ", curve_length)
     # print("s_max: ", s_arr[-1])
-    for (i, s) in enumerate(s_arr):
-        # print("\ns: ", s)
+    for (i, s) in tqdm.tqdm(enumerate(s_arr)):
         if s <= 0.0:
             t = 0.0
             t_arr[i] = lo = t

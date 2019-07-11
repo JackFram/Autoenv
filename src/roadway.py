@@ -93,10 +93,10 @@ def read_centerlines(filepath_centerlines: str):
         for j in range(1, npts - 1):
             s = centerline[j - 1].s + (line[j] - line[j - 1]).hypot()
             theta = ((line[j] - line[j - 1]).atan() + (line[j + 1] - line[j]).atan())/2  # mean angle
-            centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[j], theta), s))
+            centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[j].x, line[j].y, theta), s))
         s = centerline[npts - 2].s + (line[npts - 1] - line[npts - 2]).hypot()
         theta = (line[npts - 1] - line[npts - 2]).atan()
-        centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[npts - 1], theta), s))
+        centerline.append(CurvePt.CurvePt(VecSE2.VecSE2(line[npts - 1].x, line[npts - 1].y, theta), s))
         retval[name] = centerline
     return retval
 
@@ -104,7 +104,7 @@ def read_centerlines(filepath_centerlines: str):
 def read_roadway(input_params: RoadwayInputParams):
     boundaries = read_boundaries(input_params.filepath_boundaries)
     centerlines = read_centerlines(input_params.filepath_centerlines)
-    name = os.path.splitext(os.path.split('../data/centerlines80.txt')[1])[0]
+    name = os.path.splitext(os.path.split('../data/centerlinesHOLO.txt')[1])[0]
     return NGSIMRoadway(name, boundaries, list(centerlines.values()))
 
 
@@ -127,7 +127,7 @@ def convert_curves_feet_to_meters(roadWay: roadway.Roadway):
     return roadWay
 
 
-def integrate(centerline_path: str, boundary_path: str,
+def integrate(centerline_fn: str, boundary_fn: str,
               dist_threshold_lane_connect: float = 2.0,
               desired_distance_between_curve_samples: float = 1.0):
     '''
@@ -137,8 +137,11 @@ def integrate(centerline_path: str, boundary_path: str,
     :param desired_distance_between_curve_samples: [m]
     :return:
     '''
+    centerline_path = os.path.join(DIR, "../data/", centerline_fn)
+    boundary_path = os.path.join(DIR, "../data/", boundary_fn)
     input_params = RoadwayInputParams(filepath_boundaries=boundary_path, filepath_centerlines=centerline_path)
     roadway_data = read_roadway(input_params)
+    print("Finish loading centerlines and boundaries.")
     lane_pts_dict = dict()
     for (handle_int, lane) in enumerate(roadway_data.centerlines):
         segid = get_segid(lane)
@@ -223,7 +226,7 @@ def integrate(centerline_path: str, boundary_path: str,
         lo = first_lane_pts[n//2 - 1]
         hi = first_lane_pts[n//2]
         midpt_orig = (lo + hi) / 2
-        dir = VecE2.polar(1.0, math.atan(hi - lo) + math.pi / 2)  # direction perpendicular (left) of lane
+        dir = VecE2.polar(1.0, (hi - lo).atan() + math.pi / 2)  # direction perpendicular (left) of lane
 
         for (i, tag) in enumerate(lanetags):
             pts = lane_pts_dict[tag]
@@ -296,7 +299,6 @@ def integrate(centerline_path: str, boundary_path: str,
     retval = convert_curves_feet_to_meters(retval)
 
 
-
 def _fit_curve(pts, desired_distance_between_samples: float, max_iterations: int = 50,
                epsilon: float = 1e-4, n_intervals_in_arclen: int = 100):
     assert pts.shape[0] == 2
@@ -311,9 +313,12 @@ def _fit_curve(pts, desired_distance_between_samples: float, max_iterations: int
     x_arr = sample_spline_2(spline_coeffs[0], t_arr)
     y_arr = sample_spline_2(spline_coeffs[1], t_arr)
     theta_arr = sample_spline_theta_2(spline_coeffs[0], spline_coeffs[1], t_arr)
+    print("Finish sampling theta")
 
     k_arr = sample_spline_curvature_2(spline_coeffs[0], spline_coeffs[1], t_arr)
     kd_arr = sample_spline_derivative_of_curvature_2(spline_coeffs[0], spline_coeffs[1], t_arr)
+
+    print("Finish sampling curvature")
 
     # assert(!any(s->isnan(s), s_arr))
     # assert(!any(s->isnan(s), x_arr))
