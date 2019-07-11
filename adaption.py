@@ -151,10 +151,10 @@ def online_adaption(
     # print(('env step time: %s Seconds' % (step_time / maxstep)))
 
     # test
-    m_stability = utils.cal_m_stability(error, T=150)
-    with open("./m_stability.pkl", "wb") as fp:
-        pickle.dump(m_stability, fp)
-        print("finish saving M stability matrix.")
+    # m_stability = utils.cal_m_stability(error, T=150)
+    # with open("./m_stability.pkl", "wb") as fp:
+    #     pickle.dump(m_stability, fp)
+    #     print("finish saving M stability matrix.")
     error_info = dict()
     error_info["overall_rmse"] = utils.cal_overall_rmse(error, verbose=True)
     rmse_over_lookahead_dx = []
@@ -618,6 +618,10 @@ if __name__ == '__main__':
     print(egoids)
     print("starts")
     print(starts)
+
+    if len(egoids) == 0:
+        print("No valid vehicles, exit")
+        exit(0)
 
     collect(
         egoids,
