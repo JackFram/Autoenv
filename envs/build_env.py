@@ -64,7 +64,7 @@ def build_ngsim_env(
         env_id = "NGSIMEnv"
         normalize_wrapper = normalize_env
 
-    print(env_params)
+    # print(env_params)
     env = Env(env_id=env_id, env_params=env_params)
     low, high = env.action_space.low, env.action_space.high
     trajinfos = env.trajinfos

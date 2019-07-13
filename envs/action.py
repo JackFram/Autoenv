@@ -27,12 +27,15 @@ def propagate(veh: Vehicle, action: AccelTurnrate, roadway: Roadway, delta_t: fl
     :return:
     '''
     a = action.a  # accel
+
     omega = action.omega  # turnrate
 
     x = veh.state.posG.x
     y = veh.state.posG.y
     theta = veh.state.posG.theta
     v = veh.state.v
+
+    # print("originial x: {} y: {} theta: {}, v: {}".format(x, y, theta, v))
 
     sigma_t = delta_t / n_integration_steps
 
@@ -42,6 +45,7 @@ def propagate(veh: Vehicle, action: AccelTurnrate, roadway: Roadway, delta_t: fl
         theta += omega * sigma_t
         v += a * sigma_t
 
+    # print("propagated x: {} y: {} theta: {}, v: {}".format(x, y, theta, v))
     posG = VecSE2(x, y, theta)
 
     retval = VehicleState()

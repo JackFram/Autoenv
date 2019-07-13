@@ -8,6 +8,7 @@ from envs.action import AccelTurnrate, propagate
 from src.Vec.VecE2 import norm
 import copy
 import numpy as np
+from envs.utils import normalize
 
 
 class MultiAgentAutoEnv:
@@ -43,6 +44,7 @@ class MultiAgentAutoEnv:
         infos_cache::Dict # cache for infos intermediate results
 
         '''
+
         param_keys = params.keys()
         assert "trajectory_filepaths" in param_keys
 
@@ -184,7 +186,10 @@ class MultiAgentAutoEnv:
         self.t += self.primesteps + 1
         # enforce a maximum horizon
         self.h = min(self.h, self.t + self.H)
-        return self.get_features()
+        features = self.get_features()
+        # print("env reset features: ", features)
+        # print("reset frame: {}".format(self.t))
+        return features
 
     def _step(self, action: list):
         # make sure number of actions passed in equals number of vehicles
@@ -205,6 +210,7 @@ class MultiAgentAutoEnv:
             self.ego_vehs[i] = Vehicle(ego_state, ego_veh.definition, ego_veh.id)
 
         # load the actual scene, and insert the vehicle into it
+        # print("frame: {}, vehid: ".format(self.t), self.egoids)
         self.scene = get_scene(self.scene, self.trajdatas[self.traj_idx], self.t)
         if self.remove_ngsim_veh:
             self.scene = keep_vehicle_subset(self.scene, self.egoids)
@@ -234,6 +240,7 @@ class MultiAgentAutoEnv:
             "phi": [],
             "orig_x": [],
             "orig_y": [],
+            "orig_v": [],
             "orig_theta": [],
             "orig_length": [],
             "orig_width": []
@@ -249,6 +256,7 @@ class MultiAgentAutoEnv:
             step_infos["phi"].append(self.ego_vehs[i].state.posF.phi)
             step_infos["orig_x"].append(orig_vehs[i].state.posG.x)
             step_infos["orig_y"].append(orig_vehs[i].state.posG.y)
+            step_infos["orig_v"].append(orig_vehs[i].state.v)
             step_infos["orig_theta"].append(orig_vehs[i].state.posG.theta)
             step_infos["orig_length"].append(orig_vehs[i].definition.length_)
             step_infos["orig_width"].append(orig_vehs[i].definition.width_)
@@ -327,12 +335,15 @@ class MultiAgentAutoEnv:
         # print(rewards)
         return copy.deepcopy(features), rewards, terminal, infos
 
-    def get_features(self):
+    def get_features(self, normalize_feature=False, clip_std_multiple=10.0):
         for (i, egoid) in enumerate(self.egoids):
             veh_idx = self.scene.findfirst(egoid)
             self.ext.pull_features(self.rec, self.roadway, veh_idx)
             self.features[i] = copy.deepcopy(self.ext.features)
-        return np.array(copy.deepcopy(self.features))
+        retval = np.array(copy.deepcopy(self.features))
+        if normalize_feature:
+            retval, obs_mean, obs_std = normalize(retval, clip_std_multiple)
+        return retval
 
     def observation_space_spec(self):
         low = [0 for i in range(len(self.ext))]

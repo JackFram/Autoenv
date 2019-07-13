@@ -85,8 +85,8 @@ def clean_data(filename: str):
                 last_LY[v_id] = df.at[vehicles[v_id], 'Local_Y']
             df.at[i, 'Local_Y'] += last_LY[v_id]
 
-            df.at[i, 'v_Vel'] = np.sqrt((df.at[i, 'Global_Y'] - df.at[vehicles[v_id], 'Global_Y']) ** 2 + (
-            df.at[i, 'Global_X'] - df.at[vehicles[v_id], 'Global_X']) ** 2)
+            df.at[i, 'v_Vel'] = np.sqrt((df.at[i, 'Global_Y'] - df.at[vehicles[v_id], 'Global_Y']) ** 2 +
+                                        (df.at[i, 'Global_X'] - df.at[vehicles[v_id], 'Global_X']) ** 2)
             df.at[i, 'v_Acc'] = df.at[i, 'v_Vel'] - df.at[vehicles[v_id], 'v_Vel']
 
             df.at[i, 'Frame_ID'] = df.at[vehicles[v_id], 'Frame_ID'] + 1

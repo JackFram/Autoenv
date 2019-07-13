@@ -33,7 +33,6 @@ from src.trajdata import convert_raw_ngsim_to_trajdatas
 import math
 import tqdm
 
-
 plt.style.use("ggplot")
 
 # TODO: change this accordingly
@@ -73,14 +72,14 @@ def online_adaption(
     x = env.reset(**env_kwargs)
 
     n_agents = x.shape[0]
-    print("Agent number: {}".format(n_agents))
+    # print("Agent number: {}".format(n_agents))
     dones = [True] * n_agents
     predicted_trajs, adapnets = [], []
     policy.reset(dones)
     prev_actions, prev_hiddens = None, None
 
     # max_steps = min(200, obs.shape[1] - primesteps - 2)
-    print("max_steps")
+    print("max steps")
     print(maxstep)
     mean = np.expand_dims(mean, axis=2)
     prev_hiddens = np.zeros([n_agents, 64])
@@ -92,7 +91,7 @@ def online_adaption(
 
     avg = 0
     end_time = time.time()
-    print(('Reset env Running time: %s Seconds' % (end_time - start_time)))
+    # print(('Reset env Running time: %s Seconds' % (end_time - start_time)))
     lx = x
     error = []  # size is (maxstep, predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
     action_time = 0
@@ -127,7 +126,10 @@ def online_adaption(
         adaption_time += end_time - start_time
         prev_actions, prev_hiddens = a, hidden_vec
         start_time = time.time()
-        traj, error_per_step, time_info = prediction(env_kwargs, obs[:, step + 1, :], adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids)
+        # print("TFenv reset feature: ", x)
+        # print("loading feature: ", obs[:, step + 1, :])
+        traj, error_per_step, time_info = prediction(env_kwargs, x, adapnets, env, policy,
+                                                     prev_hiddens, n_agents, adapt_steps, nids)
         end_time = time.time()
         predict_time += (end_time - start_time)
         action_time += time_info["action"]
@@ -180,8 +182,8 @@ def online_adaption(
     for i in range(n_agents):
         error_info["agent_rmse"].append(utils.cal_agent_rmse(error, i, verbose=True))
 
-    print('obs.shape')
-    print(obs.shape)
+    # print('obs.shape')
+    # print(obs.shape)
 
     return predicted_trajs, error_info
 
@@ -192,6 +194,8 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
     error_per_step = []  # size is (predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
     get_action_time = 0
     env_step_time = 0
+    valid_data = True
+    speed_limit = 120
     for j in range(predict_span):
         # if j == 0:
         #     print("feature {}".format(j), x)
@@ -230,9 +234,16 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
             dx = abs(e_info["orig_x"][i] - e_info["x"][i])
             dy = abs(e_info["orig_y"][i] - e_info["y"][i])
             dist = math.hypot(dx, dy)
+            # print("dist: ", dist)
+            if e_info["orig_v"][i] > speed_limit:
+                valid_data = False
             # print("{}-----> dx: {} dy: {} dist: {}".format(j, dx, dy, dist))
-            error_per_agent.append({"dx": dx, "dy": dy, "dist": dist})
-        error_per_step.append(error_per_agent)
+            if valid_data:
+                error_per_agent.append({"dx": dx, "dy": dy, "dist": dist})
+        if valid_data:
+            error_per_step.append(error_per_agent)
+        # if not valid_data:
+        #     print("trajectory not valid, skipping")
         if any(dones): break
         x = nx
 
@@ -257,15 +268,15 @@ def collect_trajectories(
         random_seed,
         lbd,
         adapt_steps):
-    print('args')
+    print('env initialization args')
     print(args)
     start_time = time.time()
     env, trajinfos, _, _ = env_fn(args, n_veh=N_VEH, alpha=0.)
-    print(trajinfos[0])
+    # print(trajinfos[0])
 
     policy = policy_fn(args, env)
     end_time = time.time()
-    print(('Initializing env Running time: %s Seconds' % (end_time - start_time)))
+    # print(('Initializing env Running time: %s Seconds' % (end_time - start_time)))
     with tf.Session() as sess:
         # initialize variables
         start_time = time.time()
@@ -298,7 +309,7 @@ def collect_trajectories(
 
         kwargs = dict()
         end_time = time.time()
-        print(('Loading obs data Running time: %s Seconds' % (end_time - start_time)))
+        # print(('Loading obs data Running time: %s Seconds' % (end_time - start_time)))
         if args.env_multiagent:
             # I add not because single simulation has no orig_x etc.
             # egoid = random.choice(egoids)
@@ -327,9 +338,9 @@ def collect_trajectories(
                     trajinfos=trajinfos
                 )
 
-                trajlist.append(traj)
                 error.append(error_info)
             utils.print_error(error)
+            trajlist += error
         else:
             # for i in sample:
             for i, egoid in enumerate(egoids):
@@ -379,7 +390,7 @@ def parallel_collect_trajectories(
     # pool of processes, each with a set of ego ids
     pool = mp.Pool(processes=n_proc)
     end_time = time.time()
-    print(('Creating parallel env Running time: %s Seconds' % (end_time - start_time)))
+    # print(('Creating parallel env Running time: %s Seconds' % (end_time - start_time)))
     # run collection
     results = []
     for pid in range(n_proc):
@@ -490,7 +501,9 @@ def collect(
             adapt_steps=adapt_steps
         )
 
-    utils.write_trajectories(output_filepath, trajs)
+    return trajs
+
+    # utils.write_trajectories(output_filepath, trajs)
 
 
 def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngsim_env):
@@ -576,66 +589,81 @@ if __name__ == '__main__':
     else:
         collect_fn = parallel_collect_trajectories
 
-    orig_traj_file = "2018-11-16-15-37-21_corrected_smoothed_section_7_19.csv"  # TODO: you can change this filename
+    prev_lane_name = None
 
-    lane_file = '{}_lane'.format(orig_traj_file[:19])
-    processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
-    clean_data(orig_traj_file)
-    csv2txt(processed_data_path)
-    create_lane(lane_file)
-    print("Finish cleaning the original data")
-    print("Start generating roadway")
-    base_dir = os.path.expanduser('~/Autoenv/data/')
-    j.write_roadways_to_dxf(base_dir)
-    j.write_roadways_from_dxf(base_dir)
-    print("Finish generating roadway")
-    convert_raw_ngsim_to_trajdatas()
-    time.sleep(2)
-    print("Start feature extraction")
-    extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
-    print("Finish converting and feature extraction")
+    for file_name in os.listdir("./preprocessing/data"):
+        if "section" in file_name:
+            # TODO: you can change this filename
+            orig_traj_file = file_name
+            print("processing file {}".format(orig_traj_file))
+        else:
+            print("lane file, skipping")
+            continue
+        lane_file = '{}_lane'.format(orig_traj_file[:19])
+        processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
+        clean_data(orig_traj_file)
+        csv2txt(processed_data_path)
+        if prev_lane_name != lane_file:
+            create_lane(lane_file)
+        else:
+            print("Using same lane file, skipping generating a new one")
+        print("Finish cleaning the original data")
+        print("Start generating roadway")
+        if prev_lane_name != lane_file:
+            base_dir = os.path.expanduser('~/Autoenv/data/')
+            j.write_roadways_to_dxf(base_dir)
+            j.write_roadways_from_dxf(base_dir)
+        prev_lane_name = lane_file
+        print("Finish generating roadway")
+        convert_raw_ngsim_to_trajdatas()
+        time.sleep(10)
+        print("Start feature extraction")
+        extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
+        print("Finish converting and feature extraction")
 
-    fn = "trajdata_holo_trajectories.txt"
+        fn = "trajdata_holo_trajectories.txt"
 
-    hn = './data/trajectories/ngsim_holo_new.h5'
+        hn = './data/trajectories/ngsim_holo_new.h5'
 
-    if run_args.n_envs:
-        args.n_envs = run_args.n_envs
-    # args.env_H should be 200
-    sys.stdout.write('{} vehicles with H = {}\n'.format(args.n_envs, args.env_H))
+        if run_args.n_envs:
+            args.n_envs = run_args.n_envs
+        # args.env_H should be 200
+        sys.stdout.write('{} vehicles with H = {}\n'.format(args.n_envs, args.env_H))
 
-    args.ngsim_filename = fn
-    args.h5_filename = hn
-    if args.env_multiagent:
-        # args.n_envs gives the number of simultaneous vehicles
-        # so run_args.n_multiagent_trajs / args.n_envs gives the number
-        # of simulations to run overall
-        # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
-        #  starts = dict()
-        egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
-    else:
-        egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+        args.ngsim_filename = fn
+        args.h5_filename = hn
+        if args.env_multiagent:
+            # args.n_envs gives the number of simultaneous vehicles
+            # so run_args.n_multiagent_trajs / args.n_envs gives the number
+            # of simulations to run overall
+            # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
+            #  starts = dict()
+            egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+        else:
+            egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
 
-    print("egoids")
-    print(egoids)
-    print("starts")
-    print(starts)
+        print("egoids")
+        print(egoids)
+        # print("starts")
+        # print(starts)
 
-    if len(egoids) == 0:
-        print("No valid vehicles, exit")
-        exit(0)
+        if len(egoids) == 0:
+            print("No valid vehicles, skipping")
+            continue
 
-    collect(
-        egoids,
-        starts,
-        args,
-        exp_dir=run_args.exp_dir,
-        max_steps=200,
-        params_filename=run_args.params_filename,
-        use_hgail=run_args.use_hgail,
-        n_proc=run_args.n_proc,
-        collect_fn=collect_fn,
-        random_seed=run_args.random_seed,
-        lbd=run_args.lbd,
-        adapt_steps=run_args.adapt_steps
-    )
+        error = collect(
+            egoids,
+            starts,
+            args,
+            exp_dir=run_args.exp_dir,
+            max_steps=200,
+            params_filename=run_args.params_filename,
+            use_hgail=run_args.use_hgail,
+            n_proc=run_args.n_proc,
+            collect_fn=collect_fn,
+            random_seed=run_args.random_seed,
+            lbd=run_args.lbd,
+            adapt_steps=run_args.adapt_steps
+        )
+
+        utils.print_error(error)

@@ -36,22 +36,32 @@ def load_validate_data(
     print(veh_2_index[0])
     act_idxs = [i for (i, n) in enumerate(feature_names) if n in act_keys]
     act = x[:, :, act_idxs]
-
+    print("loading features: ")
     if normalize_data:
         obs, obs_mean, obs_std = normalize(obs, clip_std_multiple)
         # normalize actions to between -1 and 1
         act = normalize_range(act, act_low, act_high)
-
     else:
         obs_mean = None
         obs_std = None
-
     return dict(
         observations=obs,
         actions=act,
         obs_mean=obs_mean,
         obs_std=obs_std,
     ), veh_2_index
+
+
+def build_policy(args, env, latent_sampler=None):
+    print("GaussianGRUPolicy")
+    policy = myGaussianGRUPolicy(
+        name="policy",
+        env_spec=env.spec,
+        hidden_dim=args.recurrent_hidden_dim,
+        output_nonlinearity=None,
+        learn_std=True
+    )
+    return policy
 
 
 def normalize(x, clip_std_multiple=np.inf):
@@ -74,18 +84,6 @@ def normalize_range(x, low, high):
     x = (x - mean) / half_range
     x = np.clip(x, -1, 1)
     return x
-
-
-def build_policy(args, env, latent_sampler=None):
-    print("GaussianGRUPolicy")
-    policy = myGaussianGRUPolicy(
-        name="policy",
-        env_spec=env.spec,
-        hidden_dim=args.recurrent_hidden_dim,
-        output_nonlinearity=None,
-        learn_std=True
-    )
-    return policy
 
 
 def get_ground_truth(ngsim_filename: str, h5_filename: str):

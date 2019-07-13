@@ -84,8 +84,10 @@ def write_features(features, output_filepath, ext):
         veh_2_index = list()
         for (idx, (veh_id, veh_features)) in enumerate(feature_dict.items()):
             veh_2_index.append(veh_id)
+            # print(idx, veh_id)
             feature_array[[idx], 0:veh_features.shape[0], :] = veh_features.reshape(1, veh_features.shape[0], n_features)
         # print(veh_2_index)
+        print("writing features: ")
         h5file["{}_feature".format(traj_idx)] = feature_array
         h5file["{}_index".format(traj_idx)] = np.array(veh_2_index)
     # write feature names
