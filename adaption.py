@@ -590,80 +590,83 @@ if __name__ == '__main__':
         collect_fn = parallel_collect_trajectories
 
     prev_lane_name = None
+    data_base_dir = "./preprocessing/data"
+    for dir_name in os.listdir(data_base_dir):
+        if "downsampled" not in dir_name and os.path.isdir(os.path.join(data_base_dir, dir_name, "processed")):
+            for file_name in os.listdir(os.path.join(data_base_dir, dir_name, "processed")):
+                print(file_name)
+                if "section" in file_name:
+                    # TODO: you can change this filename
+                    orig_traj_file = os.path.join(dir_name, "processed", file_name)
+                    print("processing file {}".format(orig_traj_file))
+                else:
+                    print("lane file, skipping")
+                    continue
+                lane_file = os.path.join(dir_name, "processed", '{}_lane'.format(orig_traj_file[:19]))
+                processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
+                clean_data(orig_traj_file)
+                csv2txt(processed_data_path)
+                if prev_lane_name != lane_file:
+                    create_lane(lane_file)
+                else:
+                    print("Using same lane file, skipping generating a new one")
+                print("Finish cleaning the original data")
+                print("Start generating roadway")
+                if prev_lane_name != lane_file:
+                    base_dir = os.path.expanduser('~/Autoenv/data/')
+                    j.write_roadways_to_dxf(base_dir)
+                    j.write_roadways_from_dxf(base_dir)
+                prev_lane_name = lane_file
+                print("Finish generating roadway")
+                convert_raw_ngsim_to_trajdatas()
+                time.sleep(10)
+                print("Start feature extraction")
+                extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
+                print("Finish converting and feature extraction")
 
-    for file_name in os.listdir("./preprocessing/data"):
-        if "section" in file_name:
-            # TODO: you can change this filename
-            orig_traj_file = file_name
-            print("processing file {}".format(orig_traj_file))
-        else:
-            print("lane file, skipping")
-            continue
-        lane_file = '{}_lane'.format(orig_traj_file[:19])
-        processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
-        clean_data(orig_traj_file)
-        csv2txt(processed_data_path)
-        if prev_lane_name != lane_file:
-            create_lane(lane_file)
-        else:
-            print("Using same lane file, skipping generating a new one")
-        print("Finish cleaning the original data")
-        print("Start generating roadway")
-        if prev_lane_name != lane_file:
-            base_dir = os.path.expanduser('~/Autoenv/data/')
-            j.write_roadways_to_dxf(base_dir)
-            j.write_roadways_from_dxf(base_dir)
-        prev_lane_name = lane_file
-        print("Finish generating roadway")
-        convert_raw_ngsim_to_trajdatas()
-        time.sleep(10)
-        print("Start feature extraction")
-        extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
-        print("Finish converting and feature extraction")
+                fn = "trajdata_holo_trajectories.txt"
 
-        fn = "trajdata_holo_trajectories.txt"
+                hn = './data/trajectories/ngsim_holo_new.h5'
 
-        hn = './data/trajectories/ngsim_holo_new.h5'
+                if run_args.n_envs:
+                    args.n_envs = run_args.n_envs
+                # args.env_H should be 200
+                sys.stdout.write('{} vehicles with H = {}\n'.format(args.n_envs, args.env_H))
 
-        if run_args.n_envs:
-            args.n_envs = run_args.n_envs
-        # args.env_H should be 200
-        sys.stdout.write('{} vehicles with H = {}\n'.format(args.n_envs, args.env_H))
+                args.ngsim_filename = fn
+                args.h5_filename = hn
+                if args.env_multiagent:
+                    # args.n_envs gives the number of simultaneous vehicles
+                    # so run_args.n_multiagent_trajs / args.n_envs gives the number
+                    # of simulations to run overall
+                    # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
+                    #  starts = dict()
+                    egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+                else:
+                    egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
 
-        args.ngsim_filename = fn
-        args.h5_filename = hn
-        if args.env_multiagent:
-            # args.n_envs gives the number of simultaneous vehicles
-            # so run_args.n_multiagent_trajs / args.n_envs gives the number
-            # of simulations to run overall
-            # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
-            #  starts = dict()
-            egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
-        else:
-            egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+                print("egoids")
+                print(egoids)
+                # print("starts")
+                # print(starts)
 
-        print("egoids")
-        print(egoids)
-        # print("starts")
-        # print(starts)
+                if len(egoids) == 0:
+                    print("No valid vehicles, skipping")
+                    continue
 
-        if len(egoids) == 0:
-            print("No valid vehicles, skipping")
-            continue
+                error = collect(
+                    egoids,
+                    starts,
+                    args,
+                    exp_dir=run_args.exp_dir,
+                    max_steps=200,
+                    params_filename=run_args.params_filename,
+                    use_hgail=run_args.use_hgail,
+                    n_proc=run_args.n_proc,
+                    collect_fn=collect_fn,
+                    random_seed=run_args.random_seed,
+                    lbd=run_args.lbd,
+                    adapt_steps=run_args.adapt_steps
+                )
 
-        error = collect(
-            egoids,
-            starts,
-            args,
-            exp_dir=run_args.exp_dir,
-            max_steps=200,
-            params_filename=run_args.params_filename,
-            use_hgail=run_args.use_hgail,
-            n_proc=run_args.n_proc,
-            collect_fn=collect_fn,
-            random_seed=run_args.random_seed,
-            lbd=run_args.lbd,
-            adapt_steps=run_args.adapt_steps
-        )
-
-        utils.print_error(error)
+                utils.print_error(error)

@@ -686,13 +686,14 @@ def print_error(error: list):
             lookahead_rmse_dx[j] += error[i]["lookahead_rmse"]["dx"][j]/n
             lookahead_rmse_dy[j] += error[i]["lookahead_rmse"]["dy"][j]/n
             lookahead_rmse_dist[j] += error[i]["lookahead_rmse"]["dist"][j]/n
-
+    print("==========================================================")
     print("Overall RMSE:")
-    print("dx: {} dy: {} dist: {}, [m]".format(overall_rmse_dx / n, overall_rmse_dy / n, overall_rmse_dist / n))
+    print("dx: {}   dy: {}   dist: {}, [m]".format(overall_rmse_dx / n, overall_rmse_dy / n, overall_rmse_dist / n))
     print("Lookahead RMSE:")
     print("dx: ", lookahead_rmse_dx)
     print("dy: ", lookahead_rmse_dy)
     print("dist: ", lookahead_rmse_dist)
+    print("==========================================================")
 
 
 

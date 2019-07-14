@@ -46,6 +46,8 @@ cd hgail
 python setup.py develop
 # if you have errors indicating you should upgrade your numpy
 conda upgrade numpy
+# or
+pip install --upgrade numpy
 
 
 ```
