@@ -211,6 +211,8 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
             # print(state_ind)
             state = Vehicle.VehicleState()
             state.set(posG, roadway, speed)
+            if state.posF.roadind.tag.lane > 2:
+                print(state.posF.roadind.tag.lane)
             states.append(record.RecordState(state, id))
 
         frame_hi = state_ind
@@ -224,14 +226,22 @@ def get_corresponding_roadway(filename: str):
     :param filename: the path of the saved roadway file
     :return: the roadway class object
     '''
+    retval = None
     if "i101" in filename:
-        return const.ROADWAY_101
+        with open(os.path.join(DIR, "../data/ngsim_80.txt"), "r") as fp_80:
+            retval = roadway.read_roadway(fp_80)
+            fp_80.close()
     elif "i80" in filename:
-        return const.ROADWAY_80
+        with open(os.path.join(DIR, "../data/ngsim_101.txt"), "r") as fp_101:
+            retval = roadway.read_roadway(fp_101)
+            fp_101.close()
     elif "holo" in filename:
-        return const.ROADWAY_HOLO
+        with open(os.path.join(DIR, "../data/ngsim_HOLO.txt"), "r") as fp_holo:
+            retval = roadway.read_roadway(fp_holo)
+            fp_holo.close()
     else:
         raise ValueError("no such roadway file, check your file name")
+    return retval
 
 
 def convert_raw_ngsim_to_trajdatas():
@@ -254,9 +264,10 @@ def convert_raw_ngsim_to_trajdatas():
         print("finish converting")
         outpath = os.path.join(DIR, "../data/trajdata_" + filename)
         print("save to {}".format(outpath))
-        fp = open(outpath, "w")
-        trajdata.write(fp)
-        fp.close()
+        with open(outpath, "w") as fp:
+            trajdata.write(fp)
+            fp.close()
+        print("Finish saving the file")
 
 
 def load_trajdata(filepath: str):

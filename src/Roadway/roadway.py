@@ -30,6 +30,7 @@ class SpeedLimit:
 NULL_BOUNDARY = LaneBoundary("unknown", "unknown")
 DEFAULT_SPEED_LIMIT = SpeedLimit(-math.inf, math.inf)
 DEFAULT_LANE_WIDTH = 3.0
+METERS_PER_FOOT = 0.3048
 
 
 class LaneTag:
@@ -134,6 +135,7 @@ class Lane:
             self.entrances.insert(0, LaneConnection(False, CurvePt.CURVEINDEX_START, prev))
 
     def get_by_ind_roadway(self, ind: CurvePt.CurveIndex, roadway):
+        # print(ind.i, len(self.curve))
         if ind.i == -1:
             pt_lo = prev_lane_point(self, roadway)
             pt_hi = self.curve[0]
@@ -291,7 +293,9 @@ def read_roadway(fp):
                 cleanedline = re.sub(r"(\(|\))", "", line)
                 tokens = cleanedline.split()
                 x = float(tokens[0])
+                x = x/METERS_PER_FOOT
                 y = float(tokens[1])
+                y = y/METERS_PER_FOOT
                 theta = float(tokens[2])
                 s = float(tokens[3])
                 k = float(tokens[4])
@@ -393,6 +397,9 @@ if `move_along_curves` is false, will only project to lane.curve
 def proj_1(posG: VecSE2.VecSE2, lane: Lane, roadway: Roadway, move_along_curves: bool = True):
     curveproj = CurvePt.proj(posG, lane.curve)
     rettag = lane.tag
+    # print(curveproj.ind.i)
+    if has_next(lane) or has_prev(lane):
+        print(has_prev(lane), has_next(lane))
     if curveproj.ind == CurvePt.CurveIndex(0, 0.0) and has_prev(lane):
         pt_lo = prev_lane_point(lane, roadway)
         pt_hi = lane.curve[0]
@@ -447,10 +454,10 @@ def proj_2(posG: VecSE2.VecSE2, roadway: Roadway):
             footpoint = targetlane.get_by_ind_roadway(roadproj.curveproj.ind, roadway)
             vec = posG - footpoint.pos
             dist2 = VecE2.normsquared(VecE2.VecE2(vec.x, vec.y))
+            # print(best_dist2, dist2, roadproj.curveproj.ind.i)
             if dist2 < best_dist2:
                 best_dist2 = dist2
                 best_proj = roadproj
-
     return best_proj
 
 

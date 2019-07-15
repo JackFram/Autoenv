@@ -80,8 +80,9 @@ class VehicleState:
 
     def write(self, fp):
         fp.write("%.16e %.16e %.16e" % (self.posG.x, self.posG.y, self.posG.theta))
+        # self.posF.roadind.ind.i
         fp.write(" %d %.16e %d %d" % (self.posF.roadind.ind.i, self.posF.roadind.ind.t,
-                                      self.posF.roadind.tag.segment, self.posF.roadind.tag.lane + 1))
+                                      self.posF.roadind.tag.segment, self.posF.roadind.tag.lane))
         fp.write(" %.16e %.16e %.16e" % (self.posF.s, self.posF.t, self.posF.phi))
         fp.write(" %.16e" % self.v)
 

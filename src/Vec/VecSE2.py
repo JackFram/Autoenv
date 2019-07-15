@@ -40,7 +40,7 @@ class VecSE2:
         return VecSE2(self.x - other.x, self.y - other.y, self.theta - other.theta)
 
     def __radd__(self, other: VecE2):
-        return VecSE2(self.x+other.x, self.y+other.y, self.theta)
+        return VecSE2(self.x + other.x, self.y + other.y, self.theta)
 
     def __rsub__(self, other: VecE2):
         return VecSE2(self.x - other.x, self.y - other.y, self.theta)  # we have some problems here

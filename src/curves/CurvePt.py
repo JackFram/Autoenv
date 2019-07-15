@@ -95,9 +95,18 @@ def index_closest_to_point(curve: list, target: VecSE2.VecSE2):  # curve: list(C
     sqdist_b = curve[b - 1].pos - target
     sqdist_c = curve[c - 1].pos - target
 
+    # sqdist_a.show()
+    # sqdist_b.show()
+    # sqdist_c.show()
+
     sqdist_a = VecE2.normsquared(VecE2.VecE2(sqdist_a.x, sqdist_a.y))
     sqdist_b = VecE2.normsquared(VecE2.VecE2(sqdist_b.x, sqdist_b.y))
     sqdist_c = VecE2.normsquared(VecE2.VecE2(sqdist_c.x, sqdist_c.y))
+
+    # print(target.x, target.y, sqdist_a, sqdist_b, sqdist_c)
+    # curve[a - 1].pos.show()
+    # curve[b - 1].pos.show()
+    # curve[c - 1].pos.show()
 
     while True:
         if b == a:
@@ -190,6 +199,9 @@ def proj(posG: VecSE2.VecSE2, curve: list):
     Return a CurveProjection obtained by projecting posG onto the curve
     """
     ind = index_closest_to_point(curve, posG)
+    # if ind <= len(curve):
+    #     print("project: ")
+    #     print(ind, len(curve))
     curveind = CurveIndex(-1, 0)
     footpoint = VecSE2.VecSE2(0, 0, 0)
     if 0 < ind < len(curve) - 1:
