@@ -317,7 +317,7 @@ def collect_trajectories(
             error = []
             for veh_id in trajinfos.keys():
                 if trajinfos[veh_id]["te"] - trajinfos[veh_id]["ts"] <= 50:
-                    break
+                    continue
                 if random_seed:
                     kwargs = dict(random_seed=random_seed + veh_id)
                 print("egoid: {}, ts: {}, te: {}".format(veh_id, trajinfos[veh_id]["ts"], trajinfos[veh_id]["te"]))
@@ -571,8 +571,8 @@ if __name__ == '__main__':
     parser.add_argument('--adapt_steps', type=int, default=1)
 
     run_args = parser.parse_args()
-    j = julia.Julia()
-    j.using("NGSIM")
+    # j = julia.Julia()
+    # j.using("NGSIM")
 
     args_filepath = "./args/params.npz"
     if os.path.isfile(args_filepath):
@@ -608,21 +608,21 @@ if __name__ == '__main__':
                 csv2txt(processed_data_path)
                 if prev_lane_name != lane_file:
                     create_lane(lane_file)
-                    time.sleep(5)
+                    # time.sleep(5)
                 else:
                     print("Using same lane file, skipping generating a new one")
                 print("Finish cleaning the original data")
                 print("Start generating roadway")
-                if prev_lane_name != lane_file:
-                    base_dir = os.path.expanduser('~/Autoenv/data/')
-                    j.write_roadways_to_dxf(base_dir)
-                    j.write_roadways_from_dxf(base_dir)
-                    time.sleep(10)
+                # if prev_lane_name != lane_file:
+                #     base_dir = os.path.expanduser('~/Autoenv/data/')
+                #     j.write_roadways_to_dxf(base_dir)
+                #     j.write_roadways_from_dxf(base_dir)
+                    # time.sleep(10)
                 prev_lane_name = lane_file
                 print("Finish generating roadway")
                 convert_raw_ngsim_to_trajdatas()
                 print("Start feature extraction")
-                time.sleep(10)
+                # time.sleep(10)
                 extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
                 print("Finish converting and feature extraction")
 

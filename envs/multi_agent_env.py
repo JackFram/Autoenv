@@ -194,12 +194,14 @@ class MultiAgentAutoEnv:
     def _step(self, action: list):
         # make sure number of actions passed in equals number of vehicles
         assert len(action) == self.n_veh
+        # print("==========================================")
         ego_states = [None for _ in range(self.n_veh)]
 
         for (i, ego_veh) in enumerate(self.ego_vehs):
             # convert action into form
             ego_action = AccelTurnrate(action[i][0], action[i][1])
             # propagate the ego vehicle
+            # print(action[i][0], action[i][1])
             ego_state = propagate(
                 ego_veh,
                 ego_action,
@@ -245,6 +247,10 @@ class MultiAgentAutoEnv:
             "orig_length": [],
             "orig_width": []
         }
+
+        # print("orig x: {}, orig y: {}, orig v: {}".format(orig_vehs[0].state.posG.x, orig_vehs[0].state.posG.y,
+        #                                                   orig_vehs[0].state.v))
+        # print("predict x: {}, predict y: {}".format(self.ego_vehs[0].state.posG.x, self.ego_vehs[0].state.posG.y))
 
         for i in range(self.n_veh):
             step_infos["rmse_pos"].append(norm((orig_vehs[i].state.posG - self.ego_vehs[i].state.posG)))
