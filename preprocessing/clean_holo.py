@@ -116,6 +116,7 @@ def clean_data(filename: str):
     saved_path = os.path.join(processed_dir, 'holo_{}_perfect_cleaned.csv'.format(filename[5:19]))
     print("save to {}".format(saved_path))
     df.to_csv(saved_path, index=False)
+    return df.shape[0]
 
 
 def csv2txt(filename: str):

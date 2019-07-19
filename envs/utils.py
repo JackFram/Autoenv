@@ -510,6 +510,8 @@ def partition_list(lst, n):
 
 def cal_overall_rmse(error, verbose=False):
     totalStep = len(error)
+    if totalStep == 0:
+        return None
     predict_span = len(error[0])
     n_agent = len(error[0][0])
     if verbose:
@@ -568,6 +570,8 @@ def cal_step_rmse(error, i, verbose=False):
 
 def cal_lookahead_rmse(error, j, verbose=False):
     totalStep = len(error)
+    if totalStep == 0:
+        return None, None, None
     predict_span = len(error[0])
     n_agent = len(error[0][0])
     if verbose:
@@ -588,6 +592,8 @@ def cal_lookahead_rmse(error, j, verbose=False):
             sum_dy += error[i][j][k]["dy"]
             sum_dist += error[i][j][k]["dist"]
             step += 1
+    if step == 0:
+        return None, None, None
     avg_dx = sum_dx / step
     avg_dy = sum_dy / step
     avg_dist = sum_dist / step
@@ -669,31 +675,99 @@ def cal_m_stability(error, h=50, T=150, e=0.1, verbose=False):
     return error_time
 
 
-def print_error(error: list):
-    n = len(error)
-    overall_rmse_dx = 0
-    overall_rmse_dy = 0
-    overall_rmse_dist = 0
-    lookahead_rmse_dx = [0 for _ in range(10)]
-    lookahead_rmse_dy = [0 for _ in range(10)]
-    lookahead_rmse_dist = [0 for _ in range(10)]
+def cal_lookahead(error: list, predict_span: int):
+    if len(error) == 0:
+        return None
+    rmse_over_lookahead_dx = []
+    rmse_over_lookahead_dy = []
+    rmse_over_lookahead_dist = []
+    for j in range(predict_span):  # this should be the span you want to test
+        dx, dy, dist = cal_lookahead_rmse(error, j)
+        rmse_over_lookahead_dx.append(dx)
+        rmse_over_lookahead_dy.append(dy)
+        rmse_over_lookahead_dist.append(dist)
+    if len(rmse_over_lookahead_dist) == 0:
+        return None
+    return {"dx": rmse_over_lookahead_dx, "dy": rmse_over_lookahead_dy, "dist": rmse_over_lookahead_dist}
 
+
+def cal_avg(error: list, type: str = None):
+    assert type is not None
+    n = len(error)
+    dx = 0
+    dy = 0
+    dist = 0
+    lookahead_dx = [0 for _ in range(50)]
+    lookahead_dy = [0 for _ in range(50)]
+    lookahead_dist = [0 for _ in range(50)]
+    step = 0
+    lh_step = [0 for _ in range(50)]
     for i in range(n):
-        overall_rmse_dx += error[i]["overall_rmse"]["dx"]
-        overall_rmse_dy += error[i]["overall_rmse"]["dy"]
-        overall_rmse_dist += error[i]["overall_rmse"]["dist"]
-        for j in range(10):
-            lookahead_rmse_dx[j] += error[i]["lookahead_rmse"]["dx"][j]/n
-            lookahead_rmse_dy[j] += error[i]["lookahead_rmse"]["dy"][j]/n
-            lookahead_rmse_dist[j] += error[i]["lookahead_rmse"]["dist"][j]/n
+        if "lookahead" not in type and error[i][type] is not None:
+            dx += error[i][type]["dx"]
+            dy += error[i][type]["dy"]
+            dist += error[i][type]["dist"]
+            step += 1
+        elif "lookahead" in type and error[i][type] is not None:
+            lookahead_step = len(error[i][type]["dx"])
+            print(i, type, lookahead_step)
+            for j in range(lookahead_step):
+                if error[i][type]["dist"][j] is not None:
+                    lh_step[j] += 1
+                    lookahead_dx[j] += error[i][type]["dx"][j]
+                    lookahead_dy[j] += error[i][type]["dy"][j]
+                    lookahead_dist[j] += error[i][type]["dist"][j]
+                else:
+                    continue
+    if "lookahead" in type:
+        for j in range(50):
+            if lh_step[j] == 0:
+                continue
+            lookahead_dx[j] = lookahead_dx[j] / lh_step[j]
+            lookahead_dy[j] = lookahead_dy[j] / lh_step[j]
+            lookahead_dist[j] = lookahead_dist[j] / lh_step[j]
+        return {"dx": lookahead_dx, "dy": lookahead_dy, "dist": lookahead_dist}
+    if step == 0:
+        return {"dx": 0, "dy": 0, "dist": 0}
+    else:
+        if "lookahead" not in type:
+            return {"dx": dx / step, "dy": dy / step, "dist": dist / step}
+
+
+def save_error(error: list):
+    overall_rmse = cal_avg(error, "overall_rmse")
+    curve_rmse = cal_avg(error, "curve_rmse")
+    lane_change_rmse = cal_avg(error, "lane_change_rmse")
+    straight_rmse = cal_avg(error, "straight_rmse")
+    lh_overall_rmse = cal_avg(error, "overall_lookahead_rmse")
+    lh_curve_rmse = cal_avg(error, "curve_lookahead_rmse")
+    lh_laneChange_rmse = cal_avg(error, "lane_change_lookahead_rmse")
+    lh_straight_rmse = cal_avg(error, "straight_lookahead_rmse")
     print("==========================================================")
     print("Overall RMSE:")
-    print("dx: {}   dy: {}   dist: {}, [m]".format(overall_rmse_dx / n, overall_rmse_dy / n, overall_rmse_dist / n))
-    print("Lookahead RMSE:")
-    print("dx: ", lookahead_rmse_dx)
-    print("dy: ", lookahead_rmse_dy)
-    print("dist: ", lookahead_rmse_dist)
+    print("dx: {}   dy: {}   dist: {}, [m]".format(overall_rmse['dx'], overall_rmse['dy'], overall_rmse['dist']))
+    print("Curve RMSE:")
+    print("dx: {}   dy: {}   dist: {}, [m]".format(curve_rmse['dx'], curve_rmse['dy'], curve_rmse['dist']))
+    print("Lane Change RMSE:")
+    print("dx: {}   dy: {}   dist: {}, [m]".format(lane_change_rmse['dx'], lane_change_rmse['dy'],
+                                                   lane_change_rmse['dist']))
+    print("Straight RMSE:")
+    print("dx: {}   dy: {}   dist: {}, [m]".format(straight_rmse['dx'], straight_rmse['dy'], straight_rmse['dist']))
     print("==========================================================")
+    print("Overall RMSE:")
+    print("dist")
+    print(lh_overall_rmse["dist"])
+    print("Curve RMSE:")
+    print("dist")
+    print(lh_curve_rmse["dist"])
+    print("Lane Change RMSE:")
+    print("dist")
+    print(lh_laneChange_rmse["dist"])
+    print("Straight RMSE:")
+    print("dist")
+    print(lh_straight_rmse["dist"])
+    print("==========================================================")
+
 
 
 
