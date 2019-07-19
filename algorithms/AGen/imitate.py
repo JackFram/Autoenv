@@ -1,5 +1,7 @@
 from algorithms.AGen.critic.model import ObservationActionMLP
 from algorithms.AGen.critic.base import Critic
+from algorithms.dataset.CriticDataset import CriticDataset
+from algorithms.dataset.utils import KeyValueReplayMemory, load_dataset
 import os
 
 # setup
@@ -22,19 +24,38 @@ trpo_step_size = .01
 critic_learning_rate = .0001
 critic_dropout_keep_prob = .6
 recognition_learning_rate = .0001
-initial_filepath = None # tf.train.latest_checkpoint(saver_dir)
+initial_filepath = None  # tf.train.latest_checkpoint(saver_dir)
+obs_size = 66
+act_size = 2
 
 # build the critic
 critic_network = ObservationActionMLP(
     hidden_layer_dims=[64, 64],
-    dropout_keep_prob=critic_dropout_keep_prob
+    dropout_keep_prob=critic_dropout_keep_prob,
+    obs_size=obs_size,
+    act_size=act_size
+)
+
+expert_data_filepath = "Some file path here"
+
+data = load_dataset(expert_data_filepath, maxsize=real_data_maxsize)
+
+if use_critic_replay_memory:
+    critic_replay_memory = KeyValueReplayMemory(maxsize=3 * batch_size)
+else:
+    critic_replay_memory = None
+
+critic_dataset = CriticDataset(
+    data,
+    replay_memory=critic_replay_memory,
+    batch_size=1000
 )
 
 critic = Critic(
         dataset=critic_dataset,
         network=critic_network,
-        obs_dim=66,
-        act_dim=2,
+        obs_dim=obs_size,
+        act_dim=act_size,
         n_train_epochs=n_critic_train_epochs,
         grad_norm_rescale=50.,
         verbose=2,
