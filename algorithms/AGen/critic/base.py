@@ -1,6 +1,8 @@
-import numpy as np
-import tensorflow as tf
+import torch.optim as optim
+from torch.autograd import Variable
+import torch
 
+import numpy as np
 import algorithms.AGen.critic.utils
 
 
@@ -15,7 +17,8 @@ class Critic(object):
             dataset,
             obs_dim,
             act_dim,
-            optimizer=tf.train.RMSPropOptimizer(0.0001),
+            optimizer=None,
+            lr=0.0001,
             n_train_epochs=5,
             grad_norm_rescale=10000.,
             grad_norm_clip=10000.,
@@ -26,7 +29,11 @@ class Critic(object):
         self.dataset = dataset
         self.obs_dim = obs_dim
         self.act_dim = act_dim
-        self.optimizer = optimizer
+        if optimizer is None:
+            self.optimizer = optim.RMSprop(network.parameters(), lr=lr)
+        else:
+            self.optimizer = optimizer
+        self.lr = lr
         self.n_train_epochs = n_train_epochs
         self.grad_norm_rescale = grad_norm_rescale
         self.grad_norm_clip = grad_norm_clip
@@ -42,7 +49,7 @@ class Critic(object):
 
         Args:
             itr: iteration count
-            paths: list of dictionaries
+            paths: list of dictionaries {'observations': obs(list), 'actions': act(list)}
         """
         # convert to batch and use network to critique
         obs = np.concatenate([d['observations'] for d in paths], axis=0)
@@ -78,17 +85,7 @@ class Critic(object):
             critic_rewards: critic rewards
         """
         # only write summaries if have a summary writer
-        if self.summary_writer:
-            env_rewards = np.concatenate([d['rewards'] for d in paths], axis=0)
-            summary = tf.Summary(value=[
-                tf.Summary.Value(tag="critic/mean_critique_reward", simple_value=np.mean(critic_rewards)),
-                tf.Summary.Value(tag="critic/max_critique_reward", simple_value=np.max(critic_rewards)),
-                tf.Summary.Value(tag="critic/std_dev_critique_reward", simple_value=np.std(critic_rewards)),
-                tf.Summary.Value(tag="critic/mean_env_reward", simple_value=np.mean(env_rewards)),
-                tf.Summary.Value(tag="critic/mean_path_len", simple_value=len(env_rewards) / float(len(paths))),
-            ])
-            self.summary_writer.add_summary(summary, itr)
-            self.summary_writer.flush()
+        print("Wait to complete")
 
     def train(self, itr, samples_data):
         """
@@ -109,7 +106,23 @@ class Critic(object):
         Args:
             batch: dictionary with values needed for training network class member
         """
-        raise NotImplementedError()
+        self.rx = batch['rx']
+        self.ra = batch['ra']
+        self.gx = batch['gx']
+        self.ga = batch['ga']
+        self.eps = np.random.uniform(0, 1, len(batch['rx'])).reshape(-1, 1)
+        rx, ra, gx, ga, eps = self.rx, self.ra, self.gx, self.ga, self.eps
+
+        gp_loss = 0
+        # gradient penalty
+
+        # loss and train op
+        self.optimizer.zero_grad()
+        self.real_loss = real_loss = -torch.mean(self.network(rx, ra))
+        self.gen_loss = gen_loss = torch.mean(self.network(gx, ga))
+        self.loss = loss = Variable(real_loss + gen_loss + gp_loss)
+        loss.backward()
+        self.optimizer.step()
 
     def _build_summaries(
             self,
@@ -120,118 +133,9 @@ class Critic(object):
             clipped_gradients,
             gradient_penalty=None,
             batch_size=None):
-        summaries = []
-        summaries += [tf.summary.scalar('critic/loss', loss)]
-        summaries += [tf.summary.scalar('critic/w_dist', -(real_loss + gen_loss))]
-        summaries += [tf.summary.scalar('critic/real_loss', real_loss)]
-        summaries += [tf.summary.scalar('critic/gen_loss', gen_loss)]
-        summaries += [tf.summary.scalar('critic/global_grad_norm', tf.global_norm(gradients))]
-        summaries += [tf.summary.scalar('critic/global_clipped_grad_norm', tf.global_norm(clipped_gradients))]
-        summaries += [tf.summary.scalar('critic/global_var_norm', tf.global_norm(self.network.var_list))]
-        if gradient_penalty is not None:
-            summaries += [tf.summary.scalar('critic/gradient_penalty', gradient_penalty)]
-        if batch_size is not None:
-            summaries += [tf.summary.scalar('critic/batch_size', batch_size)]
+        summaries = None
         return summaries
 
     def _build_input_summaries(self, rx, ra, gx, ga):
-        summaries = []
-        summaries += [tf.summary.image('critic/real_obs', tf.reshape(rx[0], (-1, self.obs_dim, 1, 1)))]
-        summaries += [tf.summary.image('critic/real_act', tf.reshape(ra[0], (-1, self.act_dim, 1, 1)))]
-        summaries += [tf.summary.image('critic/gen_obs', tf.reshape(gx[0], (-1, self.obs_dim, 1, 1)))]
-        summaries += [tf.summary.image('critic/gen_act', tf.reshape(ga[0], (-1, self.act_dim, 1, 1)))]
+        summaries = None
         return summaries
-
-
-class WassersteinCritic(Critic):
-    def __init__(
-            self,
-            gradient_penalty=10.,
-            **kwargs):
-        super(WassersteinCritic, self).__init__(**kwargs)
-        self.gradient_penalty = gradient_penalty
-        self._build_placeholders()
-        self._build_model()
-
-    def _build_placeholders(self):
-        # placeholders for input
-        self.rx = tf.placeholder(tf.float32, shape=(None, self.obs_dim), name='rx')
-        self.ra = tf.placeholder(tf.float32, shape=(None, self.act_dim), name='ra')
-        self.gx = tf.placeholder(tf.float32, shape=(None, self.obs_dim), name='gx')
-        self.ga = tf.placeholder(tf.float32, shape=(None, self.act_dim), name='ga')
-        self.eps = tf.placeholder(tf.float32, shape=(None, 1), name='eps')
-
-    def _build_model(self):
-        # unpack placeholders
-        rx, ra, gx, ga, eps = self.rx, self.ra, self.gx, self.ga, self.eps
-
-        # gradient penalty
-        self.xhat = xhat = eps * rx + (1 - eps) * gx
-        self.ahat = ahat = eps * ra + (1 - eps) * ga
-        xhat_gradients, ahat_gradients = tf.gradients(self.network(xhat, ahat), [xhat, ahat])
-        self.hat_gradients = hat_gradients = tf.concat([xhat_gradients, ahat_gradients], axis=1)
-        slopes = tf.sqrt(tf.reduce_sum(hat_gradients ** 2, reduction_indices=[1]) + 1e-8)
-        self.gp_loss = gp_loss = self.gradient_penalty * tf.reduce_mean((slopes - 1) ** 2)
-
-        # loss and train op
-        self.real_loss = real_loss = -tf.reduce_mean(self.network(rx, ra))
-        self.gen_loss = gen_loss = tf.reduce_mean(self.network(gx, ga))
-        self.loss = loss = real_loss + gen_loss + gp_loss
-
-        if self.verbose >= 2:
-            loss = tf.Print(loss, [real_loss, gen_loss, gp_loss, loss],
-                            message='real, gen, gp, total loss: ')
-
-        self.gradients = gradients = tf.gradients(loss, self.network.var_list)
-        clipped_gradients = algorithms.AGen.critic.utils.clip_gradients(
-            gradients, self.grad_norm_rescale, self.grad_norm_clip)
-
-        self.global_step = tf.Variable(0, name='critic/global_step', trainable=False)
-        self.train_op = self.optimizer.apply_gradients([(g, v)
-                                                        for (g, v) in zip(clipped_gradients, self.network.var_list)],
-                                                       global_step=self.global_step)
-
-        # summaries
-        summaries = self._build_summaries(loss, real_loss, gen_loss, gradients, clipped_gradients, gp_loss)
-        summaries += self._build_input_summaries(rx, ra, gx, ga)
-        self.summary_op = tf.summary.merge(summaries)
-
-        # debug_nan
-        self.gp_gradients = tf.gradients(self.gp_loss, self.network.var_list)[:-1]
-
-    def _train_batch(self, batch):
-
-        feed_dict = {
-            self.rx: batch['rx'],
-            self.ra: batch['ra'],
-            self.gx: batch['gx'],
-            self.ga: batch['ga'],
-            self.eps: np.random.uniform(0, 1, len(batch['rx'])).reshape(-1, 1)
-        }
-        outputs_list = [self.train_op, self.summary_op, self.global_step]
-        if self.debug_nan:
-            outputs_list += [
-                self.gradients,
-                self.xhat,
-                self.ahat,
-                self.hat_gradients,
-                self.gp_gradients,
-                self.gp_loss,
-                self.real_loss,
-                self.gen_loss
-            ]
-        session = tf.get_default_session()
-        fetched = session.run(outputs_list, feed_dict=feed_dict)
-        summary, step = fetched[1], fetched[2]
-
-        if self.debug_nan:
-            grads, xhat, ahat, hat_grads, gp_grads, gp_loss, real_loss, gen_loss = fetched[3:]
-            grads_nan = np.any([np.any(np.isnan(g)) for g in grads])
-
-            if grads_nan or np.isnan(gp_loss) or np.isnan(real_loss) or np.isnan(gen_loss):
-                import ipdb
-                ipdb.set_trace()
-
-        if self.summary_writer:
-            self.summary_writer.add_summary(tf.Summary.FromString(summary), step)
-            self.summary_writer.flush()

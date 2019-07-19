@@ -512,14 +512,10 @@ def cal_overall_rmse(error, verbose=False):
     totalStep = len(error)
     if totalStep == 0:
         return None
-    predict_span = len(error[0])
-    n_agent = len(error[0][0])
     if verbose:
         print("======================================")
         print("Calculating overall RMSE:\n")
         print("total step: ", totalStep)
-        print("predict span: ", predict_span)
-        print("n_agent: ", n_agent)
     sum_dx = 0
     sum_dy = 0
     sum_dist = 0
@@ -531,6 +527,8 @@ def cal_overall_rmse(error, verbose=False):
                 sum_dy += error[i][j][k]["dy"]
                 sum_dist += error[i][j][k]["dist"]
                 step += 1
+    if step == 0:
+        return None
     avg_dx = sum_dx / step
     avg_dy = sum_dy / step
     avg_dist = sum_dist / step
