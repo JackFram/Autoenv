@@ -1,5 +1,6 @@
 from feature_extractor.feature_extractor import MultiFeatureExtractor
 import os
+import math
 from src.trajdata import load_trajdata, get_corresponding_roadway
 from src.Record.frame import Frame
 from src.Record.record import get_scene
@@ -571,13 +572,11 @@ def cal_lookahead_rmse(error, j, verbose=False):
     if totalStep == 0:
         return None, None, None
     predict_span = len(error[0])
-    n_agent = len(error[0][0])
     if verbose:
         print("======================================")
         print("Calculating look ahead RMSE at step {}:\n".format(j))
         print("total step: ", totalStep)
         print("predict span: ", predict_span)
-        print("n_agent: ", n_agent)
     sum_dx = 0
     sum_dy = 0
     sum_dist = 0
@@ -585,7 +584,7 @@ def cal_lookahead_rmse(error, j, verbose=False):
     for i in range(totalStep):
         if j >= len(error[i]):
             break
-        for k in range(n_agent):
+        for k in range(1):
             sum_dx += error[i][j][k]["dx"]
             sum_dy += error[i][j][k]["dy"]
             sum_dist += error[i][j][k]["dist"]
@@ -695,11 +694,19 @@ def cal_avg(error: list, type: str = None):
     dx = 0
     dy = 0
     dist = 0
+    dx_std = 0
+    dy_std = 0
+    dist_std = 0
     lookahead_dx = [0 for _ in range(50)]
     lookahead_dy = [0 for _ in range(50)]
     lookahead_dist = [0 for _ in range(50)]
+    lookahead_dx_std = [0 for _ in range(50)]
+    lookahead_dy_std = [0 for _ in range(50)]
+    lookahead_dist_std = [0 for _ in range(50)]
     step = 0
     lh_step = [0 for _ in range(50)]
+
+    # calculate mean
     for i in range(n):
         if "lookahead" not in type and error[i][type] is not None:
             dx += error[i][type]["dx"]
@@ -717,6 +724,23 @@ def cal_avg(error: list, type: str = None):
                     lookahead_dist[j] += error[i][type]["dist"][j]
                 else:
                     continue
+
+    # calculate std
+    for i in range(n):
+        if "lookahead" not in type and error[i][type] is not None and step != 0:
+            dx_std += (error[i][type]["dx"] - dx/step)**2
+            dy_std += (error[i][type]["dy"] - dy/step)**2
+            dist_std += (error[i][type]["dist"] - dist/step)**2
+        elif "lookahead" in type and error[i][type] is not None:
+            lookahead_step = len(error[i][type]["dx"])
+            # print(i, type, lookahead_step)
+            for j in range(lookahead_step):
+                if error[i][type]["dist"][j] is not None and lh_step[j] != 0:
+                    lookahead_dx_std[j] += (error[i][type]["dx"][j] - lookahead_dx[j]/lh_step[j])**2
+                    lookahead_dy_std[j] += (error[i][type]["dy"][j] - lookahead_dy[j]/lh_step[j])**2
+                    lookahead_dist_std[j] += (error[i][type]["dist"][j] - lookahead_dist[j]/lh_step[j])**2
+                else:
+                    continue
     if "lookahead" in type:
         for j in range(50):
             if lh_step[j] == 0:
@@ -724,12 +748,19 @@ def cal_avg(error: list, type: str = None):
             lookahead_dx[j] = lookahead_dx[j] / lh_step[j]
             lookahead_dy[j] = lookahead_dy[j] / lh_step[j]
             lookahead_dist[j] = lookahead_dist[j] / lh_step[j]
-        return {"dx": lookahead_dx, "dy": lookahead_dy, "dist": lookahead_dist}
+            lookahead_dx_std[j] = math.sqrt(lookahead_dx_std[j] / lh_step[j])
+            lookahead_dy_std[j] = math.sqrt(lookahead_dy_std[j] / lh_step[j])
+            lookahead_dist_std[j] = math.sqrt(lookahead_dist_std[j] / lh_step[j])
+        return {"dx": lookahead_dx, "dy": lookahead_dy, "dist": lookahead_dist, "dx_std": lookahead_dx_std,
+                "dy_std": lookahead_dy_std, "dist_std": lookahead_dist_std}
     if step == 0:
-        return {"dx": 0, "dy": 0, "dist": 0}
+        return {"dx": 0, "dy": 0, "dist": 0, "dx_std": 0, "dy_std": 0, "dist_std": 0}
     else:
         if "lookahead" not in type:
-            return {"dx": dx / step, "dy": dy / step, "dist": dist / step}
+
+            return {"dx": dx / step, "dy": dy / step, "dist": dist / step,
+                    "dx_std": math.sqrt(dx_std / step), "dy_std": math.sqrt(dy_std / step),
+                    "dist_std": math.sqrt(dist_std / step)}
 
 
 def save_error(error: list):
@@ -743,27 +774,42 @@ def save_error(error: list):
     lh_straight_rmse = cal_avg(error, "straight_lookahead_rmse")
     print("==========================================================")
     print("Overall RMSE:")
-    print("dx: {}   dy: {}   dist: {}, [m]".format(overall_rmse['dx'], overall_rmse['dy'], overall_rmse['dist']))
+    print("dx: {}±{}   dy: {}±{}   dist: {}±{}  [m]".format(overall_rmse['dx'], overall_rmse['dx_std'],
+                                                            overall_rmse['dy'], overall_rmse['dy_std'],
+                                                            overall_rmse['dist'], overall_rmse['dist_std']))
     print("Curve RMSE:")
-    print("dx: {}   dy: {}   dist: {}, [m]".format(curve_rmse['dx'], curve_rmse['dy'], curve_rmse['dist']))
+    print("dx: {}±{}   dy: {}±{}   dist: {}±{}  [m]".format(curve_rmse['dx'], curve_rmse['dx_std'],
+                                                            curve_rmse['dy'], curve_rmse['dy_std'],
+                                                            curve_rmse['dist'], curve_rmse['dist_std']))
     print("Lane Change RMSE:")
-    print("dx: {}   dy: {}   dist: {}, [m]".format(lane_change_rmse['dx'], lane_change_rmse['dy'],
-                                                   lane_change_rmse['dist']))
+    print("dx: {}±{}   dy: {}±{}   dist: {}±{}  [m]".format(lane_change_rmse['dx'], lane_change_rmse['dx_std'],
+                                                            lane_change_rmse['dy'], lane_change_rmse['dy_std'],
+                                                            lane_change_rmse['dist'], lane_change_rmse['dist_std']))
     print("Straight RMSE:")
-    print("dx: {}   dy: {}   dist: {}, [m]".format(straight_rmse['dx'], straight_rmse['dy'], straight_rmse['dist']))
+    print("dx: {}±{}   dy: {}±{}   dist: {}±{}  [m]".format(straight_rmse['dx'], straight_rmse['dx_std'],
+                                                            straight_rmse['dy'], straight_rmse['dy_std'],
+                                                            straight_rmse['dist'], straight_rmse['dist_std']))
     print("==========================================================")
     print("Overall RMSE:")
     print("dist")
     print(lh_overall_rmse["dist"])
+    print("dist std")
+    print(lh_overall_rmse["dist_std"])
     print("Curve RMSE:")
     print("dist")
     print(lh_curve_rmse["dist"])
+    print("dist std")
+    print(lh_curve_rmse["dist_std"])
     print("Lane Change RMSE:")
     print("dist")
     print(lh_laneChange_rmse["dist"])
+    print("dist std")
+    print(lh_laneChange_rmse["dist_std"])
     print("Straight RMSE:")
     print("dist")
     print(lh_straight_rmse["dist"])
+    print("dist std")
+    print(lh_straight_rmse["dist_std"])
     print("==========================================================")
 
 
