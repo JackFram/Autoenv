@@ -715,7 +715,7 @@ def cal_avg(error: list, type: str = None):
             step += 1
         elif "lookahead" in type and error[i][type] is not None:
             lookahead_step = len(error[i][type]["dx"])
-            print(i, type, lookahead_step)
+            # print(i, type, lookahead_step)
             for j in range(lookahead_step):
                 if error[i][type]["dist"][j] is not None:
                     lh_step[j] += 1
@@ -774,19 +774,19 @@ def save_error(error: list):
     lh_straight_rmse = cal_avg(error, "straight_lookahead_rmse")
     print("==========================================================")
     print("Overall RMSE:")
-    print("dx: {}±{}   dy: {}±{}   dist: {}±{}  [m]".format(overall_rmse['dx'], overall_rmse['dx_std'],
+    print("dx: {} +- {}   dy: {} +- {}   dist: {} +- {}  [m]".format(overall_rmse['dx'], overall_rmse['dx_std'],
                                                             overall_rmse['dy'], overall_rmse['dy_std'],
                                                             overall_rmse['dist'], overall_rmse['dist_std']))
     print("Curve RMSE:")
-    print("dx: {}±{}   dy: {}±{}   dist: {}±{}  [m]".format(curve_rmse['dx'], curve_rmse['dx_std'],
+    print("dx: {} +- {}   dy: {} +- {}   dist: {} +- {}  [m]".format(curve_rmse['dx'], curve_rmse['dx_std'],
                                                             curve_rmse['dy'], curve_rmse['dy_std'],
                                                             curve_rmse['dist'], curve_rmse['dist_std']))
     print("Lane Change RMSE:")
-    print("dx: {}±{}   dy: {}±{}   dist: {}±{}  [m]".format(lane_change_rmse['dx'], lane_change_rmse['dx_std'],
+    print("dx: {} +- {}   dy: {} +- {}   dist: {} +- {}  [m]".format(lane_change_rmse['dx'], lane_change_rmse['dx_std'],
                                                             lane_change_rmse['dy'], lane_change_rmse['dy_std'],
                                                             lane_change_rmse['dist'], lane_change_rmse['dist_std']))
     print("Straight RMSE:")
-    print("dx: {}±{}   dy: {}±{}   dist: {}±{}  [m]".format(straight_rmse['dx'], straight_rmse['dx_std'],
+    print("dx: {} +- {}   dy: {} +- {}   dist: {} +- {}  [m]".format(straight_rmse['dx'], straight_rmse['dx_std'],
                                                             straight_rmse['dy'], straight_rmse['dy_std'],
                                                             straight_rmse['dist'], straight_rmse['dist_std']))
     print("==========================================================")
