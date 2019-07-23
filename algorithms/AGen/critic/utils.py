@@ -1,6 +1,3 @@
-import tensorflow as tf
-
-
 def batch_to_path_rewards(rewards, path_lengths):
     '''
     Args:

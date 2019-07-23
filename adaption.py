@@ -63,7 +63,6 @@ def online_adaption(
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
     assert trajinfos is not None
-    start_time = time.time()
     theta = np.load('./data/theta.npy')  # TODO: change the file path
     theta = np.mean(theta)
 
@@ -89,26 +88,20 @@ def online_adaption(
     for i in range(n_agents):
         adapnets.append(rls.rls(lbd, theta, param_length, 2))
 
-    avg = 0
-    end_time = time.time()
     # print(('Reset env Running time: %s Seconds' % (end_time - start_time)))
     lx = x
     error = []  # size is (maxstep, predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
     curve_error = []
     changeLane_error = []
     straight_error = []
-    action_time = 0
-    step_time = 0
-    adaption_time = 0
-    predict_time = 0
-    reset_time = 0
+    orig_traj_list = []
+    pred_traj_list = []
+    time_list = []
     for step in tqdm.tqdm(range(ego_start_frame - 1, maxstep + ego_start_frame - 1)):
 
         # print("step = ", step)
         # print("feature: ", x)
 
-        start = time.time()
-        start_time = time.time()
         a, a_info, hidden_vec = policy.get_actions_with_prev(obs[:, step, :], mean[:, step, :], prev_hiddens)
 
         if adapt_steps == 1:
@@ -125,67 +118,42 @@ def online_adaption(
             for _ in range(N_ITERATION):
                 adapnets[i].update(adap_vec[i], mean[i, step+1, :])
                 adapnets[i].draw.append(adapnets[i].theta[6, 1])
-        end_time = time.time()
-        adaption_time += end_time - start_time
+
         prev_actions, prev_hiddens = a, hidden_vec
-        start_time = time.time()
-        # print("TFenv reset feature: ", x)
-        # print("loading feature: ", obs[:, step + 1, :])
-        traj, error_per_step, time_info, traj_cat = prediction(env_kwargs, x, adapnets, env, policy,
-                                                     prev_hiddens, n_agents, adapt_steps, nids)
-        end_time = time.time()
-        predict_time += (end_time - start_time)
-        action_time += time_info["action"]
-        step_time += time_info["step"]
-        error.append(error_per_step)
+
+        traj, error_per_step, time_info, orig_traj, pred_traj = prediction(env_kwargs, x, adapnets, env, policy,
+                                                                           prev_hiddens, n_agents, adapt_steps, nids)
+        traj_cat = classify_traj(orig_traj)
+
+        if traj_cat != "invalid":
+            error.append(error_per_step)
+            orig_traj_list.append(orig_traj)
+            pred_traj_list.append(pred_traj)
         if traj_cat == "curve":
             curve_error.append(error_per_step)
         elif traj_cat == "changeLane":
             changeLane_error.append(error_per_step)
         elif traj_cat == "straight":
             straight_error.append(error_per_step)
+        if "20" in time_info.keys() and "50" in time_info.keys():
+            time_list.append([time_info["20"], time_info["50"]])
         predicted_trajs.append(traj)
         d = np.stack([adapnets[i].draw for i in range(n_agents)])
-        end = time.time()
-        avg += (start - end)
+
         env_kwargs['start'] += 1
         lx = x
-        start_time = time.time()
         x = env.reset(**env_kwargs)
-        end_time = time.time()
-        reset_time += end_time - start_time
-        # print(('Step %d reset env Running time: %s Seconds' % (step, end_time - start_time)))
-    # print(('predict trajectory time: %s Seconds' % (predict_time / maxstep)))
-    # print(('env reset time: %s Seconds' % (reset_time / maxstep)))
-    # print(('adaption time: %s Seconds' % (adaption_time / maxstep)))
-    # print(('action time: %s Seconds' % (action_time / maxstep)))
-    # print(('env step time: %s Seconds' % (step_time / maxstep)))
-
-    # test
-    # m_stability = utils.cal_m_stability(error, T=150)
-    # with open("./m_stability.pkl", "wb") as fp:
-    #     pickle.dump(m_stability, fp)
-    #     print("finish saving M stability matrix.")
 
     error_info = dict()
-    error_info["overall_rmse"] = utils.cal_overall_rmse(error, verbose=True)
-    error_info["curve_rmse"] = utils.cal_overall_rmse(curve_error, verbose=False)
-    error_info["lane_change_rmse"] = utils.cal_overall_rmse(changeLane_error, verbose=False)
-    error_info["straight_rmse"] = utils.cal_overall_rmse(straight_error, verbose=False)
-
-    error_info["overall_lookahead_rmse"] = utils.cal_lookahead(error, 50)
-    error_info["curve_lookahead_rmse"] = utils.cal_lookahead(curve_error, 50)
-    error_info["lane_change_lookahead_rmse"] = utils.cal_lookahead(changeLane_error, 50)
-    error_info["straight_lookahead_rmse"] = utils.cal_lookahead(straight_error, 50)
-
-    print("======================================")
-    print("RMSE over look ahead score:\n")
-    print("rmse over look ahead dx:")
-    print(error_info["overall_lookahead_rmse"]["dx"][:10])
-    print("rmse over look ahead dy:")
-    print(error_info["overall_lookahead_rmse"]["dy"][:10])
-    print("rmse over look ahead dist:")
-    print(error_info["overall_lookahead_rmse"]["dist"][:10])
+    error_info["overall"] = error
+    error_info["curve"] = curve_error
+    error_info["lane_change"] = changeLane_error
+    error_info["straight"] = straight_error
+    error_info["time_info"] = time_list
+    error_info["orig_traj"] = orig_traj_list
+    error_info["pred_traj"] = pred_traj_list
+    print("\n\nVehicle id: {} Statistical Info:\n\n".format(env_kwargs['egoid']))
+    utils.print_error(error_info)
 
     return predicted_trajs, error_info
 
@@ -194,15 +162,15 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
     traj = hgail.misc.simulation.Trajectory()
     predict_span = 50
     error_per_step = []  # size is (predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
-    get_action_time = 0
-    env_step_time = 0
     valid_data = True
     speed_limit = 40
-    trajectory = []
+    orig_trajectory = []
+    pred_trajectory = []
+    start_time = time.time()
+    time_info = {}
     for j in range(predict_span):
         # if j == 0:
         #     print("feature {}".format(j), x)
-        start_time = time.time()
         a, a_info, hidden_vec = policy.get_actions(x)
 
         if adapt_steps == 1:
@@ -220,41 +188,39 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
 
         rnd = np.random.normal(size=means.shape)
         actions = rnd * np.exp(log_std) + means
-        end_time = time.time()
-        get_action_time += (end_time - start_time)
-        start_time = time.time()
         nx, r, dones, e_info = env.step(actions)
         traj.add(x, actions, r, a_info, e_info)
-        end_time = time.time()
-        env_step_time += (end_time - start_time)
         error_per_agent = []  # length is n_agent, each element is a dict(dx: , dy: ,dist: )
 
         for i in range(n_agents):
+            assert n_agents == 1
             # print("orig x: ", e_info["orig_x"][i])
             # print("orig y: ", e_info["orig_y"][i])
             # print("predicted x: ", e_info["x"][i])
             # print("predicted y: ", e_info["y"][i])
             dx = abs(e_info["orig_x"][i] - e_info["x"][i])
             dy = abs(e_info["orig_y"][i] - e_info["y"][i])
-            trajectory.append([e_info["orig_x"][i], e_info["orig_y"][i]])
             dist = math.hypot(dx, dy)
             # print("dist: ", dist)
             if e_info["orig_v"][i] > speed_limit:
                 valid_data = False
             # print("{}-----> dx: {} dy: {} dist: {}".format(j, dx, dy, dist))
             if valid_data:
-                error_per_agent.append({"dx": dx, "dy": dy, "dist": dist})
+                error_per_agent.append(dist)
+                orig_trajectory.append([e_info["orig_x"][i], e_info["orig_y"][i]])
+                pred_trajectory.append([e_info["x"][i], e_info["y"][i]])
         if valid_data:
-            error_per_step.append(error_per_agent)
+            error_per_step += error_per_agent
         if any(dones):
             break
         x = nx
+        end_time = time.time()
+        if j == 19:
+            time_info["20"] = end_time - start_time
+        elif j == 49:
+            time_info["50"] = end_time - start_time
 
-    time_info = {"action": (get_action_time / predict_span), "step": (env_step_time / predict_span)}
-    # this should be delete and replaced
-    # y = env.reset(**env_kwargs)
-
-    return traj.flatten(), error_per_step, time_info, classify_traj(trajectory)
+    return traj.flatten(), error_per_step, time_info, orig_trajectory, pred_trajectory
 
 
 def collect_trajectories(
@@ -262,7 +228,7 @@ def collect_trajectories(
         params,
         egoids,
         starts,
-        trajlist,
+        error_dict,
         pid,
         env_fn,
         policy_fn,
@@ -317,7 +283,13 @@ def collect_trajectories(
             # I add not because single simulation has no orig_x etc.
             # egoid = random.choice(egoids)
             trajinfos = trajinfos[0]
-            error = []
+            error = {"overall": [],
+                     "curve": [],
+                     "lane_change": [],
+                     "straight": [],
+                     "time_info": [],
+                     "orig_traj": [],
+                     "pred_traj": []}
             for veh_id in trajinfos.keys():
                 if trajinfos[veh_id]["te"] - trajinfos[veh_id]["ts"] <= 50:
                     continue
@@ -341,9 +313,14 @@ def collect_trajectories(
                     trajinfos=trajinfos
                 )
 
-                error.append(error_info)
-            utils.save_error(error)
-            trajlist += error
+                error["overall"] += error_info["overall"]
+                error["curve"] += error_info["curve"]
+                error["lane_change"] += error_info["lane_change"]
+                error["straight"] += error_info["straight"]
+                error["time_info"] += error_info["time_info"]
+                error["orig_traj"] += error_info["orig_traj"]
+                error["pred_traj"] += error_info["pred_traj"]
+            error_dict.append(error)
         else:
             # for i in sample:
             for i, egoid in enumerate(egoids):
@@ -360,11 +337,9 @@ def collect_trajectories(
                     adapt_steps=adapt_steps,
                     nids=nids
                 )
-                trajlist.append(traj)
+                # trajlist.append(traj)
 
-        print('finish online adaption')
-
-    return trajlist
+    return error_dict
 
 
 def parallel_collect_trajectories(
@@ -382,7 +357,7 @@ def parallel_collect_trajectories(
     # build manager and dictionary mapping ego ids to list of trajectories
     start_time = time.time()
     manager = mp.Manager()
-    trajlist = manager.list()
+    error_dict = manager.list()
 
     # set policy function
     policy_fn = build_env.build_hierarchy if use_hgail else validate_utils.build_policy
@@ -404,7 +379,7 @@ def parallel_collect_trajectories(
                 params,
                 proc_egoids[pid],
                 starts,
-                trajlist,
+                error_dict,
                 pid,
                 env_fn,
                 policy_fn,
@@ -422,7 +397,7 @@ def parallel_collect_trajectories(
     pool.close()
     # let the julia processes finish up
     time.sleep(10)
-    return trajlist
+    return error_dict[0]
 
 
 def single_process_collect_trajectories(
@@ -491,7 +466,7 @@ def collect(
         args.ngsim_filename.split('.')[0], adapt_steps, args.env_multiagent))
 
     with Timer():
-        trajs = collect_fn(
+        error = collect_fn(
             args,
             params,
             egoids,
@@ -504,7 +479,7 @@ def collect(
             adapt_steps=adapt_steps
         )
 
-    return trajs
+    return error
 
     # utils.write_trajectories(output_filepath, trajs)
 
@@ -593,15 +568,24 @@ if __name__ == '__main__':
 
     prev_lane_name = None
     data_base_dir = "./preprocessing/data"
-    total_error = []
-    total_traj_num = 0
+    total_error = {"overall": [],
+                   "curve": [],
+                   "lane_change": [],
+                   "straight": [],
+                   "time_info": [],
+                   "orig_traj": [],
+                   "pred_traj": []}
     for dir_name in os.listdir(data_base_dir):
         if "downsampled" not in dir_name and os.path.isdir(os.path.join(data_base_dir, dir_name, "processed")):
-            dir_error = []
+            dir_error = {"overall": [],
+                         "curve": [],
+                         "lane_change": [],
+                         "straight": [],
+                         "time_info": [],
+                         "orig_traj": [],
+                         "pred_traj": []}
             for file_name in os.listdir(os.path.join(data_base_dir, dir_name, "processed")):
-                print(file_name)
                 if "section" in file_name:
-                    # TODO: you can change this filename
                     orig_traj_file = os.path.join(dir_name, "processed", file_name)
                     print("processing file {}".format(orig_traj_file))
                 else:
@@ -648,11 +632,9 @@ if __name__ == '__main__':
                     # of simulations to run overall
                     # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
                     #  starts = dict()
-                    egoids, traj_num = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+                    egoids, _ = load_egoids(fn, args, run_args.n_runs_per_ego_id)
                 else:
-                    egoids, traj_num = load_egoids(fn, args, run_args.n_runs_per_ego_id)
-                total_traj_num += traj_num
-                print("traj_num: {}".format(traj_num))
+                    egoids, _ = load_egoids(fn, args, run_args.n_runs_per_ego_id)
                 print("egoids")
                 print(egoids)
                 # print("starts")
@@ -676,11 +658,25 @@ if __name__ == '__main__':
                     lbd=run_args.lbd,
                     adapt_steps=run_args.adapt_steps
                 )
-                dir_error += error
-            print("Directory: {} Statistical Info:\n\n".format(dir_name))
-            utils.save_error(dir_error)
-            total_error += dir_error
-            print("Overall Statistical Info up to now:\n\n")
-            print("Total trajectory number: {}\n\n".format(total_traj_num))
-            utils.save_error(total_error)
+                print("\n\nDirectory: {}, file: {} Statistical Info:\n\n".format(dir_name, file_name))
+                utils.print_error(error)
+                dir_error["overall"] += error["overall"]
+                dir_error["curve"] += error["curve"]
+                dir_error["lane_change"] += error["lane_change"]
+                dir_error["straight"] += error["straight"]
+                dir_error["time_info"] += error["time_info"]
+                dir_error["orig_traj"] += error["orig_traj"]
+                dir_error["pred_traj"] += error["pred_traj"]
+                print(np.array(dir_error["orig_traj"]).shape, dir_error["orig_traj"][:3])
+            print("\n\nDirectory: {} Statistical Info:\n\n".format(dir_name))
+            utils.print_error(dir_error)
+            total_error["overall"] += dir_error["overall"]
+            total_error["curve"] += dir_error["curve"]
+            total_error["lane_change"] += dir_error["lane_change"]
+            total_error["straight"] += dir_error["straight"]
+            total_error["time_info"] += dir_error["time_info"]
+            total_error["orig_traj"] += dir_error["orig_traj"]
+            total_error["pred_traj"] += dir_error["pred_traj"]
+            print("\n\nOverall Statistical Info up to now:\n\n")
+            utils.print_error(total_error)
 

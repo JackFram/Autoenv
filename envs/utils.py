@@ -813,6 +813,44 @@ def save_error(error: list):
     print("==========================================================")
 
 
+def print_error(error: dict):
+    overall_error = np.array(error["overall"])
+    curve_error = np.array(error["curve"])
+    lane_change_error = np.array(error["lane_change"])
+    straight_error = np.array(error["straight"])
+    time_list = np.array(error["time_info"])
+    print("========================================================================================================")
+    print("overall lane number: {}, curve: {}, lane_change: {}, straight: {}".format(overall_error.shape[0],
+                                                                                     curve_error.shape[0],
+                                                                                     lane_change_error.shape[0],
+                                                                                     straight_error.shape[0]))
+    print("50 steps, 0.1s/step:")
+    print("Average trajectory prediction time: {} seconds".format(time_list.mean(axis=0)[-1]))
+    print("Look head RMSE:")
+    print("Overall: ", overall_error.mean(axis=0))
+    print("Look head RMSE std:")
+    print("Overall: ", overall_error.std(axis=0))
+    print("Range of RMSE per step:")
+    print("min: {}\nmax: {}".format(overall_error.min(axis=0), overall_error.max(axis=0)))
+    print("RMSE of Last predicted step: {}".format(overall_error.mean(axis=0)[-1]))
+    print("Std of Last predicted step: {}".format(overall_error.std(axis=0)[-1]))
+    print("Range of last step RMSE: ")
+    print("min: {}, max: {}\n\n".format(overall_error.min(axis=0)[-1], overall_error.max(axis=0)[-1]))
+    print("20 steps, 0.1s/step:")
+    print("Average trajectory prediction time: {} seconds".format(time_list.mean(axis=0)[0]))
+    overall_error = overall_error[:, :20]
+    print("Overall: ", overall_error.mean(axis=0))
+    print("Look head RMSE std:")
+    print("Overall: ", overall_error.std(axis=0))
+    print("Range of RMSE per step:")
+    print("min: {}\nmax: {}".format(overall_error.min(axis=0), overall_error.max(axis=0)))
+    print("RMSE of Last predicted step: {}".format(overall_error.mean(axis=0)[-1]))
+    print("Std of Last predicted step: {}".format(overall_error.std(axis=0)[-1]))
+    print("Range of last step RMSE: ")
+    print("min: {}, max: {}".format(overall_error.min(axis=0)[-1], overall_error.max(axis=0)[-1]))
+    print("========================================================================================================\n")
+
+
 
 
 

@@ -249,7 +249,7 @@ class MultiAgentAutoEnv:
         }
 
         # print("orig x: {}, orig y: {}, orig v: {}".format(orig_vehs[0].state.posG.x, orig_vehs[0].state.posG.y,
-        #                                                   orig_vehs[0].state.v))
+        #                                                    orig_vehs[0].state.v))
         # print("predict x: {}, predict y: {}".format(self.ego_vehs[0].state.posG.x, self.ego_vehs[0].state.posG.y))
 
         for i in range(self.n_veh):

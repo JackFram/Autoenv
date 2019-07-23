@@ -192,27 +192,31 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
 
     state_ind = 0
     print("convert: frames and states")
+    prev_x = {}
+    prev_y = {}
     for frame in tqdm(range(1, tdraw.nframes + 1)):  # change from 1 to 0
 
         frame_lo = state_ind + 1
         # print("frame: {}".format(frame))
-
         for id in ngsim_trajdata.carsinframe(tdraw, frame):
             # print("id: {}".format(id))
+            if id not in prev_x:
+                prev_x[id] = 0
+                prev_y[id] = 0
             dfind = ngsim_trajdata.car_df_index(tdraw, id, frame)
             assert dfind != -1
-
+            theta = math.atan2(df.at[dfind, 'global_y'] - prev_y[id], df.at[dfind, 'global_x'] - prev_x[id])
             posG = VecSE2.VecSE2(df.at[dfind, 'global_x'] * METERS_PER_FOOT,
                                  df.at[dfind, 'global_y'] * METERS_PER_FOOT,
-                                 df.at[dfind, 'global_heading'])
+                                 theta)
+            prev_x[id] = df.at[dfind, 'global_x']
+            prev_y[id] = df.at[dfind, 'global_y']
             # print(df.at[dfind, 'global_heading'])
             speed = df.at[dfind, 'speed'] * METERS_PER_FOOT
             state_ind += 1
             # print(state_ind)
             state = Vehicle.VehicleState()
             state.set(posG, roadway, speed)
-            if state.posF.roadind.tag.lane > 2:
-                print(state.posF.roadind.tag.lane)
             states.append(record.RecordState(state, id))
 
         frame_hi = state_ind

@@ -19,7 +19,7 @@ def classify_traj(trajectory: list):
     '''
 
     traj_len = len(trajectory)
-    if traj_len <= 2:
+    if traj_len < 50:
         return "invalid"
     curvature_threshold = 0.03
     lane_change_threshold = 0.1
