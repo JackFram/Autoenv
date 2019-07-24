@@ -1,62 +1,68 @@
-from algorithms.AGen.critic.model import ObservationActionMLP
-from algorithms.AGen.critic.base import Critic
-from algorithms.dataset.CriticDataset import CriticDataset
-from algorithms.dataset.utils import KeyValueReplayMemory, load_dataset
+import numpy as np
 import os
+import algorithms.utils as utils
+from envs.utils import load_data
+from algorithms.RL_Algorithm.GAIL.gail import GAIL
 
-# setup
-env_id = "CartPole-v0"
-exp_name = "CartPole-v0"
-exp_dir = utils.set_up_experiment(exp_name=exp_name, phase='imitate')
-saver_dir = os.path.join(exp_dir, 'imitate', 'log')
-saver_filepath = os.path.join(saver_dir, 'checkpoint')
 
-# constants
-use_infogail = False
-use_critic_replay_memory = True
-latent_dim = 2
-real_data_maxsize = None
-batch_size = 8000
-n_critic_train_epochs = 50
-n_recognition_train_epochs = 30
-scheduler_k = 20
-trpo_step_size = .01
-critic_learning_rate = .0001
-critic_dropout_keep_prob = .6
-recognition_learning_rate = .0001
-initial_filepath = None  # tf.train.latest_checkpoint(saver_dir)
-obs_size = 66
-act_size = 2
+def run(args):
+    print("loading from:", args.params_filepath)
+    print("saving to:", args.exp_name)
+    exp_dir = utils.set_up_experiment(exp_name=args.exp_name, phase='imitate')
+    saver_dir = os.path.join(exp_dir, 'imitate', 'log')
+    saver_filepath = os.path.join(saver_dir, 'checkpoint')
+    np.savez(os.path.join(saver_dir, 'args'),  args=args)
 
-# build the critic
-critic_network = ObservationActionMLP(
-    hidden_layer_dims=[64, 64],
-    dropout_keep_prob=critic_dropout_keep_prob,
-    obs_size=obs_size,
-    act_size=act_size
-)
+    # build components
+    env, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=args.vectorize)
+    data = load_data(
+        args.expert_filepath,
+        act_low=act_low,
+        act_high=act_high,
+        min_length=args.env_H + args.env_primesteps,
+        clip_std_multiple=args.normalize_clip_std_multiple,
+        ngsim_filename=args.ngsim_filename
+    )
 
-expert_data_filepath = "Some file path here"
+    critic = utils.build_critic(args, data, env)
+    policy = utils.build_policy(args, env)
+    baseline = utils.build_baseline(args, env)
+    reward_handler = utils.build_reward_handler(args)
 
-data = load_dataset(expert_data_filepath, maxsize=real_data_maxsize)
+    # build algo
+    sampler_args = dict(n_envs=args.n_envs) if args.vectorize else None
 
-if use_critic_replay_memory:
-    critic_replay_memory = KeyValueReplayMemory(maxsize=3 * batch_size)
-else:
-    critic_replay_memory = None
+    if args.policy_recurrent:
+        optimizer = ConjugateGradientOptimizer(
+            max_backtracks=50,
+            hvp_approach=FiniteDifferenceHvp
+        )
+    else:
+        optimizer = None
 
-critic_dataset = CriticDataset(
-    data,
-    replay_memory=critic_replay_memory,
-    batch_size=1000
-)
+    algo = GAIL(
+        critic=critic,
+        recognition=None,
+        reward_handler=reward_handler,
+        env=env,
+        policy=policy,
+        baseline=baseline,
+        validator=None,
+        batch_size=args.batch_size,
+        max_path_length=args.max_path_length,
+        n_itr=args.n_itr,
+        discount=args.discount,
+        step_size=args.trpo_step_size,
+        saver=None,
+        saver_filepath=saver_filepath,
+        force_batch_sampler=False if args.vectorize else True,
+        sampler_args=sampler_args,
+        snapshot_env=False,
+        plot=False,
+        optimizer=optimizer,
+        optimizer_args=dict(
+            max_backtracks=50,
+            debug_nan=True
+        )
+    )
 
-critic = Critic(
-        dataset=critic_dataset,
-        network=critic_network,
-        obs_dim=obs_size,
-        act_dim=act_size,
-        n_train_epochs=n_critic_train_epochs,
-        grad_norm_rescale=50.,
-        verbose=2,
-)

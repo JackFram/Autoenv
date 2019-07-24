@@ -11,11 +11,14 @@ class GaussianMLP(nn.Module):
             input_dim,
             output_dim,
             mean_network=None,
+            optimizer=None,
             hidden_size=(32, 32),
             step_size=0.01,
             init_std=1.0,
             normalize_inputs=True,
             normalize_outputs=True,
+            subsample_factor=1.0,
+            max_itr=20
     ):
         """
         :param input_dim:
@@ -30,8 +33,6 @@ class GaussianMLP(nn.Module):
         super(GaussianMLP, self).__init__()
         if mean_network is None:
             mean_network = MLP(input_size=input_dim, hidden_size=hidden_size, output_size=output_dim)
-        self.fc_std = nn.Linear(input_dim, output_dim)
-        self.fc_std.weight.fill_(np.log(init_std))
 
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -40,13 +41,69 @@ class GaussianMLP(nn.Module):
         self.init_std = init_std
         self.normalize_inputs = normalize_inputs
         self.normalize_outputs = normalize_outputs
+        self.subsample_factor = subsample_factor
+        if optimizer is None:
+            optimizer = optim.RMSprop(mean_network.parameters(), lr=self.lr)
+        self.optimizer = optimizer
+        self.criterion = nn.MSELoss()
+        self.max_itr = max_itr
 
     def forward(self, x):
         if self.normalize_inputs:
             x = (x - x.mean(axis=0))/x.std(axis=0)
         mean = self.mean_network(x)
-        std = self.fc_std(x)
         if self.normalize_outputs:
             mean = (mean - mean.mean(axis=0))/mean.std(axis=0)
-            std = (std - np.log(mean.std(axis=0)))
-        return mean, std
+        return mean
+
+    def fit(self, xs, ys):
+        if self.subsample_factor < 1:
+            num_samples_tot = xs.shape[0]
+            idx = np.random.randint(0, num_samples_tot, int(num_samples_tot * self._subsample_factor))
+            xs, ys = xs[idx], ys[idx]
+        if self.normalize_outputs:
+            ys_mean = ys.mean(axis=0)
+            ys_std = ys.std(axis=0)
+            ys = (ys - ys_mean)/ys_std
+        for itr in range(self.max_itr):
+            output = self.forward(xs)
+            loss = self.criterion(output, ys)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+    def predict(self, xs):
+        return self.forward(xs)
+
+
+class GaussianMLPBaseline(object):
+    def __init__(
+            self,
+            env_spec,
+            subsample_factor=1,
+            num_seq_inputs=1,
+            regressor_args=None
+    ):
+        if regressor_args is None:
+            regressor_args = dict()
+
+        self._regressor = GaussianMLP(
+            input_dim=env_spec.observation_space.flat_dim,
+            output_dim=1,
+            **regressor_args
+        )
+
+    def fit(self, paths):
+        observations = np.concatenate([p["observations"] for p in paths])
+        returns = np.concatenate([p["returns"] for p in paths])
+        self._regressor.fit(observations, returns.reshape((-1, 1)))
+
+    def predict(self, path):
+        return self._regressor.predict(path["observations"]).flatten()
+
+
+
+
+
+
+

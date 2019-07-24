@@ -4,6 +4,7 @@ import torch.nn as nn
 import numpy as np
 
 from algorithms.policy.GRUNetwork import GRUNetwork
+from algorithms.distribution.recurrent_diagonal_gaussian import RecurrentDiagonalGaussian
 
 
 class GaussianGRUPolicy(nn.Module):
@@ -47,11 +48,45 @@ class GaussianGRUPolicy(nn.Module):
 
         self.prev_actions = None
         self.prev_hiddens = None
+        self.dist = RecurrentDiagonalGaussian(action_dim)
 
     def forward(self, x, h=None):
         x, h = self.mean_network.forward(x, h)
         log_std = self.fc_std(h)
         return x, log_std, h
+
+    def dist_info_sym(self, obs_var, state_info_vars):
+        n_batches = np.array(obs_var).shape[0]
+        n_steps = np.array(obs_var).shape[1]
+        obs_var = torch.tensor(obs_var)
+        obs_var = torch.reshape(obs_var, (n_batches, n_steps, -1))
+        if self.state_include_action:
+            prev_action_var = state_info_vars["prev_action"]
+            all_input_var = torch.cat((obs_var, prev_action_var), dim=2)
+        else:
+            all_input_var = obs_var
+        if self.feature_network is None:
+            means, log_stds, _ = self.forward(all_input_var)
+        else:
+            flat_input_var = torch.reshape(all_input_var, (-1, self.input_dim))
+            feature_batch = self.feature_network(flat_input_var)
+            means, log_stds, _ = self.forward(feature_batch)
+        return dict(mean=means, log_std=log_stds)
+
+    @property
+    def vectorized(self):
+        return True
+
+    def reset(self, dones=None):
+        if dones is None:
+            dones = [True]
+        dones = np.asarray(dones)
+        if self.prev_actions is None or len(dones) != len(self.prev_actions):
+            self.prev_actions = np.zeros((len(dones), self.action_space.flat_dim))
+            self.prev_hiddens = np.zeros((len(dones), self.hidden_dim))
+
+        self.prev_actions[dones] = 0.
+        self.prev_hiddens[dones] = self.mean_network.hid_init_param.eval()
 
     def get_action(self, observation):
         actions, agent_infos, _ = self.get_actions([observation])
@@ -108,6 +143,24 @@ class GaussianGRUPolicy(nn.Module):
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
         return actions, agent_info, hidden_vec
+
+    @property
+    def recurrent(self):
+        return True
+
+    @property
+    def distribution(self):
+        return self.dist
+
+    @property
+    def state_info_specs(self):
+        if self.state_include_action:
+            return [
+                ("prev_action", (self.action_dim,)),
+            ]
+        else:
+            return []
+
 
 
 
