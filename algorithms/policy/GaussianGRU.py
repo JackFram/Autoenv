@@ -24,8 +24,8 @@ class GaussianGRUPolicy(nn.Module):
         else:
             input_dim = obs_dim
 
-        if feature_network is None:
-            feature_dim = input_dim
+        # if feature_network is None:
+        feature_dim = input_dim
 
         self.mean_network = GRUNetwork(
             input_dim=feature_dim,
@@ -34,6 +34,7 @@ class GaussianGRUPolicy(nn.Module):
             gru_layer=gru_layer,
             output_nonlinearity=output_nonlinearity
         )
+        self.feature_network = feature_network
 
         self.fc_std = nn.Linear(hidden_dim, action_dim)
         self.fc_std.weight.fill_(np.log(init_std))
@@ -107,5 +108,6 @@ class GaussianGRUPolicy(nn.Module):
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
         return actions, agent_info, hidden_vec
+
 
 

@@ -667,7 +667,6 @@ if __name__ == '__main__':
                 dir_error["time_info"] += error["time_info"]
                 dir_error["orig_traj"] += error["orig_traj"]
                 dir_error["pred_traj"] += error["pred_traj"]
-                print(np.array(dir_error["orig_traj"]).shape, dir_error["orig_traj"][:3])
             print("\n\nDirectory: {} Statistical Info:\n\n".format(dir_name))
             utils.print_error(dir_error)
             total_error["overall"] += dir_error["overall"]

@@ -832,8 +832,8 @@ def print_error(error: dict):
     print("Look head RMSE std:")
     print("Overall: ", overall_error.std(axis=0))
     print("Range of RMSE per step:")
-    print("min: {}\nmax: {}".format(overall_error.min(axis=0), overall_error.max(axis=0)))
     if len(overall_error) != 0:
+        print("min: {}\nmax: {}".format(overall_error.min(axis=0), overall_error.max(axis=0)))
         print("RMSE of Last predicted step: {}".format(overall_error.mean(axis=0)[-1]))
         print("Std of Last predicted step: {}".format(overall_error.std(axis=0)[-1]))
         print("Range of last step RMSE: ")
