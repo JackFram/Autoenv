@@ -22,7 +22,8 @@ def classify_traj(trajectory: list):
     if traj_len < 50:
         return "invalid"
     curvature_threshold = 0.03
-    lane_change_threshold = 0.1
+    lane_change_threshold = 0.07
+    valid_threshold = 0.1
 
     x = trajectory[0]
     y = trajectory[1]
@@ -34,5 +35,7 @@ def classify_traj(trajectory: list):
         return "straight"
     elif angle < lane_change_threshold:
         return "curve"
-    else:
+    elif angle < valid_threshold:
         return "changeLane"
+    else:
+        return "invalid"

@@ -117,3 +117,4 @@ class RewardHandler(object):
                 path['rewards'] += self.recognition_scale * np.reshape(recognition_rewards[i], shape)
 
         return paths
+

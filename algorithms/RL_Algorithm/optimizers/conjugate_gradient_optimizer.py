@@ -1,3 +1,10 @@
+import numpy as np
+from algorithms.RL_Algorithm.optimizers import ext
+from algorithms.RL_Algorithm.optimizers import krylov
+from algorithms.RL_Algorithm.optimizers.ext import sliced_fun
+from algorithms.RL_Algorithm.optimizers import tensor_utils
+
+
 class FiniteDifferenceHvp(object):
     def __init__(self, base_eps=1e-8, symmetric=True, grad_clip=None, num_slices=1):
         self.base_eps = base_eps
@@ -49,7 +56,7 @@ class FiniteDifferenceHvp(object):
     def build_eval(self, inputs):
         def eval(x):
             xs = tuple(self.target.flat_to_params(x, trainable=True))
-            ret = sliced_fun(self.opt_fun["f_Hx_plain"], self._num_slices)(inputs,xs) + self.reg_coeff * x
+            ret = sliced_fun(self.opt_fun["f_Hx_plain"], self._num_slices)(inputs, xs) + self.reg_coeff * x
             return ret
 
         return eval
@@ -98,7 +105,7 @@ class ConjugateGradientOptimizer(object):
         self._debug_nan = debug_nan
         self._accept_violation = accept_violation
         if hvp_approach is None:
-            hvp_approach = PerlmutterHvp(num_slices)
+            hvp_approach = FiniteDifferenceHvp(num_slices=num_slices)
         self._hvp_approach = hvp_approach
 
     def update_opt(self, loss, target, leq_constraint, inputs, extra_inputs=None, constraint_name="constraint", *args,
@@ -189,17 +196,10 @@ class ConjugateGradientOptimizer(object):
         else:
             subsample_inputs = inputs
 
-        logger.log("Start CG optimization: #parameters: %d, #inputs: %d, #subsample_inputs: %d"%(len(prev_param),len(inputs[0]), len(subsample_inputs[0])))
-
-        logger.log("computing loss before")
         loss_before = sliced_fun(self._opt_fun["f_loss"], self._num_slices)(inputs, extra_inputs)
-        logger.log("performing update")
 
-        logger.log("computing gradient")
         flat_g = sliced_fun(self._opt_fun["f_grad"], self._num_slices)(inputs, extra_inputs)
-        logger.log("gradient computed")
 
-        logger.log("computing descent direction")
         Hx = self._hvp_approach.build_eval(subsample_inputs + extra_inputs)
 
         descent_direction = krylov.cg(Hx, flat_g, cg_iters=self._cg_iters)
@@ -211,7 +211,7 @@ class ConjugateGradientOptimizer(object):
             initial_step_size = 1.
         flat_descent_step = initial_step_size * descent_direction
 
-        logger.log("descent direction computed")
+        print("descent direction computed")
 
         n_iter = 0
         for n_iter, ratio in enumerate(self._backtrack_ratio ** np.arange(self._max_backtracks)):
@@ -227,15 +227,15 @@ class ConjugateGradientOptimizer(object):
                 break
         if (np.isnan(loss) or np.isnan(constraint_val) or loss >= loss_before or constraint_val >=
             self._max_constraint_val) and not self._accept_violation:
-            logger.log("Line search condition violated. Rejecting the step!")
+            print("Line search condition violated. Rejecting the step!")
             if np.isnan(loss):
-                logger.log("Violated because loss is NaN")
+                print("Violated because loss is NaN")
             if np.isnan(constraint_val):
-                logger.log("Violated because constraint %s is NaN" % self._constraint_name)
+                print("Violated because constraint %s is NaN" % self._constraint_name)
             if loss >= loss_before:
-                logger.log("Violated because loss not improving")
+                print("Violated because loss not improving")
             if constraint_val >= self._max_constraint_val:
-                logger.log("Violated because constraint %s is violated" % self._constraint_name)
+                print("Violated because constraint %s is violated" % self._constraint_name)
             self._target.set_param_values(prev_param, trainable=True)
-        logger.log("backtrack iters: %d" % n_iter)
-        logger.log("computing loss after")
+        print("backtrack iters: %d" % n_iter)
+        print("computing loss after")

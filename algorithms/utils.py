@@ -6,10 +6,12 @@ from algorithms.policy.GaussianGRUPolicy import GaussianGRUPolicy
 from algorithms.policy.GaussianMLPBaseline import GaussianMLPBaseline
 from algorithms.RL_Algorithm.utils import RewardHandler
 from envs.make import Env
-from hgail.envs.vectorized_normalized_env import vectorized_normalized_env
+from hgail.envs.vectorized_normalized_env import vectorized_normalized_env, VectorizedNormalizedEnv
 from sandbox.rocky.tf.envs.base import TfEnv
+from rllab.envs.normalized_env import NormalizedEnv
 from envs.utils import add_kwargs_to_reset
 import os
+import numpy as np
 
 
 def maybe_mkdir(dirpath):
@@ -141,6 +143,55 @@ def set_up_experiment(
     phase_dir = os.path.join(exp_dir, phase)
     maybe_mkdir(phase_dir)
     return exp_dir
+
+
+def save_params(output_dir, params, epoch, max_to_keep=None):
+    # make sure output_dir exists
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
+    # save
+    output_filepath = os.path.join(output_dir, 'itr_{}'.format(epoch))
+    np.savez(output_filepath, params=params)
+
+    # delete files if in excess of max_to_keep
+    if max_to_keep is not None:
+        files = [os.path.join(output_dir, f)
+                for f in os.listdir(output_dir)
+                if os.path.isfile(os.path.join(output_dir, f))
+                and 'itr_' in f]
+        sorted_files = sorted(files, key=os.path.getmtime, reverse=True)
+        if len(sorted_files) > max_to_keep:
+            for filepath in sorted_files[max_to_keep:]:
+                os.remove(filepath)
+
+
+def load_params(filepath):
+    return np.load(filepath)['params'].item()
+
+
+'''
+rllab utils
+'''
+
+
+def extract_wrapped_env(env, typ):
+    while not isinstance(env, typ):
+        # descend to wrapped env
+        if hasattr(env, 'wrapped_env'):
+            env = env.wrapped_env
+        # not the desired type, and has no wrapped env, return None
+        else:
+            return None
+    # reaches this point, then the env is of the desired type, return it
+    return env
+
+
+def extract_normalizing_env(env):
+    normalizing_env = extract_wrapped_env(env, NormalizedEnv)
+    if normalizing_env is None:
+        normalizing_env = extract_wrapped_env(env, VectorizedNormalizedEnv)
+    return normalizing_env
 
 
 
