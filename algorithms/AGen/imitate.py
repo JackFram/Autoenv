@@ -32,14 +32,6 @@ def run(args):
     # build algo
     sampler_args = dict(n_envs=args.n_envs) if args.vectorize else None
 
-    if args.policy_recurrent:
-        optimizer = ConjugateGradientOptimizer(
-            max_backtracks=50,
-            hvp_approach=FiniteDifferenceHvp
-        )
-    else:
-        optimizer = None
-
     algo = GAIL(
         critic=critic,
         recognition=None,
@@ -59,10 +51,10 @@ def run(args):
         sampler_args=sampler_args,
         snapshot_env=False,
         plot=False,
-        optimizer=optimizer,
-        optimizer_args=dict(
-            max_backtracks=50,
-            debug_nan=True
-        )
+        max_kl=args.max_kl,
+        damping=args.damping,
+        l2_reg=args.l2_reg
     )
+
+    algo.train()
 

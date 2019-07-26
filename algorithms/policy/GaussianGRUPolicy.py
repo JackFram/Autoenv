@@ -5,6 +5,7 @@ import numpy as np
 
 from algorithms.policy.GRUNetwork import GRUNetwork
 from algorithms.distribution.recurrent_diagonal_gaussian import RecurrentDiagonalGaussian
+from algorithms.RL_Algorithm.optimizers.utils.math import normal_log_density
 
 
 class GaussianGRUPolicy(nn.Module):
@@ -72,6 +73,33 @@ class GaussianGRUPolicy(nn.Module):
             feature_batch = self.feature_network(flat_input_var)
             means, log_stds, _ = self.forward(feature_batch)
         return dict(mean=means, log_std=log_stds)
+
+    def get_kl(self, x, h=None):
+        mean1, log_std1, std1 = self.forward(x, h)
+
+        mean0 = mean1.detach()
+        log_std0 = log_std1.detach()
+        std0 = std1.detach()
+        kl = log_std1 - log_std0 + (std0.pow(2) + (mean0 - mean1).pow(2)) / (2.0 * std1.pow(2)) - 0.5
+        return kl.sum(1, keepdim=True)
+
+    def get_log_prob(self, x, actions):
+        action_mean, action_log_std, action_std = self.forward(x)
+        return normal_log_density(actions, action_mean, action_log_std, action_std)
+
+    def get_fim(self, x):
+        mean, _, _ = self.forward(x)
+        cov_inv = self.action_log_std.exp().pow(-2).squeeze(0).repeat(x.size(0))
+        param_count = 0
+        std_index = 0
+        id = 0
+        for name, param in self.named_parameters():
+            if name == "action_log_std":
+                std_id = id
+                std_index = param_count
+            param_count += param.view(-1).shape[0]
+            id += 1
+        return cov_inv.detach(), mean, {'std_id': std_id, 'std_index': std_index}
 
     @property
     def vectorized(self):

@@ -1,12 +1,11 @@
-import numpy as np
 import os
 import time
 
-import torch
-
 import algorithms.RL_Algorithm.utils
 from algorithms.utils import save_params, extract_normalizing_env, load_params
-from algorithms.RL_Algorithm.optimizers import ext
+from sandbox.rocky.tf.samplers.batch_sampler import BatchSampler
+from sandbox.rocky.tf.samplers.vectorized_sampler import VectorizedSampler
+from algorithms.RL_Algorithm.optimizers.trpo import trpo_step
 
 
 class GAIL(object):
@@ -16,8 +15,6 @@ class GAIL(object):
                  baseline,
                  critic=None,
                  recognition=None,
-                 optimizer=None,
-                 optimizer_args=None,
                  step_size=0.01,
                  reward_handler=algorithms.RL_Algorithm.utils.RewardHandler(),
                  saver=None,
@@ -41,6 +38,9 @@ class GAIL(object):
                  sampler_cls=None,
                  sampler_args=None,
                  force_batch_sampler=False,
+                 max_kl=None,
+                 damping=None,
+                 l2_reg=None
                  ):
         """
         :param env: Environment
@@ -86,13 +86,7 @@ class GAIL(object):
             else:
                 sampler_cls = BatchSampler
         self.sampler = sampler_cls(self, **sampler_args)
-        self.init_opt()
 
-        if optimizer is None:
-            if optimizer_args is None:
-                optimizer_args = dict()
-            optimizer = ConjugateGradientOptimizer(**optimizer_args)
-        self.optimizer = optimizer
         self.step_size = step_size
 
         self.critic = critic
@@ -102,6 +96,10 @@ class GAIL(object):
         self.saver_filepath = saver_filepath
         self.validator = validator
         self.snapshot_env = snapshot_env
+
+        self.max_kl = max_kl
+        self.damping = damping
+        self.l2_reg = l2_reg
 
     def start_worker(self):
         self.sampler.start_worker()
@@ -187,67 +185,6 @@ class GAIL(object):
         self.policy.log_diagnostics(paths)
         self.baseline.log_diagnostics(paths)
 
-    def init_opt(self):
-        is_recurrent = int(self.policy.recurrent)
-        obs_var = self.env.observation_space.new_tensor_variable(
-            'obs',
-            extra_dims=1 + is_recurrent,
-        )
-        action_var = self.env.action_space.new_tensor_variable(
-            'action',
-            extra_dims=1 + is_recurrent,
-        )
-        advantage_var = tensor_utils.new_tensor(
-            'advantage',
-            ndim=1 + is_recurrent,
-            dtype=tf.float32,
-        )
-        dist = self.policy.distribution
-
-        old_dist_info_vars = {
-            k: tf.placeholder(tf.float32, shape=[None] * (1 + is_recurrent) + list(shape), name='old_%s' % k)
-            for k, shape in dist.dist_info_specs
-        }
-        old_dist_info_vars_list = [old_dist_info_vars[k] for k in dist.dist_info_keys]
-
-        state_info_vars = {
-            k: tf.placeholder(tf.float32, shape=[None] * (1 + is_recurrent) + list(shape), name=k)
-            for k, shape in self.policy.state_info_specs
-        }
-        state_info_vars_list = [state_info_vars[k] for k in self.policy.state_info_keys]
-
-        if is_recurrent:
-            valid_var = tf.placeholder(tf.float32, shape=[None, None], name="valid")
-        else:
-            valid_var = None
-
-        dist_info_vars = self.policy.dist_info_sym(obs_var, state_info_vars)
-        kl = dist.kl_sym(old_dist_info_vars, dist_info_vars)
-        lr = dist.likelihood_ratio_sym(action_var, old_dist_info_vars, dist_info_vars)
-        if is_recurrent:
-            mean_kl = torch.sum(kl * valid_var) / torch.sum(valid_var)
-            surr_loss = - torch.sum(lr * advantage_var * valid_var) / torch.sum(valid_var)
-        else:
-            mean_kl = torch.mean(kl)
-            surr_loss = - torch.mean(lr * advantage_var)
-
-        input_list = [
-                         obs_var,
-                         action_var,
-                         advantage_var,
-                     ] + state_info_vars_list + old_dist_info_vars_list
-        if is_recurrent:
-            input_list.append(valid_var)
-
-        self.optimizer.update_opt(
-            loss=surr_loss,
-            target=self.policy,
-            leq_constraint=(mean_kl, self.step_size),
-            inputs=input_list,
-            constraint_name="mean_kl"
-        )
-        return dict()
-
     def get_itr_snapshot(self, itr, samples_data):
         """
         Snapshot critic and recognition model as well
@@ -284,31 +221,22 @@ class GAIL(object):
 
                 and the returned value will be an array of shape (batch_size, prob_dim)
         """
-        all_input_values = tuple(ext.extract(
-            samples_data,
-            "observations", "actions", "advantages"
-        ))
-        agent_infos = samples_data["agent_infos"]
-        state_info_list = [agent_infos[k] for k in self.policy.state_info_keys]
-        dist_info_list = [agent_infos[k] for k in self.policy.distribution.dist_info_keys]
-        all_input_values += tuple(state_info_list) + tuple(dist_info_list)
-        if self.policy.recurrent:
-            all_input_values += (samples_data["valids"],)
-        print("Computing loss before")
-        loss_before = self.optimizer.loss(all_input_values)
-        print("Computing KL before")
-        mean_kl_before = self.optimizer.constraint_val(all_input_values)
-        print("Optimizing")
-        self.optimizer.optimize(all_input_values)
-        print("Computing KL after")
-        mean_kl = self.optimizer.constraint_val(all_input_values)
-        print("Computing loss after")
-        loss_after = self.optimizer.loss(all_input_values)
-        print('LossBefore', loss_before)
-        print('LossAfter', loss_after)
-        print('MeanKLBefore', mean_kl_before)
-        print('MeanKL', mean_kl)
-        print('dLoss', loss_before - loss_after)
+        obes = samples_data['observations']
+        actions = samples_data['actions']
+        returns = samples_data['returns']
+        advantages = samples_data['advantages']
+
+        trpo_step(
+            self.policy,
+            self.baseline,
+            obes,
+            actions,
+            returns,
+            advantages,
+            self.max_kl,
+            self.damping,
+            self.l2_reg
+        )
 
         # train critic
         if self.critic is not None:
