@@ -46,8 +46,10 @@ def trpo_step(policy_net, value_net, states, actions, returns, advantages, max_k
         for param in value_net.parameters():
             if param.grad is not None:
                 param.grad.data.fill_(0)
-        values_pred = value_net(states)
-        value_loss = (values_pred - returns).pow(2).mean()
+        values_pred = value_net.predict({"observations": states})
+        print(values_pred.shape, values_pred)
+        print(returns.shape, returns)
+        value_loss = torch.tensor(values_pred - returns).pow(2).mean()
 
         # weight decay
         for param in value_net.parameters():

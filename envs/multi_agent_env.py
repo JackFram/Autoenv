@@ -135,11 +135,10 @@ class MultiAgentAutoEnv:
         # first == all at this point, so if first is false, skip the reset
         if not dones[0]:
             return
-
         # sample multiple ego vehicles
         # as stated above, these will all end at the same timestep
         if traj_idx is None or egoid is None or start is None:
-            print("===sampling===")
+            # print("===sampling===")
             self.traj_idx, self.egoids, self.t, self.h = sample_multiple_trajdata_vehicle(
                 self.n_veh,
                 self.trajinfos,

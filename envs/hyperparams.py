@@ -16,7 +16,7 @@ def parse_args(arglist=None):
 
     # decaying reward logistics
     parser.add_argument('--decay_reward', type=str2bool, default=False)
-    parser.add_argument('--exp_dir', type=str, default='../../data/experiments')
+    parser.add_argument('--exp_dir', type=str, default='./data/experiments')
     parser.add_argument('--itrs_per_decay', type=int, default=25)
 
     # curriculum params
@@ -30,18 +30,18 @@ def parse_args(arglist=None):
     # logistics
     parser.add_argument('--exp_name', type=str, default='NGSIM-gail')
     parser.add_argument('--params_filepath', type=str, default='')
-    parser.add_argument('--expert_filepath', type=str, default='../../data/trajectories/ngsim.h5')
-    parser.add_argument('--vectorize', type=str2bool, default=False)
-    parser.add_argument('--n_envs', type=int, default=2)
+    parser.add_argument('--expert_filepath', type=str, default='./data/trajectories/ngsim_holo_new.h5')
+    parser.add_argument('--vectorize', type=str2bool, default=True)
+    parser.add_argument('--n_envs', type=int, default=1)
     parser.add_argument('--normalize_clip_std_multiple', type=float, default=10.)
 
     # env
-    parser.add_argument('--ngsim_filename', type=str, default='trajdata_i101_trajectories-0750am-0805am.txt')
-    parser.add_argument('--h5_filename', type=str, default='trajdata_i101_trajectories-0750am-0805am.txt')
+    parser.add_argument('--ngsim_filename', type=str, default='trajdata_holo_trajectories.txt')
+    parser.add_argument('--h5_filename', type=str, default='trajdata_holo_trajectories.txt')
     parser.add_argument('--env_H', type=int, default=200)
     parser.add_argument('--env_primesteps', type=int, default=50)
     parser.add_argument('--env_action_repeat', type=int, default=1)
-    parser.add_argument('--env_multiagent', type=str2bool, default=False)
+    parser.add_argument('--env_multiagent', type=str2bool, default=True)
     parser.add_argument('--env_reward', type=int, default=0)
 
     # reward handler
@@ -51,11 +51,19 @@ def parse_args(arglist=None):
     parser.add_argument('--reward_handler_critic_final_scale', type=float, default=1.)
 
     # policy
-    parser.add_argument('--use_infogail', type=str2bool, default=True)
+    parser.add_argument('--use_infogail', type=str2bool, default=False)
     parser.add_argument('--policy_mean_hidden_layer_dims', nargs='+', default=(128, 128, 64))
     parser.add_argument('--policy_std_hidden_layer_dims', nargs='+', default=(128, 64))
-    parser.add_argument('--policy_recurrent', type=str2bool, default=False)
+    parser.add_argument('--policy_recurrent', type=str2bool, default=True)
     parser.add_argument('--recurrent_hidden_dim', type=int, default=64)
+
+    # trpo policy update
+    parser.add_argument('--l2-reg', type=float, default=1e-3, metavar='G',
+                        help='l2 regularization regression (default: 1e-3)')
+    parser.add_argument('--max-kl', type=float, default=1e-2, metavar='G',
+                        help='max kl value (default: 1e-2)')
+    parser.add_argument('--damping', type=float, default=1e-2, metavar='G',
+                        help='damping (default: 1e-2)')
 
     # critic
     parser.add_argument('--use_critic_replay_memory', type=str2bool, default=True)

@@ -4,6 +4,8 @@ import algorithms.utils as utils
 from envs.utils import load_data
 from algorithms.RL_Algorithm.GAIL.gail import GAIL
 
+import envs.hyperparams as hyperparams
+
 
 def run(args):
     print("loading from:", args.params_filepath)
@@ -11,11 +13,12 @@ def run(args):
     exp_dir = utils.set_up_experiment(exp_name=args.exp_name, phase='imitate')
     saver_dir = os.path.join(exp_dir, 'imitate', 'log')
     saver_filepath = os.path.join(saver_dir, 'checkpoint')
+    print("saver file path is {}".format(saver_filepath))
     np.savez(os.path.join(saver_dir, 'args'),  args=args)
 
     # build components
-    env, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=args.vectorize)
-    data = load_data(
+    env, trajinfos, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=args.vectorize)
+    data, veh_2_index = load_data(
         args.expert_filepath,
         act_low=act_low,
         act_high=act_high,
@@ -23,14 +26,19 @@ def run(args):
         clip_std_multiple=args.normalize_clip_std_multiple,
         ngsim_filename=args.ngsim_filename
     )
+    print("Finish loading the data!")
 
     critic = utils.build_critic(args, data, env)
+    print("Finish building our critic!")
     policy = utils.build_policy(args, env)
+    print("Finish building our policy!")
     baseline = utils.build_baseline(args, env)
+    print("Finish building our baseline!")
     reward_handler = utils.build_reward_handler(args)
+    print("Finish building our reward handler!")
 
     # build algo
-    sampler_args = dict(n_envs=args.n_envs) if args.vectorize else None
+    sampler_args = dict(n_envs=args.n_envs) if args.vectorize else dict(n_envs=None)
 
     algo = GAIL(
         critic=critic,
@@ -55,6 +63,11 @@ def run(args):
         damping=args.damping,
         l2_reg=args.l2_reg
     )
-
+    print("Finish building GAIL!")
+    print("Start training:\n")
     algo.train()
+
+# setup
+args = hyperparams.parse_args()
+run(args)
 

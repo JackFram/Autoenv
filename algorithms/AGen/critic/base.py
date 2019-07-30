@@ -62,8 +62,8 @@ class Critic(object):
             acts = self.dataset.action_normalizer(acts)
 
         # compute rewards
-        rewards = self.network.forward(obs, acts, deterministic=True)
-
+        rewards = self.network.forward(obs, acts)
+        rewards = rewards.detach().numpy()
         if np.any(np.isnan(rewards)) and self.debug_nan:
             import ipdb
             ipdb.set_trace()

@@ -35,8 +35,6 @@ def propagate(veh: Vehicle, action: AccelTurnrate, roadway: Roadway, delta_t: fl
     theta = veh.state.posG.theta
     v = veh.state.v
 
-    # print("originial x: {} y: {} theta: {}, v: {}".format(x, y, theta, v))
-
     sigma_t = delta_t / n_integration_steps
 
     for i in range(n_integration_steps):
@@ -44,8 +42,8 @@ def propagate(veh: Vehicle, action: AccelTurnrate, roadway: Roadway, delta_t: fl
         y += v * math.sin(theta) * sigma_t
         theta += omega * sigma_t
         v += a * sigma_t
+        # print("step {},  x: {}, y: {}, theta: {}, v: {}".format(i+1, x, y, theta, v))
 
-    # print("propagated x: {} y: {} theta: {}, v: {}".format(x, y, theta, v))
     posG = VecSE2(x, y, theta)
 
     retval = VehicleState()

@@ -82,7 +82,9 @@ def build_critic(args, data, env, writer=None):
 
     critic_network = ObservationActionMLP(
         hidden_layer_dims=args.critic_hidden_layer_dims,
-        dropout_keep_prob=args.critic_dropout_keep_prob
+        dropout_keep_prob=args.critic_dropout_keep_prob,
+        obs_size=env.observation_space.flat_dim,
+        act_size=env.action_space.flat_dim
     )
 
     critic = Critic(
@@ -120,7 +122,7 @@ def build_baseline(args, env):
 def build_reward_handler(args, writer=None):
     reward_handler = RewardHandler(
         use_env_rewards=args.reward_handler_use_env_rewards,
-        max_epochs=args.reward_handler_max_epoch,
+        max_epochs=args.reward_handler_max_epochs,
         critic_final_scale=args.reward_handler_critic_final_scale,
         recognition_initial_scale=0.,
         recognition_final_scale=args.reward_handler_recognition_final_scale,
@@ -135,7 +137,7 @@ def build_reward_handler(args, writer=None):
 def set_up_experiment(
         exp_name,
         phase,
-        exp_home='../../data/experiments/',
+        exp_home='./data/experiments/',
         snapshot_gap=5):
     maybe_mkdir(exp_home)
     exp_dir = os.path.join(exp_home, exp_name)

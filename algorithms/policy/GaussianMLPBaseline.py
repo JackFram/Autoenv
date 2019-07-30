@@ -1,6 +1,7 @@
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
+import torch
 
 from algorithms.policy.MLP import MLP
 
@@ -49,21 +50,24 @@ class GaussianMLP(nn.Module):
         self.max_itr = max_itr
 
     def forward(self, x):
+        print(x.shape)
         if self.normalize_inputs:
-            x = (x - x.mean(axis=0))/x.std(axis=0)
+            x = (x - x.mean(dim=0))/x.std(dim=0)
         mean = self.mean_network(x)
         if self.normalize_outputs:
-            mean = (mean - mean.mean(axis=0))/mean.std(axis=0)
+            mean = (mean - mean.mean(dim=0))/mean.std(dim=0)
         return mean
 
     def fit(self, xs, ys):
+        xs = torch.tensor(xs).float()
+        ys = torch.tensor(ys).float()
         if self.subsample_factor < 1:
             num_samples_tot = xs.shape[0]
             idx = np.random.randint(0, num_samples_tot, int(num_samples_tot * self._subsample_factor))
             xs, ys = xs[idx], ys[idx]
         if self.normalize_outputs:
-            ys_mean = ys.mean(axis=0)
-            ys_std = ys.std(axis=0)
+            ys_mean = ys.mean(dim=0)
+            ys_std = ys.std(dim=0)
             ys = (ys - ys_mean)/ys_std
         for itr in range(self.max_itr):
             output = self.forward(xs)
@@ -73,7 +77,8 @@ class GaussianMLP(nn.Module):
             self.optimizer.step()
 
     def predict(self, xs):
-        return self.forward(xs)
+        xs = torch.tensor(xs).float()
+        return self.forward(xs).detach().numpy()
 
 
 class GaussianMLPBaseline(object):
@@ -99,7 +104,13 @@ class GaussianMLPBaseline(object):
         self._regressor.fit(observations, returns.reshape((-1, 1)))
 
     def predict(self, path):
-        return self._regressor.predict(path["observations"]).flatten()
+        if "observations" in path:
+            return self._regressor.predict(path["observations"]).flatten()
+        else:
+            return self._regressor.predict(path).flatten()
+
+    def parameters(self):
+        return self._regressor.parameters()
 
 
 

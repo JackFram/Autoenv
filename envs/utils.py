@@ -399,7 +399,7 @@ def load_data(
         act_high=1,
         clip_std_multiple=np.inf):
     # loading varies based on dataset type
-    x, feature_names = load_x_feature_names(filepath, ngsim_filename)
+    x, veh_2_index, feature_names = load_x_feature_names(filepath, ngsim_filename)
 
     # optionally keep it to a reasonable size
     if debug_size is not None:
@@ -444,7 +444,7 @@ def load_data(
         actions=act,
         obs_mean=obs_mean,
         obs_std=obs_std,
-    )
+    ), veh_2_index
 
 
 def keep_vehicle_subset(scene: Frame, ids: list):

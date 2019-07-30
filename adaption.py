@@ -163,7 +163,8 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
     predict_span = 50
     error_per_step = []  # size is (predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
     valid_data = True
-    speed_limit = 40
+    hi_speed_limit = 40
+    lo_speed_limit = 10
     orig_trajectory = []
     pred_trajectory = []
     start_time = time.time()
@@ -188,6 +189,7 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
 
         rnd = np.random.normal(size=means.shape)
         actions = rnd * np.exp(log_std) + means
+        # print("predict step: {}".format(j+1))
         nx, r, dones, e_info = env.step(actions)
         traj.add(x, actions, r, a_info, e_info)
         error_per_agent = []  # length is n_agent, each element is a dict(dx: , dy: ,dist: )
@@ -196,16 +198,21 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
             assert n_agents == 1
             # print("orig x: ", e_info["orig_x"][i])
             # print("orig y: ", e_info["orig_y"][i])
+            # print("orig v: ", e_info["orig_v"][i])
+            # print("orig theta: ", e_info["orig_theta"][i])
             # print("predicted x: ", e_info["x"][i])
             # print("predicted y: ", e_info["y"][i])
             dx = abs(e_info["orig_x"][i] - e_info["x"][i])
             dy = abs(e_info["orig_y"][i] - e_info["y"][i])
             dist = math.hypot(dx, dy)
             # print("dist: ", dist)
-            if e_info["orig_v"][i] > speed_limit:
+            if e_info["orig_v"][i] > hi_speed_limit or e_info["orig_v"][i] < lo_speed_limit:
                 valid_data = False
             # print("{}-----> dx: {} dy: {} dist: {}".format(j, dx, dy, dist))
             if valid_data:
+                if dist > 140:
+                    print("=======================\n\n\n\n\n\n\n\n\n===========================")
+                    exit(0)
                 error_per_agent.append(dist)
                 orig_trajectory.append([e_info["orig_x"][i], e_info["orig_y"][i]])
                 pred_trajectory.append([e_info["x"][i], e_info["y"][i]])

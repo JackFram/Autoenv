@@ -223,7 +223,7 @@ class GAIL(object):
         """
         obes = samples_data['observations']
         actions = samples_data['actions']
-        returns = samples_data['returns']
+        returns = samples_data['returns'].flatten()
         advantages = samples_data['advantages']
 
         trpo_step(
@@ -246,6 +246,7 @@ class GAIL(object):
         return dict()
 
     def train(self):
+        self.start_worker()
         start_time = time.time()
         for itr in range(self.start_itr, self.n_itr):
             itr_start_time = time.time()
@@ -254,7 +255,7 @@ class GAIL(object):
             print("Processing samples...")
             samples_data = self.process_samples(itr, paths)
             print("Logging diagnostics...")
-            self.log_diagnostics(paths)
+            # self.log_diagnostics(paths)
             print("Optimizing policy...")
             self.optimize_policy(itr, samples_data)
             print("Saving snapshot...")
@@ -265,3 +266,4 @@ class GAIL(object):
             print("Saved")
             print('Time', time.time() - start_time)
             print('ItrTime', time.time() - itr_start_time)
+        self.shutdown_worker()

@@ -1,6 +1,6 @@
 import torch
-import torch.autograd as autograd
 import torch.nn as nn
+from torch.autograd import Variable
 import numpy as np
 
 from algorithms.policy.GRUNetwork import GRUNetwork
@@ -28,6 +28,7 @@ class GaussianGRUPolicy(nn.Module):
 
         # if feature_network is None:
         feature_dim = input_dim
+        self._env_spec = env_spec
 
         self.mean_network = GRUNetwork(
             input_dim=feature_dim,
@@ -39,7 +40,7 @@ class GaussianGRUPolicy(nn.Module):
         self.feature_network = feature_network
 
         self.fc_std = nn.Linear(hidden_dim, action_dim)
-        self.fc_std.weight.fill_(np.log(init_std))
+        self.fc_std.weight.data.fill_(np.log(init_std))
 
         # TODO: check if need to initialize bias
 
@@ -50,6 +51,8 @@ class GaussianGRUPolicy(nn.Module):
         self.prev_actions = None
         self.prev_hiddens = None
         self.dist = RecurrentDiagonalGaussian(action_dim)
+
+        self.state_include_action = state_include_action
 
     def forward(self, x, h=None):
         x, h = self.mean_network.forward(x, h)
@@ -110,20 +113,22 @@ class GaussianGRUPolicy(nn.Module):
             dones = [True]
         dones = np.asarray(dones)
         if self.prev_actions is None or len(dones) != len(self.prev_actions):
-            self.prev_actions = np.zeros((len(dones), self.action_space.flat_dim))
+            self.prev_actions = np.zeros((len(dones), self.action_dim))
             self.prev_hiddens = np.zeros((len(dones), self.hidden_dim))
 
         self.prev_actions[dones] = 0.
-        self.prev_hiddens[dones] = self.mean_network.hid_init_param.eval()
+        if all(dones):
+            self.prev_hiddens = None
+        elif any(dones):
+            self.prev_hiddens[dones] = None
 
     def get_action(self, observation):
-        actions, agent_infos, _ = self.get_actions([observation])
+        actions, agent_infos = self.get_actions([observation])
         return actions[0], {k: v[0] for k, v in agent_infos.items()}
 
     def get_actions(self, observations):
         flat_obs = self.observation_space.flatten_n(observations)
         # self.prev_actions.shape = np.zeros([1,2], dtype=float)
-
         if self.state_include_action:
             assert self.prev_actions is not None
             all_input = np.concatenate([
@@ -132,10 +137,12 @@ class GaussianGRUPolicy(nn.Module):
             ], axis=-1)
         else:
             all_input = flat_obs
-
+        all_input = torch.tensor(all_input)
         means, log_stds, hidden_vec = self.forward(all_input, self.prev_hiddens)
 
         rnd = np.random.normal(size=means.shape)
+        means = means.detach().numpy()
+        log_stds = log_stds.detach().numpy()
         actions = rnd * np.exp(log_stds) + means
         prev_actions = self.prev_actions
         self.prev_actions = self.action_space.flatten_n(actions)
@@ -143,7 +150,7 @@ class GaussianGRUPolicy(nn.Module):
         agent_info = dict(mean=means, log_std=log_stds)
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
-        return actions, agent_info, hidden_vec
+        return actions, agent_info
 
     def get_actions_with_prev(self, observations, prev_actions, prev_hiddens):
         # for getting back to hidden vector and action prediction before prediction
@@ -170,7 +177,7 @@ class GaussianGRUPolicy(nn.Module):
         agent_info = dict(mean=means, log_std=log_stds)
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
-        return actions, agent_info, hidden_vec
+        return actions, agent_info
 
     @property
     def recurrent(self):
@@ -188,6 +195,14 @@ class GaussianGRUPolicy(nn.Module):
             ]
         else:
             return []
+
+    @property
+    def observation_space(self):
+        return self._env_spec.observation_space
+
+    @property
+    def action_space(self):
+        return self._env_spec.action_space
 
 
 
