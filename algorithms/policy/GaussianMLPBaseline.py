@@ -50,17 +50,17 @@ class GaussianMLP(nn.Module):
         self.max_itr = max_itr
 
     def forward(self, x):
-        print(x.shape)
         if self.normalize_inputs:
-            x = (x - x.mean(dim=0))/x.std(dim=0)
+            x = (x - x.mean(dim=0))/(x.std(dim=0)+1e-4)
         mean = self.mean_network(x)
         if self.normalize_outputs:
-            mean = (mean - mean.mean(dim=0))/mean.std(dim=0)
+            mean = (mean - mean.mean(dim=0))/(mean.std(dim=0)+1e-4)
+        mean = mean.double()
         return mean
 
     def fit(self, xs, ys):
-        xs = torch.tensor(xs).float()
-        ys = torch.tensor(ys).float()
+        xs = torch.tensor(xs).double()
+        ys = torch.tensor(ys).double()
         if self.subsample_factor < 1:
             num_samples_tot = xs.shape[0]
             idx = np.random.randint(0, num_samples_tot, int(num_samples_tot * self._subsample_factor))
@@ -68,16 +68,18 @@ class GaussianMLP(nn.Module):
         if self.normalize_outputs:
             ys_mean = ys.mean(dim=0)
             ys_std = ys.std(dim=0)
-            ys = (ys - ys_mean)/ys_std
+            ys = (ys - ys_mean)/(ys_std+1e-4)
         for itr in range(self.max_itr):
+            # print("fitting xs: ", xs)
             output = self.forward(xs)
+            # print("output: ", output)
             loss = self.criterion(output, ys)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
 
     def predict(self, xs):
-        xs = torch.tensor(xs).float()
+        xs = torch.tensor(xs).double()
         return self.forward(xs).detach().numpy()
 
 
@@ -96,7 +98,7 @@ class GaussianMLPBaseline(object):
             input_dim=env_spec.observation_space.flat_dim,
             output_dim=1,
             **regressor_args
-        )
+        ).double()
 
     def fit(self, paths):
         observations = np.concatenate([p["observations"] for p in paths])
@@ -104,10 +106,7 @@ class GaussianMLPBaseline(object):
         self._regressor.fit(observations, returns.reshape((-1, 1)))
 
     def predict(self, path):
-        if "observations" in path:
             return self._regressor.predict(path["observations"]).flatten()
-        else:
-            return self._regressor.predict(path).flatten()
 
     def parameters(self):
         return self._regressor.parameters()

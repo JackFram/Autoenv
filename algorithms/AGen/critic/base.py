@@ -120,7 +120,7 @@ class Critic(object):
         self.optimizer.zero_grad()
         self.real_loss = real_loss = -torch.mean(self.network(rx, ra))
         self.gen_loss = gen_loss = torch.mean(self.network(gx, ga))
-        self.loss = loss = Variable(real_loss + gen_loss + gp_loss)
+        self.loss = loss = real_loss + gen_loss + gp_loss
         loss.backward()
         self.optimizer.step()
 

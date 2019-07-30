@@ -227,7 +227,7 @@ class GAIL(object):
         advantages = samples_data['advantages']
 
         trpo_step(
-            self.policy,
+            self.policy.double(),
             self.baseline,
             obes,
             actions,

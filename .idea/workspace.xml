@@ -2,21 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="60f23679-9a28-48b8-bb04-903951b6efb8" name="Default" comment="">
-      <change type="MOVED" beforePath="$PROJECT_DIR$/algorithms/AGen/imitate.py" afterPath="$PROJECT_DIR$/imitate.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/adaption.py" afterPath="$PROJECT_DIR$/adaption.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/AGen/critic/base.py" afterPath="$PROJECT_DIR$/algorithms/AGen/critic/base.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/AGen/critic/model.py" afterPath="$PROJECT_DIR$/algorithms/AGen/critic/model.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py" afterPath="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py" afterPath="$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/policy/GRUNetwork.py" afterPath="$PROJECT_DIR$/algorithms/policy/GRUNetwork.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py" afterPath="$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py" afterPath="$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/utils.py" afterPath="$PROJECT_DIR$/algorithms/utils.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/envs/action.py" afterPath="$PROJECT_DIR$/envs/action.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/envs/hyperparams.py" afterPath="$PROJECT_DIR$/envs/hyperparams.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/envs/multi_agent_env.py" afterPath="$PROJECT_DIR$/envs/multi_agent_env.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/envs/utils.py" afterPath="$PROJECT_DIR$/envs/utils.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/imitate.py" afterPath="$PROJECT_DIR$/imitate.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -30,8 +23,8 @@
       <file leaf-file-name="GaussianGRUPolicy.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="668">
-              <caret line="116" column="2" lean-forward="true" selection-start-line="116" selection-start-column="2" selection-end-line="116" selection-end-column="2" />
+            <state relative-caret-position="428">
+              <caret line="58" column="35" lean-forward="false" selection-start-line="58" selection-start-column="35" selection-end-line="58" selection-end-column="35" />
               <folding>
                 <element signature="e#0#12#0" expanded="true" />
               </folding>
@@ -39,23 +32,35 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="vectorized_sampler.py" pinned="false" current-in-tab="true">
-        <entry file="file://$USER_HOME$/rllab/sandbox/rocky/tf/samplers/vectorized_sampler.py">
+      <file leaf-file-name="GRUNetwork.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/algorithms/policy/GRUNetwork.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="315">
-              <caret line="31" column="41" lean-forward="false" selection-start-line="31" selection-start-column="41" selection-end-line="31" selection-end-column="41" />
+            <state relative-caret-position="180">
+              <caret line="12" column="33" lean-forward="false" selection-start-line="12" selection-start-column="33" selection-end-line="12" selection-end-column="33" />
+              <folding>
+                <element signature="e#0#21#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="math.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/utils/math.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="180">
+              <caret line="13" column="43" lean-forward="false" selection-start-line="13" selection-start-column="43" selection-end-line="13" selection-end-column="43" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="model.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/algorithms/AGen/critic/model.py">
+      <file leaf-file-name="imitate.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/imitate.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="430">
-              <caret line="41" column="40" lean-forward="true" selection-start-line="41" selection-start-column="40" selection-end-line="41" selection-end-column="40" />
+            <state relative-caret-position="480">
+              <caret line="32" column="42" lean-forward="false" selection-start-line="32" selection-start-column="42" selection-end-line="32" selection-end-column="42" />
               <folding>
-                <element signature="e#0#21#0" expanded="true" />
+                <element signature="e#0#18#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -64,21 +69,9 @@
       <file leaf-file-name="base.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/algorithms/AGen/critic/base.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="601">
-              <caret line="60" column="42" lean-forward="true" selection-start-line="60" selection-start-column="42" selection-end-line="60" selection-end-column="42" />
+            <state relative-caret-position="177">
+              <caret line="115" column="19" lean-forward="false" selection-start-line="115" selection-start-column="19" selection-end-line="115" selection-end-column="19" />
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="GaussianMLPBaseline.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="411">
-              <caret line="54" column="45" lean-forward="false" selection-start-line="54" selection-start-column="45" selection-end-line="54" selection-end-column="45" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -86,8 +79,8 @@
       <file leaf-file-name="trpo.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="327">
-              <caret line="48" column="65" lean-forward="true" selection-start-line="48" selection-start-column="65" selection-end-line="48" selection-end-column="65" />
+            <state relative-caret-position="-1008">
+              <caret line="17" column="25" lean-forward="false" selection-start-line="17" selection-start-column="25" selection-end-line="17" selection-end-column="25" />
               <folding>
                 <element signature="e#0#21#0" expanded="true" />
               </folding>
@@ -95,37 +88,35 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="torch.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/utils/torch.py">
+      <file leaf-file-name="tools.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/utils/tools.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="268">
-              <caret line="18" column="36" lean-forward="true" selection-start-line="18" selection-start-column="36" selection-end-line="18" selection-end-column="36" />
-              <folding>
-                <element signature="e#0#12#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="75">
+              <caret line="5" column="0" lean-forward="false" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="gail.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="gail.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="641">
-              <caret line="225" column="51" lean-forward="true" selection-start-line="225" selection-start-column="51" selection-end-line="225" selection-end-column="51" />
+            <state relative-caret-position="604">
+              <caret line="253" column="44" lean-forward="false" selection-start-line="253" selection-start-column="44" selection-end-line="253" selection-end-column="44" />
               <folding>
-                <marker date="1564432498186" expanded="true" signature="0:278" ph="import ..." />
+                <marker date="1564515445884" expanded="true" signature="0:278" ph="import ..." />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="utils.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/algorithms/utils.py">
+      <file leaf-file-name="model.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/algorithms/AGen/critic/model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="581">
-              <caret line="99" column="5" lean-forward="true" selection-start-line="99" selection-start-column="5" selection-end-line="99" selection-end-column="5" />
+            <state relative-caret-position="252">
+              <caret line="41" column="40" lean-forward="false" selection-start-line="41" selection-start-column="40" selection-end-line="41" selection-end-column="40" />
               <folding>
-                <element signature="e#0#57#0" expanded="true" />
+                <element signature="e#0#21#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -168,6 +159,7 @@
       <find>hgail.misc</find>
       <find>curve</find>
       <find>error</find>
+      <find>fc_std</find>
     </findStrings>
     <replaceStrings>
       <replace>self</replace>
@@ -199,7 +191,6 @@
         <option value="$PROJECT_DIR$/algorithms/policy/GRUnetwork.py" />
         <option value="$PROJECT_DIR$/src/trajdata.py" />
         <option value="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/__init__.py" />
-        <option value="$PROJECT_DIR$/algorithms/policy/MLP.py" />
         <option value="$PROJECT_DIR$/algorithms/policy/base.py" />
         <option value="$PROJECT_DIR$/algorithms/__init__.py" />
         <option value="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/batch_polopt.py" />
@@ -229,18 +220,19 @@
         <option value="$PROJECT_DIR$/algorithms/AGen/imitate.py" />
         <option value="$PROJECT_DIR$/envs/utils.py" />
         <option value="$PROJECT_DIR$/algorithms/utils.py" />
-        <option value="$PROJECT_DIR$/imitate.py" />
         <option value="$PROJECT_DIR$/envs/hyperparams.py" />
-        <option value="$PROJECT_DIR$/algorithms/policy/GRUNetwork.py" />
-        <option value="$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py" />
         <option value="$PROJECT_DIR$/envs/multi_agent_env.py" />
         <option value="$PROJECT_DIR$/algorithms/AGen/critic/model.py" />
-        <option value="$PROJECT_DIR$/algorithms/AGen/critic/base.py" />
-        <option value="$USER_HOME$/rllab/sandbox/rocky/tf/samplers/vectorized_sampler.py" />
-        <option value="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py" />
-        <option value="$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py" />
-        <option value="$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py" />
         <option value="$PROJECT_DIR$/adaption.py" />
+        <option value="$USER_HOME$/rllab/sandbox/rocky/tf/samplers/vectorized_sampler.py" />
+        <option value="$PROJECT_DIR$/algorithms/policy/MLP.py" />
+        <option value="$PROJECT_DIR$/imitate.py" />
+        <option value="$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py" />
+        <option value="$PROJECT_DIR$/algorithms/policy/GRUNetwork.py" />
+        <option value="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py" />
+        <option value="$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py" />
+        <option value="$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py" />
+        <option value="$PROJECT_DIR$/algorithms/AGen/critic/base.py" />
       </list>
     </option>
   </component>
@@ -276,43 +268,6 @@
             <path>
               <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
               <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
-              <item name="algorithms" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
-              <item name="algorithms" type="462c0819:PsiDirectoryNode" />
-              <item name="AGen" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
-              <item name="algorithms" type="462c0819:PsiDirectoryNode" />
-              <item name="policy" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
-              <item name="algorithms" type="462c0819:PsiDirectoryNode" />
-              <item name="RL_Algorithm" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
-              <item name="algorithms" type="462c0819:PsiDirectoryNode" />
-              <item name="RL_Algorithm" type="462c0819:PsiDirectoryNode" />
-              <item name="GAIL" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
-              <item name="algorithms" type="462c0819:PsiDirectoryNode" />
-              <item name="RL_Algorithm" type="462c0819:PsiDirectoryNode" />
-              <item name="optimizers" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -364,9 +319,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1825525" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1825525" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -436,14 +390,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/AGen/my_gaussian_gru_policy.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2237">
-          <caret line="11" column="0" lean-forward="false" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="29" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -502,14 +448,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/policy/MLP.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
-          <caret line="5" column="35" lean-forward="true" selection-start-line="5" selection-start-column="35" selection-end-line="5" selection-end-column="35" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/envs/build_env.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
@@ -523,16 +461,6 @@
         <state relative-caret-position="-178">
           <caret line="44" column="21" lean-forward="true" selection-start-line="44" selection-start-column="21" selection-end-line="44" selection-end-column="21" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/utils/math.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="15" column="0" lean-forward="true" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#12#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -564,14 +492,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/utils/tools.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
-          <caret line="5" column="0" lean-forward="true" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -584,14 +504,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="183">
           <caret line="17" column="47" lean-forward="true" selection-start-line="17" selection-start-column="47" selection-end-line="17" selection-end-column="47" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="552">
-          <caret line="119" column="0" lean-forward="false" selection-start-line="119" selection-start-column="0" selection-end-line="119" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -717,16 +629,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/policy/GRUNetwork.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="7" column="42" lean-forward="true" selection-start-line="7" selection-start-column="42" selection-end-line="7" selection-end-column="42" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/envs/action.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="286">
@@ -757,100 +659,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/imitate.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="451">
-          <caret line="43" column="22" lean-forward="true" selection-start-line="43" selection-start-column="22" selection-end-line="43" selection-end-column="22" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/envs/utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="573">
           <caret line="225" column="58" lean-forward="true" selection-start-line="225" selection-start-column="58" selection-end-line="225" selection-end-column="58" />
           <folding>
             <element signature="e#0#69#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="581">
-          <caret line="99" column="5" lean-forward="true" selection-start-line="99" selection-start-column="5" selection-end-line="99" selection-end-column="5" />
-          <folding>
-            <element signature="e#0#57#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/AGen/critic/model.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="430">
-          <caret line="41" column="40" lean-forward="true" selection-start-line="41" selection-start-column="40" selection-end-line="41" selection-end-column="40" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/utils/torch.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="268">
-          <caret line="18" column="36" lean-forward="true" selection-start-line="18" selection-start-column="36" selection-end-line="18" selection-end-column="36" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="668">
-          <caret line="116" column="2" lean-forward="true" selection-start-line="116" selection-start-column="2" selection-end-line="116" selection-end-column="2" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/AGen/critic/base.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="601">
-          <caret line="60" column="42" lean-forward="true" selection-start-line="60" selection-start-column="42" selection-end-line="60" selection-end-column="42" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="327">
-          <caret line="48" column="65" lean-forward="true" selection-start-line="48" selection-start-column="65" selection-end-line="48" selection-end-column="65" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="411">
-          <caret line="54" column="45" lean-forward="false" selection-start-line="54" selection-start-column="45" selection-end-line="54" selection-end-column="45" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="641">
-          <caret line="225" column="51" lean-forward="true" selection-start-line="225" selection-start-column="51" selection-end-line="225" selection-end-column="51" />
-          <folding>
-            <marker date="1564432498186" expanded="true" signature="0:278" ph="import ..." />
           </folding>
         </state>
       </provider>
@@ -867,11 +681,151 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/policy/MLP.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="11" column="25" lean-forward="false" selection-start-line="11" selection-start-column="25" selection-end-line="11" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$USER_HOME$/rllab/sandbox/rocky/tf/samplers/vectorized_sampler.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="315">
-          <caret line="31" column="41" lean-forward="false" selection-start-line="31" selection-start-column="41" selection-end-line="31" selection-end-column="41" />
+        <state relative-caret-position="418">
+          <caret line="56" column="60" lean-forward="true" selection-start-line="56" selection-start-column="60" selection-end-line="56" selection-end-column="60" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="552">
+          <caret line="119" column="0" lean-forward="false" selection-start-line="119" selection-start-column="0" selection-end-line="119" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="265">
+          <caret line="113" column="0" lean-forward="true" selection-start-line="113" selection-start-column="0" selection-end-line="113" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#57#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/imitate.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="480">
+          <caret line="32" column="42" lean-forward="false" selection-start-line="32" selection-start-column="42" selection-end-line="32" selection-end-column="42" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/AGen/my_gaussian_gru_policy.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3093">
+          <caret line="11" column="0" lean-forward="false" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="29" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-73">
+          <caret line="74" column="39" lean-forward="true" selection-start-line="74" selection-start-column="39" selection-end-line="74" selection-end-column="39" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/policy/GRUNetwork.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="12" column="33" lean-forward="false" selection-start-line="12" selection-start-column="33" selection-end-line="12" selection-end-column="33" />
+          <folding>
+            <element signature="e#0#21#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/utils/tools.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="5" column="0" lean-forward="false" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/utils/math.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="13" column="43" lean-forward="false" selection-start-line="13" selection-start-column="43" selection-end-line="13" selection-end-column="43" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/utils/torch.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="930">
+          <caret line="62" column="18" lean-forward="true" selection-start-line="62" selection-start-column="18" selection-end-line="62" selection-end-column="18" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1008">
+          <caret line="17" column="25" lean-forward="false" selection-start-line="17" selection-start-column="25" selection-end-line="17" selection-end-column="25" />
+          <folding>
+            <element signature="e#0#21#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="428">
+          <caret line="58" column="35" lean-forward="false" selection-start-line="58" selection-start-column="35" selection-end-line="58" selection-end-column="35" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/AGen/critic/model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="252">
+          <caret line="41" column="40" lean-forward="false" selection-start-line="41" selection-start-column="40" selection-end-line="41" selection-end-column="40" />
+          <folding>
+            <element signature="e#0#21#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/AGen/critic/base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="177">
+          <caret line="115" column="19" lean-forward="false" selection-start-line="115" selection-start-column="19" selection-end-line="115" selection-end-column="19" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="604">
+          <caret line="253" column="44" lean-forward="false" selection-start-line="253" selection-start-column="44" selection-end-line="253" selection-end-column="44" />
+          <folding>
+            <marker date="1564515445884" expanded="true" signature="0:278" ph="import ..." />
+          </folding>
         </state>
       </provider>
     </entry>

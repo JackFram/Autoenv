@@ -6,12 +6,11 @@ class GRUNetwork(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim, gru_layer=nn.GRUCell,
                  output_nonlinearity=None):
         super(GRUNetwork, self).__init__()
-        self.gru = gru_layer(input_size=input_dim, hidden_size=hidden_dim)
-        self.fc = nn.Linear(hidden_dim, output_dim)
+        self.gru = gru_layer(input_size=input_dim, hidden_size=hidden_dim).double()
+        self.fc = nn.Linear(hidden_dim, output_dim).double()
         self.output_activation_fn = output_nonlinearity
 
     def forward(self, x, h=None):
-        x = x.float()
         if h is not None:
             h = self.gru(x, h)
         else:

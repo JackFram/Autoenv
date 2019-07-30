@@ -3,7 +3,7 @@ from algorithms.RL_Algorithm.optimizers.utils import *
 
 
 def conjugate_gradients(Avp_f, b, nsteps, rdotr_tol=1e-10):
-    x = zeros(b.size(), device=b.device)
+    x = zeros(b.size(), device=b.device).double()
     r = b.clone()
     p = b.clone()
     rdotr = torch.dot(r, r)
@@ -40,20 +40,18 @@ def line_search(model, f, x, fullstep, expected_improve_full, max_backtracks=10,
 def trpo_step(policy_net, value_net, states, actions, returns, advantages, max_kl, damping, l2_reg, use_fim=True):
 
     """update critic"""
-
     def get_value_loss(flat_params):
-        set_flat_params_to(value_net, tensor(flat_params))
+        set_flat_params_to(value_net, tensor(flat_params).double())
         for param in value_net.parameters():
             if param.grad is not None:
                 param.grad.data.fill_(0)
         values_pred = value_net.predict({"observations": states})
-        print(values_pred.shape, values_pred)
-        print(returns.shape, returns)
-        value_loss = torch.tensor(values_pred - returns).pow(2).mean()
+        value_loss = (torch.tensor(values_pred - returns).double()).pow(2).mean()
 
         # weight decay
         for param in value_net.parameters():
             value_loss += param.pow(2).sum() * l2_reg
+        print(value_loss.dtype)
         value_loss.backward()
         return value_loss.item(), get_flat_grad_from(value_net.parameters()).cpu().numpy()
 
@@ -69,16 +67,16 @@ def trpo_step(policy_net, value_net, states, actions, returns, advantages, max_k
     def get_loss(volatile=False):
         with torch.set_grad_enabled(not volatile):
             log_probs = policy_net.get_log_prob(states, actions)
-            action_loss = -advantages * torch.exp(log_probs - fixed_log_probs)
+            action_loss = -torch.tensor(advantages).flatten() * torch.exp(log_probs - fixed_log_probs)
             return action_loss.mean()
 
     """use fisher information matrix for Hessian*vector"""
     def Fvp_fim(v):
         M, mu, info = policy_net.get_fim(states)
         mu = mu.view(-1)
-        filter_input_ids = set() if policy_net.is_disc_action else {[info['std_id']]}
+        filter_input_ids = set() if policy_net.is_disc_action else {info['std_id']}
 
-        t = ones(mu.size(), requires_grad=True, device=mu.device)
+        t = ones(mu.size(), requires_grad=True, device=mu.device).double()
         mu_t = (mu * t).sum()
         Jt = compute_flat_grad(mu_t, policy_net.parameters(), filter_input_ids=filter_input_ids, create_graph=True)
         Jtv = (Jt * v).sum()

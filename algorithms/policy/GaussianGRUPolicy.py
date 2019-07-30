@@ -13,11 +13,12 @@ class GaussianGRUPolicy(nn.Module):
                  env_spec,
                  hidden_dim=32,
                  feature_network=None,
-                 state_include_action=True,
+                 state_include_action=False,
                  gru_layer=nn.GRUCell,
                  init_std=1.0,
-                 output_nonlinearity=None):
-        super(GaussianGRUPolicy, self).__init__()
+                 output_nonlinearity=None,
+                 log_std=0):
+        super().__init__()
         obs_dim = env_spec.observation_space.flat_dim
         action_dim = env_spec.action_space.flat_dim
 
@@ -36,11 +37,12 @@ class GaussianGRUPolicy(nn.Module):
             hidden_dim=hidden_dim,
             gru_layer=gru_layer,
             output_nonlinearity=output_nonlinearity
-        )
+        ).double()
         self.feature_network = feature_network
 
-        self.fc_std = nn.Linear(hidden_dim, action_dim)
-        self.fc_std.weight.data.fill_(np.log(init_std))
+        # self.fc_std = nn.Linear(hidden_dim, action_dim).double()
+        # self.fc_std.weight.data.fill_(np.log(init_std))
+        self.action_log_std = nn.Parameter(torch.ones(1, action_dim) * log_std)
 
         # TODO: check if need to initialize bias
 
@@ -54,10 +56,13 @@ class GaussianGRUPolicy(nn.Module):
 
         self.state_include_action = state_include_action
 
+        self.is_disc_action = False
+
     def forward(self, x, h=None):
-        x, h = self.mean_network.forward(x, h)
-        log_std = self.fc_std(h)
-        return x, log_std, h
+        action_mean, h = self.mean_network.forward(x, h)
+        # action_log_std = self.fc_std(h)
+        action_log_std = self.action_log_std.expand_as(action_mean)
+        return action_mean, action_log_std, h
 
     def dist_info_sym(self, obs_var, state_info_vars):
         n_batches = np.array(obs_var).shape[0]
@@ -87,11 +92,22 @@ class GaussianGRUPolicy(nn.Module):
         return kl.sum(1, keepdim=True)
 
     def get_log_prob(self, x, actions):
-        action_mean, action_log_std, action_std = self.forward(x)
+        x = x.reshape((-1, self.input_dim))
+        actions = actions.reshape((-1, self.action_dim))
+        if self.state_include_action:
+            raise NotImplementedError
+        else:
+            all_input = x
+        x = torch.tensor(all_input)
+        actions = torch.tensor(actions)
+        action_mean, action_log_std, hidden_vec = self.forward(x)
+        action_log_std = action_log_std.double()
+        action_std = torch.exp(action_log_std)
         return normal_log_density(actions, action_mean, action_log_std, action_std)
 
     def get_fim(self, x):
-        mean, _, _ = self.forward(x)
+        x = torch.tensor(x).reshape((-1, self.input_dim))
+        mean, action_log_std, _ = self.forward(x)
         cov_inv = self.action_log_std.exp().pow(-2).squeeze(0).repeat(x.size(0))
         param_count = 0
         std_index = 0
@@ -137,7 +153,7 @@ class GaussianGRUPolicy(nn.Module):
             ], axis=-1)
         else:
             all_input = flat_obs
-        all_input = torch.tensor(all_input)
+        all_input = torch.tensor(all_input).double()
         means, log_stds, hidden_vec = self.forward(all_input, self.prev_hiddens)
 
         rnd = np.random.normal(size=means.shape)
