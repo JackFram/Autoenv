@@ -6,6 +6,7 @@ from algorithms.utils import save_params, extract_normalizing_env, load_params
 from sandbox.rocky.tf.samplers.batch_sampler import BatchSampler
 from sandbox.rocky.tf.samplers.vectorized_sampler import VectorizedSampler
 from algorithms.RL_Algorithm.optimizers.trpo import trpo_step
+from algorithms.RL_Algorithm.optimizers.utils import *
 
 
 class GAIL(object):
@@ -223,20 +224,26 @@ class GAIL(object):
         """
         obes = samples_data['observations']
         actions = samples_data['actions']
-        returns = samples_data['returns'].flatten()
         advantages = samples_data['advantages']
 
+        print("obs shape: {}, action shape: {}, return shape: {}, advantages shape: {}".format(
+            samples_data['observations'].shape,
+            samples_data['actions'].shape,
+            samples_data['returns'].shape,
+            samples_data['advantages'].shape
+        ))
+        # print(samples_data["returns"])
+        # for params in self.baseline.parameters():
+        #     print(params)
         trpo_step(
             self.policy.double(),
-            self.baseline,
             obes,
             actions,
-            returns,
             advantages,
             self.max_kl,
             self.damping,
-            self.l2_reg
         )
+
 
         # train critic
         if self.critic is not None:

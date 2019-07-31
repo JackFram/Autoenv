@@ -99,9 +99,6 @@ def online_adaption(
     time_list = []
     for step in tqdm.tqdm(range(ego_start_frame - 1, maxstep + ego_start_frame - 1)):
 
-        # print("step = ", step)
-        # print("feature: ", x)
-
         a, a_info, hidden_vec = policy.get_actions_with_prev(obs[:, step, :], mean[:, step, :], prev_hiddens)
 
         if adapt_steps == 1:
@@ -189,29 +186,28 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
 
         rnd = np.random.normal(size=means.shape)
         actions = rnd * np.exp(log_std) + means
-        # print("predict step: {}".format(j+1))
+        print("predict step: {}".format(j+1))
         nx, r, dones, e_info = env.step(actions)
         traj.add(x, actions, r, a_info, e_info)
         error_per_agent = []  # length is n_agent, each element is a dict(dx: , dy: ,dist: )
 
         for i in range(n_agents):
             assert n_agents == 1
-            # print("orig x: ", e_info["orig_x"][i])
-            # print("orig y: ", e_info["orig_y"][i])
-            # print("orig v: ", e_info["orig_v"][i])
-            # print("orig theta: ", e_info["orig_theta"][i])
+            print("orig x: ", e_info["orig_x"][i])
+            print("orig y: ", e_info["orig_y"][i])
+            print("orig v: ", e_info["orig_v"][i])
+            print("orig theta: ", e_info["orig_theta"][i])
             # print("predicted x: ", e_info["x"][i])
             # print("predicted y: ", e_info["y"][i])
             dx = abs(e_info["orig_x"][i] - e_info["x"][i])
             dy = abs(e_info["orig_y"][i] - e_info["y"][i])
             dist = math.hypot(dx, dy)
-            # print("dist: ", dist)
+            print("dist: ", dist)
             if e_info["orig_v"][i] > hi_speed_limit or e_info["orig_v"][i] < lo_speed_limit:
                 valid_data = False
             # print("{}-----> dx: {} dy: {} dist: {}".format(j, dx, dy, dist))
             if valid_data:
                 if dist > 140:
-                    print("=======================\n\n\n\n\n\n\n\n\n===========================")
                     exit(0)
                 error_per_agent.append(dist)
                 orig_trajectory.append([e_info["orig_x"][i], e_info["orig_y"][i]])
@@ -298,7 +294,7 @@ def collect_trajectories(
                      "orig_traj": [],
                      "pred_traj": []}
             for veh_id in trajinfos.keys():
-                if trajinfos[veh_id]["te"] - trajinfos[veh_id]["ts"] <= 50:
+                if trajinfos[veh_id]["te"] - trajinfos[veh_id]["ts"] <= 50 or veh_id != 6:
                     continue
                 if random_seed:
                     kwargs = dict(random_seed=random_seed + veh_id)
@@ -592,7 +588,7 @@ if __name__ == '__main__':
                          "orig_traj": [],
                          "pred_traj": []}
             for file_name in os.listdir(os.path.join(data_base_dir, dir_name, "processed")):
-                if "section" in file_name:
+                if "section" in file_name and "2018-11-22-15-39-29" in file_name:
                     orig_traj_file = os.path.join(dir_name, "processed", file_name)
                     print("processing file {}".format(orig_traj_file))
                 else:
@@ -634,11 +630,6 @@ if __name__ == '__main__':
                 args.ngsim_filename = fn
                 args.h5_filename = hn
                 if args.env_multiagent:
-                    # args.n_envs gives the number of simultaneous vehicles
-                    # so run_args.n_multiagent_trajs / args.n_envs gives the number
-                    # of simulations to run overall
-                    # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
-                    #  starts = dict()
                     egoids, _ = load_egoids(fn, args, run_args.n_runs_per_ego_id)
                 else:
                     egoids, _ = load_egoids(fn, args, run_args.n_runs_per_ego_id)

@@ -154,6 +154,7 @@ def save_params(output_dir, params, epoch, max_to_keep=None):
 
     # save
     output_filepath = os.path.join(output_dir, 'itr_{}'.format(epoch))
+    print("params are saved to: {}".format(output_filepath))
     np.savez(output_filepath, params=params)
 
     # delete files if in excess of max_to_keep

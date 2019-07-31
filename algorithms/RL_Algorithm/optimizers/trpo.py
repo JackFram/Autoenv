@@ -37,28 +37,29 @@ def line_search(model, f, x, fullstep, expected_improve_full, max_backtracks=10,
     return False, x
 
 
-def trpo_step(policy_net, value_net, states, actions, returns, advantages, max_kl, damping, l2_reg, use_fim=True):
+def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=True):
 
-    """update critic"""
-    def get_value_loss(flat_params):
-        set_flat_params_to(value_net, tensor(flat_params).double())
-        for param in value_net.parameters():
-            if param.grad is not None:
-                param.grad.data.fill_(0)
-        values_pred = value_net.predict({"observations": states})
-        value_loss = (torch.tensor(values_pred - returns).double()).pow(2).mean()
-
-        # weight decay
-        for param in value_net.parameters():
-            value_loss += param.pow(2).sum() * l2_reg
-        print(value_loss.dtype)
-        value_loss.backward()
-        return value_loss.item(), get_flat_grad_from(value_net.parameters()).cpu().numpy()
-
-    flat_params, _, opt_info = scipy.optimize.fmin_l_bfgs_b(get_value_loss,
-                                                            get_flat_params_from(value_net).detach().cpu().numpy(),
-                                                            maxiter=25)
-    set_flat_params_to(value_net, tensor(flat_params))
+    # """update critic"""
+    # def get_value_loss(flat_params):
+    #     set_flat_params_to(value_net, tensor(flat_params).double())
+    #     for param in value_net.parameters():
+    #         if param.grad is not None:
+    #             param.grad.data.fill_(0)
+    #     values_pred = value_net.predict({"observations": states})
+    #     value_loss = (torch.tensor(values_pred - returns).double()).pow(2).mean()
+    #
+    #     # weight decay
+    #     for param in value_net.parameters():
+    #         value_loss += param.pow(2).sum() * l2_reg
+    #     print(value_loss)
+    #     value_loss.backward()
+    #     return value_loss.item(), get_flat_grad_from(value_net.parameters()).cpu().numpy()
+    #
+    # flat_params, _, opt_info = scipy.optimize.fmin_l_bfgs_b(get_value_loss,
+    #                                                         get_flat_params_from(value_net).detach().cpu().numpy(),
+    #                                                         maxiter=25)
+    # print("after optimize: ", tensor(flat_params))
+    # set_flat_params_to(value_net, tensor(flat_params))
 
     """update policy"""
     with torch.no_grad():
@@ -117,7 +118,10 @@ def trpo_step(policy_net, value_net, states, actions, returns, advantages, max_k
     expected_improve = -loss_grad.dot(fullstep)
 
     prev_params = get_flat_params_from(policy_net)
+    print("prev_params: ", prev_params)
     success, new_params = line_search(policy_net, get_loss, prev_params, fullstep, expected_improve)
+    print("new_params: ", new_params)
+    print("success flag: ", success)
     set_flat_params_to(policy_net, new_params)
 
     return success

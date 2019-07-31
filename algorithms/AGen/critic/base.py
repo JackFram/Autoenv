@@ -85,6 +85,7 @@ class Critic(object):
             critic_rewards: critic rewards
         """
         # only write summaries if have a summary writer
+        print("reward shape: ", critic_rewards.shape)
         print("Wait to complete")
 
     def train(self, itr, samples_data):

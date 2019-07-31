@@ -67,7 +67,7 @@ def parse_args(arglist=None):
 
     # critic
     parser.add_argument('--use_critic_replay_memory', type=str2bool, default=True)
-    parser.add_argument('--n_critic_train_epochs', type=int, default=40)
+    parser.add_argument('--n_critic_train_epochs', type=int, default=5)
     parser.add_argument('--critic_learning_rate', type=float, default=.0004)
     parser.add_argument('--critic_dropout_keep_prob', type=float, default=.8)
     parser.add_argument('--gradient_penalty', type=float, default=2.)
