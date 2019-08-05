@@ -390,7 +390,7 @@ def normalize_range(x, low, high):
 def load_data(
         filepath,
         act_keys=['accel', 'turn_rate_global'],
-        ngsim_filename='trajdata_i101_trajectories-0750am-0805am.txt',
+        ngsim_filename='trajdata_holo_trajectories.txt',
         debug_size=None,
         min_length=50,
         normalize_data=True,
@@ -829,8 +829,14 @@ def print_error(error: dict):
         print("Average trajectory prediction time: {} seconds".format(time_list.mean(axis=0)[-1]))
     print("Look head RMSE:")
     print("Overall: ", overall_error.mean(axis=0))
+    print("Curve: ", curve_error.mean(axis=0))
+    print("Lane Change: ", lane_change_error.mean(axis=0))
+    print("Straight: ", straight_error.mean(axis=0))
     print("Look head RMSE std:")
     print("Overall: ", overall_error.std(axis=0))
+    print("Curve: ", curve_error.std(axis=0))
+    print("Lane Change: ", lane_change_error.std(axis=0))
+    print("Straight: ", straight_error.std(axis=0))
     print("Range of RMSE per step:")
     if len(overall_error) != 0:
         print("min: {}\nmax: {}".format(overall_error.min(axis=0), overall_error.max(axis=0)))

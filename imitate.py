@@ -18,6 +18,7 @@ def run(args):
 
     # build components
     env, trajinfos, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=args.vectorize)
+    # TODO: need to extract expert data first
     data, veh_2_index = load_data(
         args.expert_filepath,
         act_low=act_low,
@@ -61,7 +62,10 @@ def run(args):
         plot=False,
         max_kl=args.max_kl,
         damping=args.damping,
-        l2_reg=args.l2_reg
+        l2_reg=args.l2_reg,
+        policy_filepath=args.policy_param,
+        critic_filepath=args.critic_param,
+        env_filepath=args.env_param
     )
     print("Finish building GAIL!")
     print("Start training:\n")

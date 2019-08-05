@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 import numpy as np
 
 from algorithms.policy.GRUNetwork import GRUNetwork
 from algorithms.distribution.recurrent_diagonal_gaussian import RecurrentDiagonalGaussian
 from algorithms.RL_Algorithm.optimizers.utils.math import normal_log_density
+from algorithms.policy.GRUCell import GRUCell
 
 
 class GaussianGRUPolicy(nn.Module):
@@ -13,9 +13,8 @@ class GaussianGRUPolicy(nn.Module):
                  env_spec,
                  hidden_dim=32,
                  feature_network=None,
-                 state_include_action=False,
-                 gru_layer=nn.GRUCell,
-                 init_std=1.0,
+                 state_include_action=True,
+                 gru_layer=GRUCell,
                  output_nonlinearity=None,
                  log_std=0):
         super().__init__()
@@ -82,7 +81,10 @@ class GaussianGRUPolicy(nn.Module):
             means, log_stds, _ = self.forward(feature_batch)
         return dict(mean=means, log_std=log_stds)
 
-    def get_kl(self, x, h=None):
+    def get_kl(self, x, actions, h=None):
+        if self.state_include_action:
+            prev_act = np.concatenate([np.zeros((actions.shape[0], 1, actions.shape[2])), actions], axis=1)[:, :-1, :]
+            x = np.concatenate([x, prev_act], axis=-1)
         mean1, log_std1, std1 = self.forward(x, h)
 
         mean0 = mean1.detach()
@@ -92,20 +94,22 @@ class GaussianGRUPolicy(nn.Module):
         return kl.sum(1, keepdim=True)
 
     def get_log_prob(self, x, actions):
+        if self.state_include_action:
+            prev_act = np.concatenate([np.zeros((actions.shape[0], 1, actions.shape[2])), actions], axis=1)[:, :-1, :]
+            x = np.concatenate([x, prev_act], axis=-1)
         x = x.reshape((-1, self.input_dim))
         actions = actions.reshape((-1, self.action_dim))
-        if self.state_include_action:
-            raise NotImplementedError
-        else:
-            all_input = x
-        x = torch.tensor(all_input)
+        x = torch.tensor(x)
         actions = torch.tensor(actions)
         action_mean, action_log_std, hidden_vec = self.forward(x)
         action_log_std = action_log_std.double()
         action_std = torch.exp(action_log_std)
         return normal_log_density(actions, action_mean, action_log_std, action_std)
 
-    def get_fim(self, x):
+    def get_fim(self, x, actions):
+        if self.state_include_action:
+            prev_act = np.concatenate([np.zeros((actions.shape[0], 1, actions.shape[2])), actions], axis=1)[:, :-1, :]
+            x = np.concatenate([x, prev_act], axis=-1)
         x = torch.tensor(x).reshape((-1, self.input_dim))
         mean, action_log_std, _ = self.forward(x)
         cov_inv = self.action_log_std.exp().pow(-2).squeeze(0).repeat(x.size(0))

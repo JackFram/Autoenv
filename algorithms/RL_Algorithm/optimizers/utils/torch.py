@@ -58,7 +58,7 @@ def compute_flat_grad(output, inputs, filter_input_ids=set(), retain_graph=False
             params.append(param)
 
     grads = torch.autograd.grad(output, params, retain_graph=retain_graph, create_graph=create_graph)
-
+    grads = [grad.contiguous() for grad in grads]
     j = 0
     out_grads = []
     for i, param in enumerate(inputs):

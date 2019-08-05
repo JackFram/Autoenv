@@ -41,7 +41,10 @@ class GAIL(object):
                  force_batch_sampler=False,
                  max_kl=None,
                  damping=None,
-                 l2_reg=None
+                 l2_reg=None,
+                 policy_filepath=None,
+                 critic_filepath=None,
+                 env_filepath=None
                  ):
         """
         :param env: Environment
@@ -102,6 +105,10 @@ class GAIL(object):
         self.damping = damping
         self.l2_reg = l2_reg
 
+        self.critic_filepath = critic_filepath
+        self.policy_filepath = policy_filepath
+        self.env_filepath = env_filepath
+
     def start_worker(self):
         self.sampler.start_worker()
 
@@ -153,17 +160,17 @@ class GAIL(object):
             save_dir = os.path.split(self.saver_filepath)[0]
             save_params(save_dir, params, itr + 1, max_to_keep=50)
 
-    def load(self, filepath):
+    def load(self):
         '''
         Load parameters from a filepath. Symmetric to _save. This is not ideal,
         but it's easier than keeping track of everything separately.
         '''
-        params = load_params(filepath)
-        if self.critic and 'critic' in params.keys():
-            self.critic.network.set_param_values(params['critic'])
-        if self.recognition and 'recognition' in params.keys():
-            self.recognition.network.set_param_values(params['recognition'])
-        self.policy.set_param_values(params['policy'])
+        params = load_params(self.env_filepath)
+        self.policy.load_state_dict(torch.load(self.policy_filepath))
+        self.critic.network.load_state_dict(torch.load(self.critic_filepath))
+        print("critic state dict: ", self.critic.network.state_dict())
+        print("policy dict: ", self.policy.state_dict())
+        # self.policy.set_param_values(params['policy'])
         normalized_env = extract_normalizing_env(self.env)
         if normalized_env is not None:
             normalized_env._obs_mean = params['normalzing']['obs_mean']
@@ -232,9 +239,7 @@ class GAIL(object):
             samples_data['returns'].shape,
             samples_data['advantages'].shape
         ))
-        # print(samples_data["returns"])
-        # for params in self.baseline.parameters():
-        #     print(params)
+
         trpo_step(
             self.policy.double(),
             obes,
@@ -243,7 +248,6 @@ class GAIL(object):
             self.max_kl,
             self.damping,
         )
-
 
         # train critic
         if self.critic is not None:
@@ -255,6 +259,8 @@ class GAIL(object):
     def train(self):
         self.start_worker()
         start_time = time.time()
+        print("loading critic and policy params from file")
+        self.load()
         for itr in range(self.start_itr, self.n_itr):
             itr_start_time = time.time()
             print("Obtaining samples...")

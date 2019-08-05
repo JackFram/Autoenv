@@ -1,9 +1,10 @@
 import torch.nn as nn
 import numpy as np
+from algorithms.policy.GRUCell import GRUCell
 
 
 class GRUNetwork(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, gru_layer=nn.GRUCell,
+    def __init__(self, input_dim, output_dim, hidden_dim, gru_layer=GRUCell,
                  output_nonlinearity=None):
         super(GRUNetwork, self).__init__()
         self.gru = gru_layer(input_size=input_dim, hidden_size=hidden_dim).double()

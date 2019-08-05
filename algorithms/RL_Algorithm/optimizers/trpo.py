@@ -31,6 +31,13 @@ def line_search(model, f, x, fullstep, expected_improve_full, max_backtracks=10,
         actual_improve = fval - fval_new
         expected_improve = expected_improve_full * stepfrac
         ratio = actual_improve / expected_improve
+        print("stepfrac: {}, actual improve: {}, expected improve: {}, accept ratio: {}, actual ratio: {}".format(
+            stepfrac,
+            actual_improve,
+            expected_improve,
+            accept_ratio,
+            ratio
+        ))
 
         if ratio > accept_ratio:
             return True, x_new
@@ -73,7 +80,7 @@ def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=
 
     """use fisher information matrix for Hessian*vector"""
     def Fvp_fim(v):
-        M, mu, info = policy_net.get_fim(states)
+        M, mu, info = policy_net.get_fim(states, actions)
         mu = mu.view(-1)
         filter_input_ids = set() if policy_net.is_disc_action else {info['std_id']}
 
@@ -93,7 +100,7 @@ def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=
 
     """directly compute Hessian*vector from KL"""
     def Fvp_direct(v):
-        kl = policy_net.get_kl(states)
+        kl = policy_net.get_kl(states, actions)
         kl = kl.mean()
 
         grads = torch.autograd.grad(kl, policy_net.parameters(), create_graph=True)
@@ -101,14 +108,15 @@ def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=
 
         kl_v = (flat_grad_kl * v).sum()
         grads = torch.autograd.grad(kl_v, policy_net.parameters())
-        flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).detach()
+        flat_grad_grad_kl = torch.cat([grad.view(-1) for grad in grads]).detach()
 
         return flat_grad_grad_kl + v * damping
 
     Fvp = Fvp_fim if use_fim else Fvp_direct
 
     loss = get_loss()
-    grads = torch.autograd.grad(loss, policy_net.parameters())
+    grads = torch.autograd.grad(loss, policy_net.parameters(), allow_unused=True)
+    grads = [grad.contiguous() for grad in grads]
     loss_grad = torch.cat([grad.view(-1) for grad in grads]).detach()
     stepdir = conjugate_gradients(Fvp, -loss_grad, 10)
 
@@ -116,6 +124,9 @@ def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=
     lm = math.sqrt(max_kl / shs)
     fullstep = stepdir * lm
     expected_improve = -loss_grad.dot(fullstep)
+    # print("loss: {}, loss_grad: {}, stepdir: {}, shs: {}, lm: {}, fullstep: {}, expected_improve: {}".format(
+    #     loss, loss_grad, stepdir, shs, lm, fullstep, expected_improve
+    # ))
 
     prev_params = get_flat_params_from(policy_net)
     print("prev_params: ", prev_params)

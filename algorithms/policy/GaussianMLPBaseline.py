@@ -74,8 +74,6 @@ class GaussianMLP(nn.Module):
             output = self.forward(xs)
             # print("output: ", output)
             loss = self.criterion(output, ys)
-            print("output: ", output)
-            print("ys: ", ys)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

@@ -43,6 +43,7 @@ def parse_args(arglist=None):
     parser.add_argument('--env_action_repeat', type=int, default=1)
     parser.add_argument('--env_multiagent', type=str2bool, default=True)
     parser.add_argument('--env_reward', type=int, default=0)
+    parser.add_argument('--env_param', type=str, default="./data/experiments/multiagent_curr/imitate/log/itr_200.npz")
 
     # reward handler
     parser.add_argument('--reward_handler_max_epochs', type=int, default=100)
@@ -55,6 +56,7 @@ def parse_args(arglist=None):
     parser.add_argument('--policy_mean_hidden_layer_dims', nargs='+', default=(128, 128, 64))
     parser.add_argument('--policy_std_hidden_layer_dims', nargs='+', default=(128, 64))
     parser.add_argument('--policy_recurrent', type=str2bool, default=True)
+    parser.add_argument('--policy_param', type=str, default="./data/experiments/NGSIM-gail/imitate/model/policy.pkl")
     parser.add_argument('--recurrent_hidden_dim', type=int, default=64)
 
     # trpo policy update
@@ -74,6 +76,7 @@ def parse_args(arglist=None):
     parser.add_argument('--critic_grad_rescale', type=float, default=40.)
     parser.add_argument('--critic_batch_size', type=int, default=1000)
     parser.add_argument('--critic_hidden_layer_dims', nargs='+', default=(128, 128, 64))
+    parser.add_argument('--critic_param', type=str, default="./data/experiments/NGSIM-gail/imitate/model/critic.pkl")
 
     # recognition
     parser.add_argument('--latent_dim', type=int, default=4)

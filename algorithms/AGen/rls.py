@@ -21,7 +21,7 @@ class rls(object):
     def initialize(self):
         self.rls_state = []
 
-        self.F = 10000 * np.eye(self.nn_dim)
+        self.F = 1e-2 * np.eye(self.nn_dim)
 
         self.F_M = self.F
 
@@ -35,19 +35,18 @@ class rls(object):
         for j in range(self.y_dim):
             self.F = self.F_M[self.nn_dim * j:self.nn_dim * (j + 1),
                      self.nn_dim * j:self.nn_dim * (j + 1)]
-
+            # print(self.F)
             k = self.lbd + hidden_vec @ self.F @ hidden_vec.T
             # 65 * 1
             k = self.F @ hidden_vec.T / k
-
             self.theta[:, j] = self.theta[:, j] + k @ (obs_Y[:, j] - hidden_vec @ self.theta[:, j])
+
+            self.F = (self.F - k @ hidden_vec @ self.F) / self.lbd
 
             self.F_M[self.nn_dim * j:self.nn_dim * (j + 1),
             self.nn_dim * j:self.nn_dim * (j + 1)] = self.F
 
         pred = hidden_vec @ self.theta
-
-        error = obs_Y - pred
 
         self.rls_state.append(pred)
 
