@@ -21,12 +21,8 @@ def maybe_mkdir(dirpath):
 
 def build_ngsim_env(
         args,
-        exp_dir='/tmp',
         n_veh=1,
-        alpha=0.001,
-        vectorize=False,
-        render_params=None,
-        videoMaking=False):
+        alpha=0.001):
     basedir = os.path.expanduser('~/Autoenv/data')
     filepaths = [os.path.join(basedir, args.ngsim_filename)]
     # if render_params is None:

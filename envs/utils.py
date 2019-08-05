@@ -351,19 +351,21 @@ def load_x_feature_names(filepath, ngsim_filename):
     feature_names = []
     for feature_name in f.attrs['feature_names']:
         feature_names.append(feature_name.decode())
+    f.close()
     return x, veh_2_index, feature_names
 
 
 def compute_lengths(arr):
     sums = np.sum(np.array(arr), axis=2)
     lengths = []
+    start = []
+    end = []
     for sample in sums:
-        zero_idxs = np.where(sample == 0.)[0]
-        if len(zero_idxs) == 0:
-            lengths.append(len(sample))
-        else:
-            lengths.append(zero_idxs[0])
-    return np.array(lengths)
+        zero_idxs = np.where(sample != 0.)[0]
+        lengths.append(len(zero_idxs))
+        start.append(zero_idxs[0])
+        end.append(zero_idxs[-1])
+    return np.array(lengths), start, end
 
 
 def normalize(x, clip_std_multiple=np.inf):
@@ -410,7 +412,7 @@ def load_data(
         x = x[idxs]
 
     # compute lengths of the samples before anything else b/c this is fragile
-    lengths = compute_lengths(x)
+    lengths, start, end = compute_lengths(x)
 
     # flatten the dataset to (n_samples, n_features)
     # taking only the valid timesteps from each sample
@@ -419,7 +421,10 @@ def load_data(
     for i, l in enumerate(lengths):
         # enforce minimum length constraint
         if l >= min_length:
-            xs.append(x[i, :l])
+            xs.append(x[i, start[i]:end[i] + 1])
+    if len(xs) == 0:
+        print("Inadequate trajectory length, skipping")
+        return None, None
     x = np.concatenate(xs)
 
     # split into observations and actions
