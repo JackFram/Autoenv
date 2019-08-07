@@ -157,7 +157,8 @@ def sample_trajdata_vehicle(trajinfos, offset: int = 0, traj_idx: int = None, eg
 
 
 def sample_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_resamples: int = 100, egoid: int = None,
-                                     traj_idx: int = None, verbose: bool = True, rseed: int = None):
+                                     traj_idx: int = None, verbose: bool = True, rseed: int = None,
+                                     multiple: bool = False):
     if rseed is not None:
         random.seed(rseed)
     # if passed in egoid and traj_idx, use those, otherwise, sample
@@ -180,12 +181,13 @@ def sample_multiple_trajdata_vehicle(n_veh: int, trajinfos, offset: int, max_res
     # start with the set containing the first egoid so we don't double count it
     egoids = set()
     egoids.add(egoid)
-    for othid in trajinfos[traj_idx].keys():
-        oth_ts = trajinfos[traj_idx][othid]["ts"]
-        oth_te = trajinfos[traj_idx][othid]["te"]
-        # other vehicle must start at or before ts and must end at or after te
-        if oth_ts <= ts and te <= oth_te:
-            egoids.add(othid)
+    if multiple:
+        for othid in trajinfos[traj_idx].keys():
+            oth_ts = trajinfos[traj_idx][othid]["ts"]
+            oth_te = trajinfos[traj_idx][othid]["te"]
+            # other vehicle must start at or before ts and must end at or after te
+            if oth_ts <= ts and te <= oth_te:
+                egoids.add(othid)
 
     # check that there are enough valid ids from which to sample
     if len(egoids) < n_veh:
@@ -351,7 +353,7 @@ def load_x_feature_names(filepath, ngsim_filename):
     feature_names = []
     for feature_name in f.attrs['feature_names']:
         feature_names.append(feature_name.decode())
-    f.close()
+    # f.close()
     return x, veh_2_index, feature_names
 
 

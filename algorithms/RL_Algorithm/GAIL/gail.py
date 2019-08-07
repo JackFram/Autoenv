@@ -160,10 +160,14 @@ class GAIL(object):
             # collect params (or stuff to keep in general)
             params = dict()
             if self.critic:
+                critic_save_path = os.path.join(self.saver_filepath, "critic_{}.pkl".format(itr))
                 torch.save(self.critic.network.state_dict(),
-                           os.path.join(self.saver_filepath, "critic_{}.pkl".format(itr)))
+                           critic_save_path)
+                print("critic params has been saved to: {}".format(critic_save_path))
+            policy_save_path = os.path.join(self.saver_filepath, "policy_{}.pkl".format(itr))
             torch.save(self.policy.state_dict(),
-                       os.path.join(self.saver_filepath, "policy_{}.pkl".format(itr)))
+                       policy_save_path)
+            print("policy params has been saved to: {}".format(policy_save_path))
             # if the environment is wrapped in a normalizing env, save those stats
             normalized_env = extract_normalizing_env(self.env)
             if normalized_env is not None:
@@ -193,9 +197,11 @@ class GAIL(object):
             normalized_env._obs_var = params['normalzing']['obs_var']
 
     def load_critic(self, critic_param_path):
+        print("critic loading params from: {}".format(critic_param_path))
         self.critic.network.load_state_dict(torch.load(critic_param_path))
 
     def load_policy(self, policy_param_path):
+        print("policy loading params from: {}".format(policy_param_path))
         self.policy.load_state_dict(torch.load(policy_param_path))
 
     def _validate(self, itr, samples_data):
@@ -321,11 +327,16 @@ class GAIL(object):
         )
         if data is None:
             return False
-        torch.save(self.critic.network.state_dict(), './data/experiments/NGSIM-gail/imitate/model/critic_cache.pkl')
+        critic_param_cache = './data/experiments/NGSIM-gail/imitate/model/critic_cache.pkl'
+        if self.critic:
+            torch.save(self.critic.network.state_dict(), critic_param_cache)
         critic = utils.build_critic(args, data, env)
         self.env = env
         self.critic = critic
-        self.load_critic('./data/experiments/NGSIM-gail/imitate/model/critic_cache.pkl')
+        if os.path.isfile(critic_param_cache):
+            self.load_critic(critic_param_cache)
+        else:
+            self.load_critic(self.critic_filepath)
         # self.shutdown_worker()
         self.sampler = self.sampler_cls(self, **self.sampler_args)
         self.start_worker()
