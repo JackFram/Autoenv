@@ -21,6 +21,7 @@ from contexttimer import Timer
 
 import hgail.misc.simulation
 import hgail.misc.utils
+import algorithms.utils
 
 from envs import hyperparams, utils, build_env
 
@@ -66,6 +67,11 @@ def online_adaption(
     theta = np.load('./data/theta.npy')  # TODO: change the file path
     theta = np.mean(theta)
 
+    policy_fc_weight = np.array(policy.mean_network.fc.weight.data)
+    policy_fc_bias = np.array(policy.mean_network.fc.bias.data).reshape((2, 1))
+    new_theta = np.concatenate([policy_fc_weight, policy_fc_bias], axis=1)
+    new_theta = np.mean(new_theta)
+
     ego_start_frame = trajinfos[env_kwargs['egoid']]['ts']
     maxstep = trajinfos[env_kwargs['egoid']]['te'] - trajinfos[env_kwargs['egoid']]['ts'] - 52
     env_kwargs['start'] = ego_start_frame + 2
@@ -86,7 +92,7 @@ def online_adaption(
     param_length = 65 if adapt_steps == 1 else 195
 
     for i in range(n_agents):
-        adapnets.append(rls.rls(lbd, theta, param_length, 2))
+        adapnets.append(rls.rls(lbd, new_theta, param_length, 2))
 
     # print(('Reset env Running time: %s Seconds' % (end_time - start_time)))
     lx = x
@@ -244,7 +250,7 @@ def collect_trajectories(
     print(args)
     env, trajinfos, _, _ = env_fn(args, n_veh=N_VEH, alpha=0.)
     # print(trajinfos[0])
-
+    args.policy_recurrent = True
     policy = policy_fn(args, env)
     with tf.Session() as sess:
         # initialize variables
@@ -257,7 +263,7 @@ def collect_trajectories(
                 level.algo.policy.set_param_values(params[i]['policy'])
             policy = policy[0].algo.policy
         else:
-            policy.set_param_values(params['policy'])
+            policy.load_param("./data/experiments/NGSIM-gail/imitate/model/policy.pkl")
 
         normalized_env = hgail.misc.utils.extract_normalizing_env(env)
         if normalized_env is not None:
@@ -355,19 +361,18 @@ def parallel_collect_trajectories(
         lbd=0.99,
         adapt_steps=1):
     # build manager and dictionary mapping ego ids to list of trajectories
-    start_time = time.time()
     manager = mp.Manager()
     error_dict = manager.list()
 
+    tf_policy = False
     # set policy function
-    policy_fn = build_env.build_hierarchy if use_hgail else validate_utils.build_policy
+    policy_fn = validate_utils.build_policy if tf_policy else algorithms.utils.build_policy
 
     # partition egoids
     proc_egoids = utils.partition_list(egoids, n_proc)
 
     # pool of processes, each with a set of ego ids
     pool = mp.Pool(processes=n_proc)
-    end_time = time.time()
     # print(('Creating parallel env Running time: %s Seconds' % (end_time - start_time)))
     # run collection
     results = []
@@ -548,8 +553,8 @@ if __name__ == '__main__':
     parser.add_argument('--adapt_steps', type=int, default=1)
 
     run_args = parser.parse_args()
-    j = julia.Julia()
-    j.using("NGSIM")
+    # j = julia.Julia()
+    # j.using("NGSIM")
 
     args_filepath = "./args/params.npz"
     if os.path.isfile(args_filepath):
@@ -604,10 +609,10 @@ if __name__ == '__main__':
                     print("Using same lane file, skipping generating a new one")
                 print("Finish cleaning the original data")
                 print("Start generating roadway")
-                if prev_lane_name != lane_file:
-                    base_dir = os.path.expanduser('~/Autoenv/data/')
-                    j.write_roadways_to_dxf(base_dir)
-                    j.write_roadways_from_dxf(base_dir)
+                # if prev_lane_name != lane_file:
+                #     base_dir = os.path.expanduser('~/Autoenv/data/')
+                #     j.write_roadways_to_dxf(base_dir)
+                #     j.write_roadways_from_dxf(base_dir)
                 prev_lane_name = lane_file
                 print("Finish generating roadway")
                 convert_raw_ngsim_to_trajdatas()

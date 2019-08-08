@@ -63,6 +63,9 @@ class GaussianGRUPolicy(nn.Module):
         action_log_std = self.action_log_std.expand_as(action_mean)
         return action_mean, action_log_std, h
 
+    def load_param(self, param_path: str):
+        self.load_state_dict(torch.load(param_path))
+
     def dist_info_sym(self, obs_var, state_info_vars):
         n_batches = np.array(obs_var).shape[0]
         n_steps = np.array(obs_var).shape[1]
@@ -143,7 +146,7 @@ class GaussianGRUPolicy(nn.Module):
             self.prev_hiddens[dones] = None
 
     def get_action(self, observation):
-        actions, agent_infos = self.get_actions([observation])
+        actions, agent_infos, _ = self.get_actions([observation])
         return actions[0], {k: v[0] for k, v in agent_infos.items()}
 
     def get_actions(self, observations):
@@ -170,7 +173,7 @@ class GaussianGRUPolicy(nn.Module):
         agent_info = dict(mean=means, log_std=log_stds)
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
-        return actions, agent_info
+        return actions, agent_info, hidden_vec.detach().numpy()
 
     def get_actions_with_prev(self, observations, prev_actions, prev_hiddens):
         # for getting back to hidden vector and action prediction before prediction
@@ -187,8 +190,12 @@ class GaussianGRUPolicy(nn.Module):
             ], axis=-1)
         else:
             all_input = flat_obs
-
+        all_input = torch.tensor(all_input).double()
+        if not torch.is_tensor(prev_hiddens):
+            prev_hiddens = torch.tensor(prev_hiddens).double()
         means, log_stds, hidden_vec = self.forward(all_input, prev_hiddens)
+        means = means.detach().numpy()
+        log_stds = log_stds.detach().numpy()
         rnd = np.random.normal(size=means.shape)
         actions = rnd * np.exp(log_stds) + means
 
@@ -197,7 +204,7 @@ class GaussianGRUPolicy(nn.Module):
         agent_info = dict(mean=means, log_std=log_stds)
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
-        return actions, agent_info
+        return actions, agent_info, hidden_vec.detach().numpy()
 
     @property
     def recurrent(self):

@@ -304,6 +304,8 @@ class GAIL(object):
             self.j.write_roadways_from_dxf(base_dir)
             print("Finish generating roadway")
             self.file_set.update(paths)
+        if len(self.file_set) == 0:
+            return False
         trajectory_file = random.choice(list(self.file_set))
         processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(trajectory_file[5:19])
         self.file_set.remove(trajectory_file)
@@ -350,9 +352,8 @@ class GAIL(object):
         for itr in range(self.start_itr, self.n_itr):
             itr_start_time = time.time()
             print("Initializing AutoEnv...")
-            if not self.init_env(itr):
-                print("Invalid data, skipping this iteration!")
-                continue
+            while not self.init_env(itr):
+                print("Invalid data, initialize again!")
             print("Obtaining samples...")
             paths = self.obtain_samples(itr)
             print("Processing samples...")
