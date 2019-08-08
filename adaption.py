@@ -64,13 +64,17 @@ def online_adaption(
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
     assert trajinfos is not None
-    theta = np.load('./data/theta.npy')  # TODO: change the file path
-    theta = np.mean(theta)
+    # theta = np.load('./data/theta.npy')  # TODO: change the file path
+    # theta = np.mean(theta)
+    #
+    # print("original theta: {}".format(theta))
 
     policy_fc_weight = np.array(policy.mean_network.fc.weight.data)
     policy_fc_bias = np.array(policy.mean_network.fc.bias.data).reshape((2, 1))
     new_theta = np.concatenate([policy_fc_weight, policy_fc_bias], axis=1)
     new_theta = np.mean(new_theta)
+
+    # print("new theta: {}".format(new_theta))
 
     ego_start_frame = trajinfos[env_kwargs['egoid']]['ts']
     maxstep = trajinfos[env_kwargs['egoid']]['te'] - trajinfos[env_kwargs['egoid']]['ts'] - 52
@@ -106,7 +110,7 @@ def online_adaption(
     for step in tqdm.tqdm(range(ego_start_frame, maxstep + ego_start_frame - 1)):
 
         a, a_info, hidden_vec = policy.get_actions_with_prev(obs[:, step, :], mean[:, step, :], prev_hiddens)
-
+        # print(hidden_vec)
         if adapt_steps == 1:
             adap_vec = hidden_vec
         elif adapt_steps == 2:
@@ -190,8 +194,8 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
 
         prev_hiddens = hidden_vec
 
-        rnd = np.random.normal(size=means.shape)
-        actions = rnd * np.exp(log_std) + means
+        # rnd = np.random.normal(size=means.shape)
+        actions = means
         # print("predict step: {}".format(j+1))
         nx, r, dones, e_info = env.step(actions)
         traj.add(x, actions, r, a_info, e_info)
@@ -254,7 +258,6 @@ def collect_trajectories(
     policy = policy_fn(args, env)
     with tf.Session() as sess:
         # initialize variables
-        start_time = time.time()
         sess.run(tf.global_variables_initializer())
 
         # then load parameters
@@ -264,6 +267,7 @@ def collect_trajectories(
             policy = policy[0].algo.policy
         else:
             policy.load_param("./data/experiments/NGSIM-gail/imitate/model/policy.pkl")
+            # policy.set_param_values(params['policy'])
 
         normalized_env = hgail.misc.utils.extract_normalizing_env(env)
         if normalized_env is not None:
@@ -283,7 +287,6 @@ def collect_trajectories(
             sample = np.random.choice(data['observations'].shape[0], 2)
 
         kwargs = dict()
-        end_time = time.time()
         # print(('Loading obs data Running time: %s Seconds' % (end_time - start_time)))
         if args.env_multiagent:
             # I add not because single simulation has no orig_x etc.
@@ -553,8 +556,8 @@ if __name__ == '__main__':
     parser.add_argument('--adapt_steps', type=int, default=1)
 
     run_args = parser.parse_args()
-    # j = julia.Julia()
-    # j.using("NGSIM")
+    j = julia.Julia()
+    j.using("NGSIM")
 
     args_filepath = "./args/params.npz"
     if os.path.isfile(args_filepath):
@@ -609,10 +612,10 @@ if __name__ == '__main__':
                     print("Using same lane file, skipping generating a new one")
                 print("Finish cleaning the original data")
                 print("Start generating roadway")
-                # if prev_lane_name != lane_file:
-                #     base_dir = os.path.expanduser('~/Autoenv/data/')
-                #     j.write_roadways_to_dxf(base_dir)
-                #     j.write_roadways_from_dxf(base_dir)
+                if prev_lane_name != lane_file:
+                    base_dir = os.path.expanduser('~/Autoenv/data/')
+                    j.write_roadways_to_dxf(base_dir)
+                    j.write_roadways_from_dxf(base_dir)
                 prev_lane_name = lane_file
                 print("Finish generating roadway")
                 convert_raw_ngsim_to_trajdatas()
