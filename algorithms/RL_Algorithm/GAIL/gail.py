@@ -160,11 +160,11 @@ class GAIL(object):
             # collect params (or stuff to keep in general)
             params = dict()
             if self.critic:
-                critic_save_path = os.path.join(self.saver_filepath, "critic_{}.pkl".format(itr))
+                critic_save_path = os.path.join(self.saver_filepath, "critic_{}.pkl".format(itr + 1))
                 torch.save(self.critic.network.state_dict(),
                            critic_save_path)
                 print("critic params has been saved to: {}".format(critic_save_path))
-            policy_save_path = os.path.join(self.saver_filepath, "policy_{}.pkl".format(itr))
+            policy_save_path = os.path.join(self.saver_filepath, "policy_{}.pkl".format(itr + 1))
             torch.save(self.policy.state_dict(),
                        policy_save_path)
             print("policy params has been saved to: {}".format(policy_save_path))
@@ -330,8 +330,10 @@ class GAIL(object):
         if data is None:
             return False
         critic_param_cache = './data/experiments/NGSIM-gail/imitate/model/critic_cache.pkl'
+        policy_param_cache = './data/experiments/NGSIM-gail/imitate/model/policy_cache.pkl'
         if self.critic:
             torch.save(self.critic.network.state_dict(), critic_param_cache)
+        torch.save(self.policy.state_dict(), policy_param_cache)
         critic = utils.build_critic(args, data, env)
         self.env = env
         self.critic = critic
@@ -355,7 +357,12 @@ class GAIL(object):
             while not self.init_env(itr):
                 print("Invalid data, initialize again!")
             print("Obtaining samples...")
-            paths = self.obtain_samples(itr)
+            try:
+                paths = self.obtain_samples(itr)
+            except BaseException as e:
+                print("Error occurred", e)
+                print("continue to next iteration")
+                continue
             print("Processing samples...")
             samples_data = self.process_samples(itr, paths)
             print("Logging diagnostics...")

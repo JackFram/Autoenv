@@ -98,12 +98,13 @@ def build_critic(args, data, env, writer=None):
     return critic
 
 
-def build_policy(args, env):
+def build_policy(args, env, mode: int=0):
     if args.policy_recurrent:
         policy = GaussianGRUPolicy(
             env_spec=env.spec,
             hidden_dim=args.recurrent_hidden_dim,
             output_nonlinearity=None,
+            mode=mode
         )
     else:
         raise NotImplementedError("Hasn't implement none recurrent policy yet.")

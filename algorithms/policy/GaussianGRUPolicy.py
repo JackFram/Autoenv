@@ -16,6 +16,7 @@ class GaussianGRUPolicy(nn.Module):
                  state_include_action=True,
                  gru_layer=GRUCell,
                  output_nonlinearity=None,
+                 mode: int=0,
                  log_std=0):
         super().__init__()
         obs_dim = env_spec.observation_space.flat_dim
@@ -54,6 +55,8 @@ class GaussianGRUPolicy(nn.Module):
         self.dist = RecurrentDiagonalGaussian(action_dim)
 
         self.state_include_action = state_include_action
+
+        self.mode = mode
 
         self.is_disc_action = False
 
@@ -150,6 +153,7 @@ class GaussianGRUPolicy(nn.Module):
         return actions[0], {k: v[0] for k, v in agent_infos.items()}
 
     def get_actions(self, observations):
+        # mode: 0 stand for training, 1 for testing
         flat_obs = self.observation_space.flatten_n(observations)
         # self.prev_actions.shape = np.zeros([1,2], dtype=float)
         if self.state_include_action:
@@ -173,7 +177,12 @@ class GaussianGRUPolicy(nn.Module):
         agent_info = dict(mean=means, log_std=log_stds)
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
-        return actions, agent_info, hidden_vec.detach().numpy()
+        if self.mode == 1:
+            return actions, agent_info, hidden_vec.detach().numpy()
+        elif self.mode == 0:
+            return actions, agent_info
+        else:
+            raise NotImplementedError
 
     def get_actions_with_prev(self, observations, prev_actions, prev_hiddens):
         # for getting back to hidden vector and action prediction before prediction
@@ -204,7 +213,12 @@ class GaussianGRUPolicy(nn.Module):
         agent_info = dict(mean=means, log_std=log_stds)
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
-        return actions, agent_info, hidden_vec.detach().numpy()
+        if self.mode == 1:
+            return actions, agent_info, hidden_vec.detach().numpy()
+        elif self.mode == 0:
+            return actions, agent_info
+        else:
+            raise NotImplementedError
 
     @property
     def recurrent(self):
