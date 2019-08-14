@@ -255,7 +255,7 @@ def collect_trajectories(
     env, trajinfos, _, _ = env_fn(args, n_veh=N_VEH, alpha=0.)
     # print(trajinfos[0])
     args.policy_recurrent = True
-    policy = policy_fn(args, env)
+    policy = policy_fn(args, env, mode=1)
     with tf.Session() as sess:
         # initialize variables
         sess.run(tf.global_variables_initializer())

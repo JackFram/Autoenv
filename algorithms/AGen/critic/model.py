@@ -51,8 +51,8 @@ class ObservationActionMLP(nn.Module):
         self.score_layer = nn.Linear(hidden_layer_dims[-1], output_dim)
 
     def forward(self, obs, act):
-        obs = torch.tensor(obs).float()
-        act = torch.tensor(act).float()
+        obs = torch.tensor(obs).cuda().float()
+        act = torch.tensor(act).cuda().float()
         obs_feature = self.obs_block.forward(obs)
         act_feature = self.act_block.forward(act)
         feature = torch.cat((obs_feature, act_feature), dim=1)

@@ -63,7 +63,7 @@ class Critic(object):
 
         # compute rewards
         rewards = self.network.forward(obs, acts)
-        rewards = rewards.detach().numpy()
+        rewards = rewards.cpu().detach().numpy()
         if np.any(np.isnan(rewards)) and self.debug_nan:
             import ipdb
             ipdb.set_trace()

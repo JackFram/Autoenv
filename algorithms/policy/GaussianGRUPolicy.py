@@ -17,7 +17,8 @@ class GaussianGRUPolicy(nn.Module):
                  gru_layer=GRUCell,
                  output_nonlinearity=None,
                  mode: int=0,
-                 log_std=0):
+                 log_std=0,
+                 cuda_enable=True):
         super().__init__()
         obs_dim = env_spec.observation_space.flat_dim
         action_dim = env_spec.action_space.flat_dim
@@ -37,7 +38,7 @@ class GaussianGRUPolicy(nn.Module):
             hidden_dim=hidden_dim,
             gru_layer=gru_layer,
             output_nonlinearity=output_nonlinearity
-        ).double()
+        )
         self.feature_network = feature_network
 
         # self.fc_std = nn.Linear(hidden_dim, action_dim).double()
@@ -57,6 +58,7 @@ class GaussianGRUPolicy(nn.Module):
         self.state_include_action = state_include_action
 
         self.mode = mode
+        self.cuda_enable = cuda_enable and torch.cuda.is_available()
 
         self.is_disc_action = False
 
@@ -105,10 +107,10 @@ class GaussianGRUPolicy(nn.Module):
             x = np.concatenate([x, prev_act], axis=-1)
         x = x.reshape((-1, self.input_dim))
         actions = actions.reshape((-1, self.action_dim))
-        x = torch.tensor(x)
-        actions = torch.tensor(actions)
+        x = torch.tensor(x).cuda()
+        actions = torch.tensor(actions).float().cuda()
         action_mean, action_log_std, hidden_vec = self.forward(x)
-        action_log_std = action_log_std.double()
+        action_log_std = action_log_std
         action_std = torch.exp(action_log_std)
         return normal_log_density(actions, action_mean, action_log_std, action_std)
 
@@ -116,7 +118,7 @@ class GaussianGRUPolicy(nn.Module):
         if self.state_include_action:
             prev_act = np.concatenate([np.zeros((actions.shape[0], 1, actions.shape[2])), actions], axis=1)[:, :-1, :]
             x = np.concatenate([x, prev_act], axis=-1)
-        x = torch.tensor(x).reshape((-1, self.input_dim))
+        x = torch.tensor(x).reshape((-1, self.input_dim)).cuda()
         mean, action_log_std, _ = self.forward(x)
         cov_inv = self.action_log_std.exp().pow(-2).squeeze(0).repeat(x.size(0))
         param_count = 0
@@ -164,12 +166,16 @@ class GaussianGRUPolicy(nn.Module):
             ], axis=-1)
         else:
             all_input = flat_obs
-        all_input = torch.tensor(all_input).double()
+        all_input = torch.tensor(all_input)
+        if self.cuda_enable:
+            all_input = all_input.cuda()
+            if self.prev_hiddens is not None:
+                self.prev_hiddens = self.prev_hiddens.cuda()
         means, log_stds, hidden_vec = self.forward(all_input, self.prev_hiddens)
 
         rnd = np.random.normal(size=means.shape)
-        means = means.detach().numpy()
-        log_stds = log_stds.detach().numpy()
+        means = means.cpu().detach().numpy()
+        log_stds = log_stds.cpu().detach().numpy()
         actions = rnd * np.exp(log_stds) + means
         prev_actions = self.prev_actions
         self.prev_actions = self.action_space.flatten_n(actions)
@@ -199,12 +205,12 @@ class GaussianGRUPolicy(nn.Module):
             ], axis=-1)
         else:
             all_input = flat_obs
-        all_input = torch.tensor(all_input).double()
+        all_input = torch.tensor(all_input)
         if not torch.is_tensor(prev_hiddens):
-            prev_hiddens = torch.tensor(prev_hiddens).double()
+            prev_hiddens = torch.tensor(prev_hiddens)
         means, log_stds, hidden_vec = self.forward(all_input, prev_hiddens)
-        means = means.detach().numpy()
-        log_stds = log_stds.detach().numpy()
+        means = means.cpu().detach().numpy()
+        log_stds = log_stds.cpu().detach().numpy()
         rnd = np.random.normal(size=means.shape)
         actions = rnd * np.exp(log_stds) + means
 

@@ -52,6 +52,7 @@ class GAIL(object):
                  policy_filepath=None,
                  critic_filepath=None,
                  env_filepath=None,
+                 cuda_enable=True,
                  args=None
                  ):
         """
@@ -119,6 +120,13 @@ class GAIL(object):
         self.policy_filepath = policy_filepath
         self.env_filepath = env_filepath
 
+        self.cuda_enable = cuda_enable and torch.cuda.is_available()
+        if self.cuda_enable:
+            self.policy = self.policy.cuda()
+            self.baseline.set_cuda()
+            if self.critic:
+                self.critic.network = self.critic.network.cuda()
+
         self.file_set = set()
 
         self.j = julia.Julia()
@@ -156,15 +164,18 @@ class GAIL(object):
         Save a tf checkpoint of the session.
         """
         # using keep_checkpoint_every_n_hours as proxy for iterations between saves
+
+        id = itr + 1 + 200
+
         if (itr + 1) % 50 == 0:
             # collect params (or stuff to keep in general)
             params = dict()
             if self.critic:
-                critic_save_path = os.path.join(self.saver_filepath, "critic_{}.pkl".format(itr + 1))
+                critic_save_path = os.path.join(self.saver_filepath, "critic_{}.pkl".format(id))
                 torch.save(self.critic.network.state_dict(),
                            critic_save_path)
                 print("critic params has been saved to: {}".format(critic_save_path))
-            policy_save_path = os.path.join(self.saver_filepath, "policy_{}.pkl".format(itr + 1))
+            policy_save_path = os.path.join(self.saver_filepath, "policy_{}.pkl".format(id))
             torch.save(self.policy.state_dict(),
                        policy_save_path)
             print("policy params has been saved to: {}".format(policy_save_path))
@@ -178,7 +189,7 @@ class GAIL(object):
 
             # save params
             save_dir = os.path.split(self.saver_filepath)[0]
-            save_params(save_dir, params, itr + 1, max_to_keep=50)
+            save_params(save_dir, params, id, max_to_keep=50)
 
     def load(self):
         '''
@@ -203,6 +214,7 @@ class GAIL(object):
     def load_policy(self, policy_param_path):
         print("policy loading params from: {}".format(policy_param_path))
         self.policy.load_state_dict(torch.load(policy_param_path))
+        self.policy = self.policy.float()
 
     def _validate(self, itr, samples_data):
         """
@@ -269,7 +281,7 @@ class GAIL(object):
         ))
 
         trpo_step(
-            self.policy.double(),
+            self.policy,
             obes,
             actions,
             advantages,
@@ -344,25 +356,26 @@ class GAIL(object):
         # self.shutdown_worker()
         self.sampler = self.sampler_cls(self, **self.sampler_args)
         self.start_worker()
+
+        if self.cuda_enable and self.critic:
+            self.critic.network = self.critic.network.cuda()
         return True
 
     def train(self):
         self.start_worker()
         start_time = time.time()
+        self.critic_filepath = "./data/experiments/NGSIM-gail/imitate/model/critic_200.pkl"
+        self.policy_filepath = "./data/experiments/NGSIM-gail/imitate/model/policy_200.pkl"
         print("loading critic and policy params from file")
         self.load()
         for itr in range(self.start_itr, self.n_itr):
+            # try:
             itr_start_time = time.time()
             print("Initializing AutoEnv...")
             while not self.init_env(itr):
                 print("Invalid data, initialize again!")
             print("Obtaining samples...")
-            try:
-                paths = self.obtain_samples(itr)
-            except BaseException as e:
-                print("Error occurred", e)
-                print("continue to next iteration")
-                continue
+            paths = self.obtain_samples(itr)
             print("Processing samples...")
             samples_data = self.process_samples(itr, paths)
             print("Logging diagnostics...")
@@ -377,4 +390,10 @@ class GAIL(object):
             print("Saved")
             print('Time', time.time() - start_time)
             print('ItrTime', time.time() - itr_start_time)
+            # except BaseException as e:
+            #     print("***************************************")
+            #     print("Some error occurred, which is {}".format(e))
+            #     exit(0)
+            #     print("skip to next iteration")
+            #     continue
         self.shutdown_worker()

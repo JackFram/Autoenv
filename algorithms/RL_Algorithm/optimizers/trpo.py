@@ -3,7 +3,7 @@ from algorithms.RL_Algorithm.optimizers.utils import *
 
 
 def conjugate_gradients(Avp_f, b, nsteps, rdotr_tol=1e-10):
-    x = zeros(b.size(), device=b.device).double()
+    x = zeros(b.size(), device=b.device)
     r = b.clone()
     p = b.clone()
     rdotr = torch.dot(r, r)
@@ -75,7 +75,7 @@ def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=
     def get_loss(volatile=False):
         with torch.set_grad_enabled(not volatile):
             log_probs = policy_net.get_log_prob(states, actions)
-            action_loss = -torch.tensor(advantages).flatten() * torch.exp(log_probs - fixed_log_probs)
+            action_loss = -torch.tensor(advantages).flatten().float().cuda() * torch.exp(log_probs - fixed_log_probs)
             return action_loss.mean()
 
     """use fisher information matrix for Hessian*vector"""
@@ -84,7 +84,7 @@ def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=
         mu = mu.view(-1)
         filter_input_ids = set() if policy_net.is_disc_action else {info['std_id']}
 
-        t = ones(mu.size(), requires_grad=True, device=mu.device).double()
+        t = ones(mu.size(), requires_grad=True, device=mu.device)
         mu_t = (mu * t).sum()
         Jt = compute_flat_grad(mu_t, policy_net.parameters(), filter_input_ids=filter_input_ids, create_graph=True)
         Jtv = (Jt * v).sum()

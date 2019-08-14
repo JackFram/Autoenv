@@ -52,6 +52,7 @@ class GaussianMLP(nn.Module):
     def forward(self, x):
         if self.normalize_inputs:
             x = (x - x.mean(dim=0))/(x.std(dim=0)+1e-4)
+        x = x.cuda()
         mean = self.mean_network(x)
         if self.normalize_outputs:
             mean = (mean - mean.mean(dim=0))/(mean.std(dim=0)+1e-4)
@@ -59,8 +60,8 @@ class GaussianMLP(nn.Module):
         return mean
 
     def fit(self, xs, ys):
-        xs = torch.tensor(xs).double()
-        ys = torch.tensor(ys).double()
+        xs = torch.tensor(xs).double().cuda()
+        ys = torch.tensor(ys).double().cuda()
         if self.subsample_factor < 1:
             num_samples_tot = xs.shape[0]
             idx = np.random.randint(0, num_samples_tot, int(num_samples_tot * self._subsample_factor))
@@ -80,7 +81,7 @@ class GaussianMLP(nn.Module):
 
     def predict(self, xs):
         xs = torch.tensor(xs).double()
-        return self.forward(xs).detach().numpy()
+        return self.forward(xs).cpu().detach().numpy()
 
 
 class GaussianMLPBaseline(object):
@@ -110,6 +111,9 @@ class GaussianMLPBaseline(object):
 
     def parameters(self):
         return self._regressor.parameters()
+
+    def set_cuda(self):
+        self._regressor.cuda()
 
 
 

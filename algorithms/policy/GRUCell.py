@@ -34,13 +34,18 @@ class GRUCell(nn.Module):
         self.nonlinearity = nn.Tanh()
 
     def forward(self, x, h=None):
+        x = x.float()
         if h is None:
             h = x.new_zeros(x.size(0), self.hidden_size, requires_grad=False)
         W_x_ruc = torch.cat([self.W_xr, self.W_xu, self.W_xc], dim=1)
         W_h_ruc = torch.cat([self.W_hr, self.W_hu, self.W_hc], dim=1)
         b_ruc = torch.cat([self.b_r, self.b_u, self.b_c], dim=1)
-        xb_ruc = torch.matmul(x, W_x_ruc.double()) + torch.reshape(b_ruc.double(), (1, -1))
-        h_ruc = torch.matmul(h, W_h_ruc.double())
+        if torch.cuda.is_available():
+            xb_ruc = torch.matmul(x, W_x_ruc.cuda()) + torch.reshape(b_ruc.cuda(), (1, -1))
+            h_ruc = torch.matmul(h, W_h_ruc.cuda())
+        else:
+            xb_ruc = torch.matmul(x, W_x_ruc) + torch.reshape(b_ruc, (1, -1))
+            h_ruc = torch.matmul(h, W_h_ruc)
         xb_r, xb_u, xb_c = torch.split(dim=1, split_size_or_sections=int(xb_ruc.shape[1]/3), tensor=xb_ruc)
         h_r, h_u, h_c = torch.split(dim=1, split_size_or_sections=int(h_ruc.shape[1]/3), tensor=h_ruc)
         r = self.gate_nonlinearity(xb_r + h_r)

@@ -66,6 +66,7 @@ def run(args):
         policy_filepath=args.policy_param,
         critic_filepath=args.critic_param,
         env_filepath=args.env_param,
+        cuda_enable=False,
         args=args
     )
     print("Finish building GAIL!")
