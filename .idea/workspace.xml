@@ -2,17 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="60f23679-9a28-48b8-bb04-903951b6efb8" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/adaption.py" afterPath="$PROJECT_DIR$/adaption.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/AGen/critic/base.py" afterPath="$PROJECT_DIR$/algorithms/AGen/critic/base.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/AGen/critic/model.py" afterPath="$PROJECT_DIR$/algorithms/AGen/critic/model.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py" afterPath="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py" afterPath="$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/policy/GRUCell.py" afterPath="$PROJECT_DIR$/algorithms/policy/GRUCell.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/policy/GRUNetwork.py" afterPath="$PROJECT_DIR$/algorithms/policy/GRUNetwork.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py" afterPath="$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py" afterPath="$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/imitate.py" afterPath="$PROJECT_DIR$/imitate.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -88,8 +79,8 @@
       <file leaf-file-name="adaption.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/adaption.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="518">
-              <caret line="572" column="56" lean-forward="true" selection-start-line="572" selection-start-column="56" selection-end-line="572" selection-end-column="56" />
+            <state relative-caret-position="858">
+              <caret line="269" column="91" lean-forward="true" selection-start-line="269" selection-start-column="91" selection-end-line="269" selection-end-column="91" />
               <folding />
             </state>
           </provider>
@@ -98,8 +89,8 @@
       <file leaf-file-name="GaussianGRUPolicy.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="983">
-              <caret line="124" column="21" lean-forward="true" selection-start-line="124" selection-start-column="21" selection-end-line="124" selection-end-column="21" />
+            <state relative-caret-position="1531">
+              <caret line="179" column="40" lean-forward="true" selection-start-line="179" selection-start-column="40" selection-end-line="179" selection-end-column="40" />
               <folding />
             </state>
           </provider>
@@ -228,7 +219,6 @@
         <option value="$PROJECT_DIR$/doc/Mac_Carla.md" />
         <option value="$PROJECT_DIR$/envs/utils.py" />
         <option value="$PROJECT_DIR$/algorithms/utils.py" />
-        <option value="$PROJECT_DIR$/adaption.py" />
         <option value="$USER_HOME$/JackFram.github.io/index.html" />
         <option value="$PROJECT_DIR$/imitate.py" />
         <option value="$PROJECT_DIR$/algorithms/policy/GRUNetwork.py" />
@@ -236,9 +226,10 @@
         <option value="$PROJECT_DIR$/algorithms/AGen/critic/model.py" />
         <option value="$PROJECT_DIR$/algorithms/AGen/critic/base.py" />
         <option value="$PROJECT_DIR$/algorithms/policy/GaussianMLPBaseline.py" />
-        <option value="$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py" />
         <option value="$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py" />
         <option value="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py" />
+        <option value="$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py" />
+        <option value="$PROJECT_DIR$/adaption.py" />
       </list>
     </option>
   </component>
@@ -809,14 +800,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="983">
-          <caret line="124" column="21" lean-forward="true" selection-start-line="124" selection-start-column="21" selection-end-line="124" selection-end-column="21" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/algorithms/RL_Algorithm/optimizers/trpo.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="30">
@@ -843,10 +826,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/algorithms/policy/GaussianGRUPolicy.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1531">
+          <caret line="179" column="40" lean-forward="true" selection-start-line="179" selection-start-column="40" selection-end-line="179" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/adaption.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="518">
-          <caret line="572" column="56" lean-forward="true" selection-start-line="572" selection-start-column="56" selection-end-line="572" selection-end-column="56" />
+        <state relative-caret-position="858">
+          <caret line="269" column="91" lean-forward="true" selection-start-line="269" selection-start-column="91" selection-end-line="269" selection-end-column="91" />
           <folding />
         </state>
       </provider>

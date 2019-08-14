@@ -69,8 +69,8 @@ def online_adaption(
     #
     # print("original theta: {}".format(theta))
 
-    policy_fc_weight = np.array(policy.mean_network.fc.weight.data)
-    policy_fc_bias = np.array(policy.mean_network.fc.bias.data).reshape((2, 1))
+    policy_fc_weight = np.array(policy.mean_network.fc.weight.data.cpu())
+    policy_fc_bias = np.array(policy.mean_network.fc.bias.data.cpu()).reshape((2, 1))
     new_theta = np.concatenate([policy_fc_weight, policy_fc_bias], axis=1)
     new_theta = np.mean(new_theta)
 
@@ -256,6 +256,7 @@ def collect_trajectories(
     # print(trajinfos[0])
     args.policy_recurrent = True
     policy = policy_fn(args, env, mode=1)
+    policy = policy.cuda()
     with tf.Session() as sess:
         # initialize variables
         sess.run(tf.global_variables_initializer())
@@ -266,7 +267,7 @@ def collect_trajectories(
                 level.algo.policy.set_param_values(params[i]['policy'])
             policy = policy[0].algo.policy
         else:
-            policy.load_param("./data/experiments/NGSIM-gail/imitate/model/policy.pkl")
+            policy.load_param("./data/experiments/NGSIM-gail/imitate/model/policy_650.pkl")
             # policy.set_param_values(params['policy'])
 
         normalized_env = hgail.misc.utils.extract_normalizing_env(env)
@@ -556,8 +557,8 @@ if __name__ == '__main__':
     parser.add_argument('--adapt_steps', type=int, default=1)
 
     run_args = parser.parse_args()
-    j = julia.Julia()
-    j.using("NGSIM")
+    # j = julia.Julia()
+    # j.using("NGSIM")
 
     args_filepath = "./args/params.npz"
     if os.path.isfile(args_filepath):
@@ -612,10 +613,10 @@ if __name__ == '__main__':
                     print("Using same lane file, skipping generating a new one")
                 print("Finish cleaning the original data")
                 print("Start generating roadway")
-                if prev_lane_name != lane_file:
-                    base_dir = os.path.expanduser('~/Autoenv/data/')
-                    j.write_roadways_to_dxf(base_dir)
-                    j.write_roadways_from_dxf(base_dir)
+                # if prev_lane_name != lane_file:
+                #     base_dir = os.path.expanduser('~/Autoenv/data/')
+                #     j.write_roadways_to_dxf(base_dir)
+                #     j.write_roadways_from_dxf(base_dir)
                 prev_lane_name = lane_file
                 print("Finish generating roadway")
                 convert_raw_ngsim_to_trajdatas()

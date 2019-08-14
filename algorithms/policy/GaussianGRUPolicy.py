@@ -184,7 +184,7 @@ class GaussianGRUPolicy(nn.Module):
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
         if self.mode == 1:
-            return actions, agent_info, hidden_vec.detach().numpy()
+            return actions, agent_info, hidden_vec.cpu().detach().numpy()
         elif self.mode == 0:
             return actions, agent_info
         else:
@@ -205,9 +205,9 @@ class GaussianGRUPolicy(nn.Module):
             ], axis=-1)
         else:
             all_input = flat_obs
-        all_input = torch.tensor(all_input)
+        all_input = torch.tensor(all_input).cuda()
         if not torch.is_tensor(prev_hiddens):
-            prev_hiddens = torch.tensor(prev_hiddens)
+            prev_hiddens = torch.tensor(prev_hiddens).float().cuda()
         means, log_stds, hidden_vec = self.forward(all_input, prev_hiddens)
         means = means.cpu().detach().numpy()
         log_stds = log_stds.cpu().detach().numpy()
@@ -220,7 +220,7 @@ class GaussianGRUPolicy(nn.Module):
         if self.state_include_action:
             agent_info["prev_action"] = np.copy(prev_actions)
         if self.mode == 1:
-            return actions, agent_info, hidden_vec.detach().numpy()
+            return actions, agent_info, hidden_vec.cpu().detach().numpy()
         elif self.mode == 0:
             return actions, agent_info
         else:
