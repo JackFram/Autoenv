@@ -826,7 +826,11 @@ def print_error(error: dict):
     lane_change_error = np.array(error["lane_change"])
     straight_error = np.array(error["straight"])
     time_list = np.array(error["time_info"])
+    orig_traj = np.array(error["orig_traj"])
+    pred_traj = np.array(error["pred_traj"])
     print("========================================================================================================")
+    np.save("./orig_traj.npz", orig_traj)
+    np.save("./pred_traj.npz", pred_traj)
     print("overall lane number: {}, curve: {}, lane_change: {}, straight: {}".format(overall_error.shape[0],
                                                                                      curve_error.shape[0],
                                                                                      lane_change_error.shape[0],

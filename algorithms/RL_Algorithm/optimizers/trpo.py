@@ -6,11 +6,13 @@ def conjugate_gradients(Avp_f, b, nsteps, rdotr_tol=1e-10):
     x = zeros(b.size(), device=b.device)
     r = b.clone()
     p = b.clone()
+    print("p: {}".format(p))
     rdotr = torch.dot(r, r)
     for i in range(nsteps):
         Avp = Avp_f(p)
         alpha = rdotr / torch.dot(p, Avp)
         x += alpha * p
+        print("step: {}".format(i), "Avp: {}".format(Avp), "p: {}".format(p), "rdotr: {}".format(rdotr), "x: {}".format(x))
         r -= alpha * Avp
         new_rdotr = torch.dot(r, r)
         betta = new_rdotr / rdotr
@@ -24,8 +26,9 @@ def conjugate_gradients(Avp_f, b, nsteps, rdotr_tol=1e-10):
 def line_search(model, f, x, fullstep, expected_improve_full, max_backtracks=10, accept_ratio=0.1):
     fval = f(True).item()
 
-    for stepfrac in [.5**x for x in range(max_backtracks)]:
+    for stepfrac in [.5**i for i in range(max_backtracks)]:
         x_new = x + stepfrac * fullstep
+        print(x, stepfrac, x_new)
         set_flat_params_to(model, x_new)
         fval_new = f(True).item()
         actual_improve = fval - fval_new
@@ -45,28 +48,6 @@ def line_search(model, f, x, fullstep, expected_improve_full, max_backtracks=10,
 
 
 def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=True):
-
-    # """update critic"""
-    # def get_value_loss(flat_params):
-    #     set_flat_params_to(value_net, tensor(flat_params).double())
-    #     for param in value_net.parameters():
-    #         if param.grad is not None:
-    #             param.grad.data.fill_(0)
-    #     values_pred = value_net.predict({"observations": states})
-    #     value_loss = (torch.tensor(values_pred - returns).double()).pow(2).mean()
-    #
-    #     # weight decay
-    #     for param in value_net.parameters():
-    #         value_loss += param.pow(2).sum() * l2_reg
-    #     print(value_loss)
-    #     value_loss.backward()
-    #     return value_loss.item(), get_flat_grad_from(value_net.parameters()).cpu().numpy()
-    #
-    # flat_params, _, opt_info = scipy.optimize.fmin_l_bfgs_b(get_value_loss,
-    #                                                         get_flat_params_from(value_net).detach().cpu().numpy(),
-    #                                                         maxiter=25)
-    # print("after optimize: ", tensor(flat_params))
-    # set_flat_params_to(value_net, tensor(flat_params))
 
     """update policy"""
     with torch.no_grad():
@@ -115,14 +96,19 @@ def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=
     Fvp = Fvp_fim if use_fim else Fvp_direct
 
     loss = get_loss()
+    print("loss: {}".format(loss))
     grads = torch.autograd.grad(loss, policy_net.parameters(), allow_unused=True)
     grads = [grad.contiguous() for grad in grads]
     loss_grad = torch.cat([grad.view(-1) for grad in grads]).detach()
     stepdir = conjugate_gradients(Fvp, -loss_grad, 10)
+    print("stepdir: {}".format(stepdir))
 
     shs = 0.5 * (stepdir.dot(Fvp(stepdir)))
+    print("shs: {}".format(shs))
     lm = math.sqrt(max_kl / shs)
+    print("lm: {}".format(lm))
     fullstep = stepdir * lm
+    print("fullstep: {}".format(fullstep))
     expected_improve = -loss_grad.dot(fullstep)
     # print("loss: {}, loss_grad: {}, stepdir: {}, shs: {}, lm: {}, fullstep: {}, expected_improve: {}".format(
     #     loss, loss_grad, stepdir, shs, lm, fullstep, expected_improve

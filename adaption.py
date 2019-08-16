@@ -267,7 +267,9 @@ def collect_trajectories(
                 level.algo.policy.set_param_values(params[i]['policy'])
             policy = policy[0].algo.policy
         else:
-            policy.load_param("./data/experiments/NGSIM-gail/imitate/model/policy_650.pkl")
+            policy_param_path = "./data/experiments/NGSIM-gail/imitate/model/policy_650.pkl"
+            policy.load_param(policy_param_path)
+            print("load policy param from: {}".format(policy_param_path))
             # policy.set_param_values(params['policy'])
 
         normalized_env = hgail.misc.utils.extract_normalizing_env(env)
@@ -557,8 +559,8 @@ if __name__ == '__main__':
     parser.add_argument('--adapt_steps', type=int, default=1)
 
     run_args = parser.parse_args()
-    # j = julia.Julia()
-    # j.using("NGSIM")
+    j = julia.Julia()
+    j.using("NGSIM")
 
     args_filepath = "./args/params.npz"
     if os.path.isfile(args_filepath):
@@ -613,10 +615,10 @@ if __name__ == '__main__':
                     print("Using same lane file, skipping generating a new one")
                 print("Finish cleaning the original data")
                 print("Start generating roadway")
-                # if prev_lane_name != lane_file:
-                #     base_dir = os.path.expanduser('~/Autoenv/data/')
-                #     j.write_roadways_to_dxf(base_dir)
-                #     j.write_roadways_from_dxf(base_dir)
+                if prev_lane_name != lane_file:
+                    base_dir = os.path.expanduser('~/Autoenv/data/')
+                    j.write_roadways_to_dxf(base_dir)
+                    j.write_roadways_from_dxf(base_dir)
                 prev_lane_name = lane_file
                 print("Finish generating roadway")
                 convert_raw_ngsim_to_trajdatas()

@@ -165,7 +165,7 @@ class GAIL(object):
         """
         # using keep_checkpoint_every_n_hours as proxy for iterations between saves
 
-        id = itr + 1 + 200
+        id = itr + 1
 
         if (itr + 1) % 50 == 0:
             # collect params (or stuff to keep in general)
@@ -364,36 +364,35 @@ class GAIL(object):
     def train(self):
         self.start_worker()
         start_time = time.time()
-        self.critic_filepath = "./data/experiments/NGSIM-gail/imitate/model/critic_200.pkl"
-        self.policy_filepath = "./data/experiments/NGSIM-gail/imitate/model/policy_200.pkl"
+        self.critic_filepath = "./data/experiments/NGSIM-gail/imitate/model/critic.pkl"
+        self.policy_filepath = "./data/experiments/NGSIM-gail/imitate/model/policy.pkl"
         print("loading critic and policy params from file")
         self.load()
         for itr in range(self.start_itr, self.n_itr):
-            # try:
-            itr_start_time = time.time()
-            print("Initializing AutoEnv...")
-            while not self.init_env(itr):
-                print("Invalid data, initialize again!")
-            print("Obtaining samples...")
-            paths = self.obtain_samples(itr)
-            print("Processing samples...")
-            samples_data = self.process_samples(itr, paths)
-            print("Logging diagnostics...")
-            # self.log_diagnostics(paths)
-            print("Optimizing policy...")
-            self.optimize_policy(itr, samples_data)
-            print("Saving snapshot...")
-            params = self.get_itr_snapshot(itr, samples_data)
-            if self.store_paths:
-                params["paths"] = samples_data["paths"]
-            # logger.save_itr_params(itr, params)
-            print("Saved")
-            print('Time', time.time() - start_time)
-            print('ItrTime', time.time() - itr_start_time)
-            # except BaseException as e:
-            #     print("***************************************")
-            #     print("Some error occurred, which is {}".format(e))
-            #     exit(0)
-            #     print("skip to next iteration")
-            #     continue
+            try:
+                itr_start_time = time.time()
+                print("Initializing AutoEnv...")
+                while not self.init_env(itr):
+                    print("Invalid data, initialize again!")
+                print("Obtaining samples...")
+                paths = self.obtain_samples(itr)
+                print("Processing samples...")
+                samples_data = self.process_samples(itr, paths)
+                print("Logging diagnostics...")
+                # self.log_diagnostics(paths)
+                print("Optimizing policy...")
+                self.optimize_policy(itr, samples_data)
+                print("Saving snapshot...")
+                params = self.get_itr_snapshot(itr, samples_data)
+                if self.store_paths:
+                    params["paths"] = samples_data["paths"]
+                # logger.save_itr_params(itr, params)
+                print("Saved")
+                print('Time', time.time() - start_time)
+                print('ItrTime', time.time() - itr_start_time)
+            except BaseException as e:
+                print("***************************************\n" * 10)
+                print("Some error occurred, which is {}".format(e))
+                print("skip to next iteration")
+                continue
         self.shutdown_worker()
