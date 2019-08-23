@@ -43,7 +43,7 @@ def parse_args(arglist=None):
     parser.add_argument('--env_action_repeat', type=int, default=1)
     parser.add_argument('--env_multiagent', type=str2bool, default=True)
     parser.add_argument('--env_reward', type=int, default=0)
-    parser.add_argument('--env_param', type=str, default="./data/experiments/multiagent_curr/imitate/log/itr_200.npz")
+    parser.add_argument('--env_param', type=str, default="./data/experiments/NGSIM-gail/imitate/itr_650.npz")
 
     # reward handler
     parser.add_argument('--reward_handler_max_epochs', type=int, default=100)

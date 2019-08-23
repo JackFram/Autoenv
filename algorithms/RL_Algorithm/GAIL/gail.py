@@ -134,6 +134,8 @@ class GAIL(object):
 
         self.args = args
 
+        self.prev_itr = 650
+
     def start_worker(self):
         self.sampler.start_worker()
 
@@ -165,7 +167,7 @@ class GAIL(object):
         """
         # using keep_checkpoint_every_n_hours as proxy for iterations between saves
 
-        id = itr + 1
+        id = itr + 1 + self.prev_itr
 
         if (itr + 1) % 50 == 0:
             # collect params (or stuff to keep in general)
@@ -197,6 +199,7 @@ class GAIL(object):
         but it's easier than keeping track of everything separately.
         '''
         params = load_params(self.env_filepath)
+        print("load env normalization param from: {}".format(self.env_filepath))
         if self.policy is not None:
             self.load_policy(self.policy_filepath)
         if self.critic is not None:
@@ -364,8 +367,9 @@ class GAIL(object):
     def train(self):
         self.start_worker()
         start_time = time.time()
-        self.critic_filepath = "./data/experiments/NGSIM-gail/imitate/model/critic.pkl"
-        self.policy_filepath = "./data/experiments/NGSIM-gail/imitate/model/policy.pkl"
+        self.env_filepath = "./data/experiments/NGSIM-gail/imitate/itr_600.npz"
+        self.critic_filepath = "./data/experiments/NGSIM-gail/imitate/model/critic_{}.pkl".format(self.prev_itr)
+        self.policy_filepath = "./data/experiments/NGSIM-gail/imitate/model/policy_{}.pkl".format(self.prev_itr)
         print("loading critic and policy params from file")
         self.load()
         for itr in range(self.start_itr, self.n_itr):

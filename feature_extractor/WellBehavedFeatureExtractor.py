@@ -3,6 +3,13 @@ from src.Roadway.roadway import Roadway
 from src.Basic import Vehicle
 from feature_extractor.interface import convert_2_float
 from feature_extractor.Get import get_Is_Colliding, get_RoadEdgeDist_Left, get_RoadEdgeDist_Right
+'''
+"is_colliding": if collide with other vehicle or not
+"out_of_lane": if vehicle drive out of lane or not
+"negative_velocity": boolean feature indicate whether the velocity is negative or not
+"distance_road_edge_left": the distance of the current vehicle to the most left side of the road
+"distance_road_edge_right": the distance of the current vehicle to the most right side of the road
+'''
 
 
 class WellBehavedFeatureExtractor:

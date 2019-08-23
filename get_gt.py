@@ -21,10 +21,12 @@ from contexttimer import Timer
 
 import hgail.misc.simulation
 import hgail.misc.utils
+import algorithms.utils
 
 from envs import hyperparams, utils, build_env
 
 from envs.utils import str2bool
+from utils.math_utils import classify_traj
 from algorithms.AGen import rls, validate_utils
 from preprocessing.clean_holo import clean_data, csv2txt, create_lane
 from preprocessing.extract_feature import extract_ngsim_features
@@ -42,7 +44,9 @@ EGO_ID = 1978
 DATA_INDEX = [96]
 N_ITERATION = 1
 MAX_STEP = 150
+TOTAL_STEP = 0
 
+Veh_counter = 0
 
 def online_adaption(
         env,
@@ -61,14 +65,21 @@ def online_adaption(
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
     assert trajinfos is not None
-    start_time = time.time()
-    theta = np.load('./data/theta.npy')  # TODO: change the file path
-    theta = np.mean(theta)
+    # theta = np.load('./data/theta.npy')  # TODO: change the file path
+    # theta = np.mean(theta)
+    #
+    # print("original theta: {}".format(theta))
+
+    policy_fc_weight = np.array(policy.mean_network.fc.weight.data.cpu())
+    policy_fc_bias = np.array(policy.mean_network.fc.bias.data.cpu()).reshape((2, 1))
+    new_theta = np.concatenate([policy_fc_weight, policy_fc_bias], axis=1)
+    new_theta = np.mean(new_theta)
+
+    # print("new theta: {}".format(new_theta))
 
     ego_start_frame = trajinfos[env_kwargs['egoid']]['ts']
-    maxstep = trajinfos[env_kwargs['egoid']]['te'] - trajinfos[env_kwargs['egoid']]['ts'] - 50
-
-    env_kwargs['start'] = ego_start_frame
+    maxstep = trajinfos[env_kwargs['egoid']]['te'] - trajinfos[env_kwargs['egoid']]['ts'] - 52
+    env_kwargs['start'] = ego_start_frame + 2
     x = env.reset(**env_kwargs)
 
     n_agents = x.shape[0]
@@ -76,7 +87,6 @@ def online_adaption(
     dones = [True] * n_agents
     predicted_trajs, adapnets = [], []
     policy.reset(dones)
-    prev_actions, prev_hiddens = None, None
 
     # max_steps = min(200, obs.shape[1] - primesteps - 2)
     print("max steps")
@@ -87,27 +97,21 @@ def online_adaption(
     param_length = 65 if adapt_steps == 1 else 195
 
     for i in range(n_agents):
-        adapnets.append(rls.rls(lbd, theta, param_length, 2))
+        adapnets.append(rls.rls(lbd, new_theta, param_length, 2))
 
-    avg = 0
-    end_time = time.time()
     # print(('Reset env Running time: %s Seconds' % (end_time - start_time)))
     lx = x
     error = []  # size is (maxstep, predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
-    action_time = 0
-    step_time = 0
-    adaption_time = 0
-    predict_time = 0
-    reset_time = 0
-    for step in tqdm.tqdm(range(ego_start_frame - 1, maxstep + ego_start_frame - 1)):
+    curve_error = []
+    changeLane_error = []
+    straight_error = []
+    orig_traj_list = []
+    pred_traj_list = []
+    time_list = []
+    for step in tqdm.tqdm(range(ego_start_frame, maxstep + ego_start_frame - 1)):
 
-        # print("step = ", step)
-        # print("feature: ", x)
-
-        start = time.time()
-        start_time = time.time()
         a, a_info, hidden_vec = policy.get_actions_with_prev(obs[:, step, :], mean[:, step, :], prev_hiddens)
-
+        # print(hidden_vec)
         if adapt_steps == 1:
             adap_vec = hidden_vec
         elif adapt_steps == 2:
@@ -122,85 +126,66 @@ def online_adaption(
             for _ in range(N_ITERATION):
                 adapnets[i].update(adap_vec[i], mean[i, step+1, :])
                 adapnets[i].draw.append(adapnets[i].theta[6, 1])
-        end_time = time.time()
-        adaption_time += end_time - start_time
+
         prev_actions, prev_hiddens = a, hidden_vec
-        start_time = time.time()
-        # print("TFenv reset feature: ", x)
-        # print("loading feature: ", obs[:, step + 1, :])
-        traj, error_per_step, time_info = prediction(env_kwargs, x, adapnets, env, policy,
-                                                     prev_hiddens, n_agents, adapt_steps, nids, maxstep)
-        end_time = time.time()
-        predict_time += (end_time - start_time)
-        action_time += time_info["action"]
-        step_time += time_info["step"]
-        error.append(error_per_step)
+
+        traj, error_per_step, time_info, orig_traj, pred_traj = prediction(env_kwargs, x, adapnets, env, policy,
+                                                                           prev_hiddens, n_agents, adapt_steps, nids)
+        print("Vehicle Counter: {}".format(Veh_counter))
+        break
+        traj_cat = classify_traj(orig_traj)
+
+        if traj_cat != "invalid":
+            error.append(error_per_step)
+            orig_traj_list.append(orig_traj)
+            pred_traj_list.append(pred_traj)
+        if traj_cat == "curve":
+            curve_error.append(error_per_step)
+        elif traj_cat == "changeLane":
+            changeLane_error.append(error_per_step)
+        elif traj_cat == "straight":
+            straight_error.append(error_per_step)
+        if "20" in time_info.keys() and "50" in time_info.keys():
+            time_list.append([time_info["20"], time_info["50"]])
         predicted_trajs.append(traj)
         d = np.stack([adapnets[i].draw for i in range(n_agents)])
-        end = time.time()
-        avg += (start - end)
+
         env_kwargs['start'] += 1
         lx = x
-        start_time = time.time()
         x = env.reset(**env_kwargs)
-        end_time = time.time()
-        reset_time += end_time - start_time
-        # print(('Step %d reset env Running time: %s Seconds' % (step, end_time - start_time)))
-    # print(('predict trajectory time: %s Seconds' % (predict_time / maxstep)))
-    # print(('env reset time: %s Seconds' % (reset_time / maxstep)))
-    # print(('adaption time: %s Seconds' % (adaption_time / maxstep)))
-    # print(('action time: %s Seconds' % (action_time / maxstep)))
-    # print(('env step time: %s Seconds' % (step_time / maxstep)))
 
-    # test
-    # m_stability = utils.cal_m_stability(error, T=150)
-    # with open("./m_stability.pkl", "wb") as fp:
-    #     pickle.dump(m_stability, fp)
-    #     print("finish saving M stability matrix.")
     error_info = dict()
-    error_info["overall_rmse"] = utils.cal_overall_rmse(error, verbose=True)
-    rmse_over_lookahead_dx = []
-    rmse_over_lookahead_dy = []
-    rmse_over_lookahead_dist = []
-    for j in range(50):  # this should be the span you want to test
-        dx, dy, dist = utils.cal_lookahead_rmse(error, j)
-        rmse_over_lookahead_dx.append(dx)
-        rmse_over_lookahead_dy.append(dy)
-        rmse_over_lookahead_dist.append(dist)
-    print("======================================")
-    print("RMSE over look ahead score:\n")
-    print("rmse over look ahead dx:")
-    print(rmse_over_lookahead_dx[:10])
-    print("rmse over look ahead dy:")
-    print(rmse_over_lookahead_dy[:10])
-    print("rmse over look ahead dist:")
-    print(rmse_over_lookahead_dist[:10])
-    error_info["lookahead_rmse"] = {"dx": rmse_over_lookahead_dx, "dy": rmse_over_lookahead_dy,
-                                    "dist": rmse_over_lookahead_dist}
-
-    error_info["agent_rmse"] = []
-    for i in range(n_agents):
-        error_info["agent_rmse"].append(utils.cal_agent_rmse(error, i, verbose=True))
-
-    # print('obs.shape')
-    # print(obs.shape)
+    error_info["overall"] = error
+    error_info["curve"] = curve_error
+    error_info["lane_change"] = changeLane_error
+    error_info["straight"] = straight_error
+    error_info["time_info"] = time_list
+    error_info["orig_traj"] = orig_traj_list
+    error_info["pred_traj"] = pred_traj_list
+    print("\n\nVehicle id: {} Statistical Info:\n\n".format(env_kwargs['egoid']))
+    print("Vehicle Counter: {}".format(Veh_counter))
+    utils.print_error(error_info)
 
     return predicted_trajs, error_info
 
 
-def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids, maxstep):
+def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids):
     traj = hgail.misc.simulation.Trajectory()
-    predict_span = maxstep - 1
+    predict_span = 400
+    # predict_span = 50
     error_per_step = []  # size is (predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
-    get_action_time = 0
-    env_step_time = 0
     valid_data = True
-    speed_limit = 45
-    gts = []
+    hi_speed_limit = 40
+    lo_speed_limit = 10
+    orig_trajectory = []
+    pred_trajectory = []
+    start_time = time.time()
+    time_info = {}
+    feature_array = np.zeros([0, 66])
+    lane_array = []
     for j in range(predict_span):
         # if j == 0:
         #     print("feature {}".format(j), x)
-        start_time = time.time()
         a, a_info, hidden_vec = policy.get_actions(x)
 
         if adapt_steps == 1:
@@ -216,37 +201,51 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
 
         prev_hiddens = hidden_vec
 
-        rnd = np.random.normal(size=means.shape)
-        actions = rnd * np.exp(log_std) + means
-        end_time = time.time()
-        get_action_time += (end_time - start_time)
-        start_time = time.time()
+        # rnd = np.random.normal(size=means.shape)
+        actions = means
+        # print("predict step: {}".format(j+1))
         nx, r, dones, e_info = env.step(actions)
         traj.add(x, actions, r, a_info, e_info)
-        end_time = time.time()
-        env_step_time += (end_time - start_time)
         error_per_agent = []  # length is n_agent, each element is a dict(dx: , dy: ,dist: )
 
         for i in range(n_agents):
+            assert n_agents == 1
             # print("orig x: ", e_info["orig_x"][i])
             # print("orig y: ", e_info["orig_y"][i])
+            # print("orig v: ", e_info["orig_v"][i])
+            # print("orig theta: ", e_info["orig_theta"][i])
             # print("predicted x: ", e_info["x"][i])
             # print("predicted y: ", e_info["y"][i])
             dx = abs(e_info["orig_x"][i] - e_info["x"][i])
             dy = abs(e_info["orig_y"][i] - e_info["y"][i])
-            gts.append([e_info["orig_x"][i], e_info["orig_y"][i]])
+            dist = math.hypot(dx, dy)
+            # print("dist: ", dist)
+            # print("{}-----> dx: {} dy: {} dist: {}".format(j, dx, dy, dist))
+            error_per_agent.append(dist)
+            orig_trajectory.append([e_info["orig_x"][i], e_info["orig_y"][i]])
+            pred_trajectory.append([e_info["x"][i], e_info["y"][i]])
+
+        error_per_step += error_per_agent
         x = nx
-    gts = np.array(gts)
-    with open("./gts.pkl", "wb") as fp:
-        pickle.dump(gts, fp)
-    print("Saved gt, exit")
-    exit(0)
-
-    time_info = {"action": (get_action_time / predict_span), "step": (env_step_time / predict_span)}
-    # this should be delete and replaced
-    # y = env.reset(**env_kwargs)
-
-    return traj.flatten(), error_per_step, time_info
+        feature_array = np.concatenate([feature_array, np.array(x)], axis=0)
+        lane_array.append(e_info["lane_id"][0])
+        end_time = time.time()
+        if j == 19:
+            time_info["20"] = end_time - start_time
+        elif j == 49:
+            time_info["50"] = end_time - start_time
+        if any(dones):
+            # break
+            continue
+    lane_array = np.array(lane_array)
+    print(feature_array.shape, np.array(orig_trajectory).shape, lane_array.shape)
+    global Veh_counter
+    np.savez("./abu/{}.npz".format(Veh_counter), feature=feature_array, trajectory=np.array(orig_trajectory), lane_id=lane_array)
+    print("Trajectory has been saved to ./abu/{}.npz".format(Veh_counter))
+    Veh_counter += 1
+    if Veh_counter == 100:
+        exit(0)
+    return traj.flatten(), error_per_step, time_info, orig_trajectory, pred_trajectory
 
 
 def collect_trajectories(
@@ -254,7 +253,7 @@ def collect_trajectories(
         params,
         egoids,
         starts,
-        trajlist,
+        error_dict,
         pid,
         env_fn,
         policy_fn,
@@ -265,16 +264,13 @@ def collect_trajectories(
         adapt_steps):
     print('env initialization args')
     print(args)
-    start_time = time.time()
     env, trajinfos, _, _ = env_fn(args, n_veh=N_VEH, alpha=0.)
     # print(trajinfos[0])
-
-    policy = policy_fn(args, env)
-    end_time = time.time()
-    # print(('Initializing env Running time: %s Seconds' % (end_time - start_time)))
+    args.policy_recurrent = True
+    policy = policy_fn(args, env, mode=1)
+    policy = policy.cuda()
     with tf.Session() as sess:
         # initialize variables
-        start_time = time.time()
         sess.run(tf.global_variables_initializer())
 
         # then load parameters
@@ -283,12 +279,16 @@ def collect_trajectories(
                 level.algo.policy.set_param_values(params[i]['policy'])
             policy = policy[0].algo.policy
         else:
-            policy.set_param_values(params['policy'])
+            policy_param_path = "./data/experiments/NGSIM-gail/imitate/model/policy_700.pkl"
+            policy.load_param(policy_param_path)
+            print("load policy param from: {}".format(policy_param_path))
+            # policy.set_param_values(params['policy'])
 
         normalized_env = hgail.misc.utils.extract_normalizing_env(env)
         if normalized_env is not None:
             normalized_env._obs_mean = params['normalzing']['obs_mean']
             normalized_env._obs_var = params['normalzing']['obs_var']
+            print(params['normalzing']['obs_mean'], params['normalzing']['obs_var'])
 
         # collect trajectories
         egoids = np.unique(egoids)
@@ -303,17 +303,21 @@ def collect_trajectories(
             sample = np.random.choice(data['observations'].shape[0], 2)
 
         kwargs = dict()
-        end_time = time.time()
         # print(('Loading obs data Running time: %s Seconds' % (end_time - start_time)))
         if args.env_multiagent:
             # I add not because single simulation has no orig_x etc.
             # egoid = random.choice(egoids)
             trajinfos = trajinfos[0]
-            error = []
+            error = {"overall": [],
+                     "curve": [],
+                     "lane_change": [],
+                     "straight": [],
+                     "time_info": [],
+                     "orig_traj": [],
+                     "pred_traj": []}
             for veh_id in trajinfos.keys():
-                if trajinfos[veh_id]["te"] - trajinfos[veh_id]["ts"] <= 50:
+                if trajinfos[veh_id]["te"] - trajinfos[veh_id]["ts"] <= 452:
                     continue
-                print(veh_id)
                 if random_seed:
                     kwargs = dict(random_seed=random_seed + veh_id)
                 print("egoid: {}, ts: {}, te: {}".format(veh_id, trajinfos[veh_id]["ts"], trajinfos[veh_id]["te"]))
@@ -333,10 +337,16 @@ def collect_trajectories(
                     nids=nids,
                     trajinfos=trajinfos
                 )
+                print("Vehicle Counter: {}".format(Veh_counter))
 
-                error.append(error_info)
-            utils.save_error(error)
-            trajlist += error
+                error["overall"] += error_info["overall"]
+                error["curve"] += error_info["curve"]
+                error["lane_change"] += error_info["lane_change"]
+                error["straight"] += error_info["straight"]
+                error["time_info"] += error_info["time_info"]
+                error["orig_traj"] += error_info["orig_traj"]
+                error["pred_traj"] += error_info["pred_traj"]
+            error_dict.append(error)
         else:
             # for i in sample:
             for i, egoid in enumerate(egoids):
@@ -353,11 +363,9 @@ def collect_trajectories(
                     adapt_steps=adapt_steps,
                     nids=nids
                 )
-                trajlist.append(traj)
+                # trajlist.append(traj)
 
-        print('finish online adaption')
-
-    return trajlist
+    return error_dict
 
 
 def parallel_collect_trajectories(
@@ -373,49 +381,69 @@ def parallel_collect_trajectories(
         lbd=0.99,
         adapt_steps=1):
     # build manager and dictionary mapping ego ids to list of trajectories
-    start_time = time.time()
-    manager = mp.Manager()
-    trajlist = manager.list()
 
+    tf_policy = False
+    parallel = False
     # set policy function
-    policy_fn = build_env.build_hierarchy if use_hgail else validate_utils.build_policy
+    policy_fn = validate_utils.build_policy if tf_policy else algorithms.utils.build_policy
 
     # partition egoids
     proc_egoids = utils.partition_list(egoids, n_proc)
-
-    # pool of processes, each with a set of ego ids
-    pool = mp.Pool(processes=n_proc)
-    end_time = time.time()
-    # print(('Creating parallel env Running time: %s Seconds' % (end_time - start_time)))
-    # run collection
-    results = []
-    for pid in range(n_proc):
-        res = pool.apply_async(
-            collect_trajectories,
-            args=(
-                args,
-                params,
-                proc_egoids[pid],
-                starts,
-                trajlist,
-                pid,
-                env_fn,
-                policy_fn,
-                max_steps,
-                use_hgail,
-                random_seed,
-                lbd,
-                adapt_steps
+    if parallel:
+        manager = mp.Manager()
+        error_dict = manager.list()
+        # pool of processes, each with a set of ego ids
+        pool = mp.Pool(processes=n_proc)
+        # print(('Creating parallel env Running time: %s Seconds' % (end_time - start_time)))
+        # run collection
+        results = []
+        for pid in range(n_proc):
+            res = pool.apply_async(
+                collect_trajectories,
+                args=(
+                    args,
+                    params,
+                    proc_egoids[pid],
+                    starts,
+                    error_dict,
+                    pid,
+                    env_fn,
+                    policy_fn,
+                    max_steps,
+                    use_hgail,
+                    random_seed,
+                    lbd,
+                    adapt_steps
+                )
             )
+            results.append(res)
+        [res.get() for res in results]
+        pool.close()
+    else:
+        error_dict = []
+        error_dict = collect_trajectories(
+            args,
+            params,
+            proc_egoids[0],
+            starts,
+            error_dict,
+            0,
+            env_fn,
+            policy_fn,
+            max_steps,
+            use_hgail,
+            random_seed,
+            lbd,
+            adapt_steps
         )
-        results.append(res)
 
     # wait for the processes to finish
-    [res.get() for res in results]
-    pool.close()
+
+    print("Vehicle Counter: {}".format(Veh_counter))
+
     # let the julia processes finish up
     time.sleep(10)
-    return trajlist
+    return error_dict[0]
 
 
 def single_process_collect_trajectories(
@@ -475,7 +503,7 @@ def collect(
             this with args.env_multiagent == True
     '''
     # load information relevant to the experiment
-    params_filepath = os.path.join(exp_dir, 'imitate/log/{}'.format(params_filename))
+    params_filepath = os.path.join(exp_dir, 'imitate/{}'.format(params_filename))
     params = hgail.misc.utils.load_params(params_filepath)
     # validation setup
     validation_dir = os.path.join(exp_dir, 'imitate', 'test')
@@ -484,7 +512,7 @@ def collect(
         args.ngsim_filename.split('.')[0], adapt_steps, args.env_multiagent))
 
     with Timer():
-        trajs = collect_fn(
+        error = collect_fn(
             args,
             params,
             egoids,
@@ -496,8 +524,8 @@ def collect(
             lbd=lbd,
             adapt_steps=adapt_steps
         )
-
-    return trajs
+    print("Vehicle Counter: {}".format(Veh_counter))
+    return error
 
     # utils.write_trajectories(output_filepath, trajs)
 
@@ -509,6 +537,7 @@ def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngs
     print("ids_filename")
     print(ids_filename)
     ids_filepath = os.path.join(basedir, ids_filename)
+    traj_num = 0
     if True:
         print("Creating ids file")
         # this should create the ids file
@@ -534,27 +563,25 @@ def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngs
         ids_file = h5py.File(ids_filepath, 'r')
         ts = ids_file['ts'].value
         # subtract offset gives valid end points
-        te = ids_file['te'].value - offset
-        starts = np.array([np.random.randint(s, e + 1) for (s, e) in zip(ts, te)])
+        te = ids_file['te'].value
+        length = np.array([e - s for (s, e) in zip(ts, te)])
+        traj_num = length.sum()
         # write to file
-        starts_file = h5py.File(start_times_filepath, 'w')
-        starts_file.create_dataset('starts', data=starts)
-        starts_file.close()
+        # starts_file = h5py.File(start_times_filepath, 'w')
+        # starts_file.create_dataset('starts', data=starts)
+        # starts_file.close()
 
     # create a dict from id to start time
-    id2starts = dict()
-    for (egoid, start) in zip(ids, starts):
-        id2starts[egoid] = start
 
     ids = np.tile(ids, n_runs_per_ego_id)
-    return ids, id2starts
+    return ids, traj_num
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='validation settings')
     parser.add_argument('--n_proc', type=int, default=1)
-    parser.add_argument('--exp_dir', type=str, default='./data/experiments/multiagent_curr')
-    parser.add_argument('--params_filename', type=str, default='itr_2000.npz')
+    parser.add_argument('--exp_dir', type=str, default='./data/experiments/NGSIM-gail')
+    parser.add_argument('--params_filename', type=str, default='itr_700.npz')
     parser.add_argument('--n_runs_per_ego_id', type=int, default=1)
     parser.add_argument('--use_hgail', type=str2bool, default=False)
     parser.add_argument('--use_multiagent', type=str2bool, default=False)
@@ -567,9 +594,8 @@ if __name__ == '__main__':
     parser.add_argument('--adapt_steps', type=int, default=1)
 
     run_args = parser.parse_args()
-    # j = julia.Julia()
-    # j.using("NGSIM")
-
+    j = julia.Julia()
+    j.using("NGSIM")
     args_filepath = "./args/params.npz"
     if os.path.isfile(args_filepath):
         args = hyperparams.load_args(args_filepath)
@@ -587,84 +613,114 @@ if __name__ == '__main__':
 
     prev_lane_name = None
     data_base_dir = "./preprocessing/data"
+    total_error = {"overall": [],
+                   "curve": [],
+                   "lane_change": [],
+                   "straight": [],
+                   "time_info": [],
+                   "orig_traj": [],
+                   "pred_traj": []}
     for dir_name in os.listdir(data_base_dir):
         if "downsampled" not in dir_name and os.path.isdir(os.path.join(data_base_dir, dir_name, "processed")):
+            dir_error = {"overall": [],
+                         "curve": [],
+                         "lane_change": [],
+                         "straight": [],
+                         "time_info": [],
+                         "orig_traj": [],
+                         "pred_traj": []}
             for file_name in os.listdir(os.path.join(data_base_dir, dir_name, "processed")):
-                print(file_name)
-                if "section" in file_name:
-                    # TODO: you can change this filename
-                    orig_traj_file = os.path.join(dir_name, "processed", file_name)
-                    print("processing file {}".format(orig_traj_file))
-                else:
-                    print("lane file, skipping")
+                try:
+                    if "section" in file_name:
+                        orig_traj_file = os.path.join(dir_name, "processed", file_name)
+                        print("processing file {}".format(orig_traj_file))
+                    else:
+                        print("lane file, skipping")
+                        continue
+                    lane_file = os.path.join(dir_name, "processed", '{}_lane'.format(orig_traj_file[:19]))
+                    processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
+                    df_len = clean_data(orig_traj_file)
+                    if df_len == 0:
+                        print("Invalid file, skipping")
+                        continue
+                    csv2txt(processed_data_path)
+                    if prev_lane_name != lane_file:
+                        create_lane(lane_file)
+                    else:
+                        print("Using same lane file, skipping generating a new one")
+                    print("Finish cleaning the original data")
+                    print("Start generating roadway")
+                    if prev_lane_name != lane_file:
+                        base_dir = os.path.expanduser('~/Autoenv/data/')
+                        j.write_roadways_to_dxf(base_dir)
+                        j.write_roadways_from_dxf(base_dir)
+                    prev_lane_name = lane_file
+                    print("Finish generating roadway")
+                    convert_raw_ngsim_to_trajdatas()
+                    print("Start feature extraction")
+                    extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
+                    print("Finish converting and feature extraction")
+
+                    fn = "trajdata_holo_trajectories.txt"
+
+                    hn = './data/trajectories/ngsim_holo_new.h5'
+
+                    if run_args.n_envs:
+                        args.n_envs = run_args.n_envs
+                    # args.env_H should be 200
+                    sys.stdout.write('{} vehicles with H = {}\n'.format(args.n_envs, args.env_H))
+
+                    args.ngsim_filename = fn
+                    args.h5_filename = hn
+                    if args.env_multiagent:
+                        egoids, _ = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+                    else:
+                        egoids, _ = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+                    print("egoids")
+                    print(egoids)
+                    # print("starts")
+                    # print(starts)
+
+                    if len(egoids) == 0:
+                        print("No valid vehicles, skipping")
+                        continue
+                    starts = None
+                    error = collect(
+                        egoids,
+                        starts,
+                        args,
+                        exp_dir=run_args.exp_dir,
+                        max_steps=200,
+                        params_filename=run_args.params_filename,
+                        use_hgail=run_args.use_hgail,
+                        n_proc=run_args.n_proc,
+                        collect_fn=collect_fn,
+                        random_seed=run_args.random_seed,
+                        lbd=run_args.lbd,
+                        adapt_steps=run_args.adapt_steps
+                    )
+                    print("Vehicle Counter: {}".format(Veh_counter))
+                except BaseException as e:
+                    print("error occurred which is:{}".format(e))
                     continue
-                lane_file = os.path.join(dir_name, "processed", '{}_lane'.format(orig_traj_file[:19]))
-                processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
-                df_len = clean_data(orig_traj_file)
-                if df_len == 0:
-                    print("Invalid file, skipping")
-                    continue
-                csv2txt(processed_data_path)
-                if prev_lane_name != lane_file:
-                    create_lane(lane_file)
-                else:
-                    print("Using same lane file, skipping generating a new one")
-                print("Finish cleaning the original data")
-                print("Start generating roadway")
-                # if prev_lane_name != lane_file:
-                #     base_dir = os.path.expanduser('~/Autoenv/data/')
-                #     j.write_roadways_to_dxf(base_dir)
-                #     j.write_roadways_from_dxf(base_dir)
-                prev_lane_name = lane_file
-                print("Finish generating roadway")
-                convert_raw_ngsim_to_trajdatas()
-                print("Start feature extraction")
-                extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
-                print("Finish converting and feature extraction")
-
-                fn = "trajdata_holo_trajectories.txt"
-
-                hn = './data/trajectories/ngsim_holo_new.h5'
-
-                if run_args.n_envs:
-                    args.n_envs = run_args.n_envs
-                # args.env_H should be 200
-                sys.stdout.write('{} vehicles with H = {}\n'.format(args.n_envs, args.env_H))
-
-                args.ngsim_filename = fn
-                args.h5_filename = hn
-                if args.env_multiagent:
-                    # args.n_envs gives the number of simultaneous vehicles
-                    # so run_args.n_multiagent_trajs / args.n_envs gives the number
-                    # of simulations to run overall
-                    # egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
-                    #  starts = dict()
-                    egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
-                else:
-                    egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
-
-                print("egoids")
-                print(egoids)
-                # print("starts")
-                # print(starts)
-
-                if len(egoids) == 0:
-                    print("No valid vehicles, skipping")
-                    continue
-
-                error = collect(
-                    egoids,
-                    starts,
-                    args,
-                    exp_dir=run_args.exp_dir,
-                    max_steps=200,
-                    params_filename=run_args.params_filename,
-                    use_hgail=run_args.use_hgail,
-                    n_proc=run_args.n_proc,
-                    collect_fn=collect_fn,
-                    random_seed=run_args.random_seed,
-                    lbd=run_args.lbd,
-                    adapt_steps=run_args.adapt_steps
-                )
-
+                print("\n\nDirectory: {}, file: {} Statistical Info:\n\n".format(dir_name, file_name))
                 utils.print_error(error)
+                dir_error["overall"] += error["overall"]
+                dir_error["curve"] += error["curve"]
+                dir_error["lane_change"] += error["lane_change"]
+                dir_error["straight"] += error["straight"]
+                dir_error["time_info"] += error["time_info"]
+                dir_error["orig_traj"] += error["orig_traj"]
+                dir_error["pred_traj"] += error["pred_traj"]
+            print("\n\nDirectory: {} Statistical Info:\n\n".format(dir_name))
+            utils.print_error(dir_error)
+            total_error["overall"] += dir_error["overall"]
+            total_error["curve"] += dir_error["curve"]
+            total_error["lane_change"] += dir_error["lane_change"]
+            total_error["straight"] += dir_error["straight"]
+            total_error["time_info"] += dir_error["time_info"]
+            total_error["orig_traj"] += dir_error["orig_traj"]
+            total_error["pred_traj"] += dir_error["pred_traj"]
+            print("\n\nOverall Statistical Info up to now:\n\n")
+            utils.print_error(total_error)
+

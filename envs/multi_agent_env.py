@@ -195,7 +195,6 @@ class MultiAgentAutoEnv:
         assert len(action) == self.n_veh
         # print("==========================================")
         ego_states = [None for _ in range(self.n_veh)]
-
         for (i, ego_veh) in enumerate(self.ego_vehs):
             # convert action into form
             ego_action = AccelTurnrate(action[i][0], action[i][1])
@@ -209,7 +208,6 @@ class MultiAgentAutoEnv:
             )
             # update the ego_veh
             self.ego_vehs[i] = Vehicle(ego_state, ego_veh.definition, ego_veh.id)
-
         # load the actual scene, and insert the vehicle into it
         # print("frame: {}, vehid: ".format(self.t), self.egoids)
         self.scene = get_scene(self.scene, self.trajdatas[self.traj_idx], self.t)
@@ -225,7 +223,9 @@ class MultiAgentAutoEnv:
             orig_vehs[i] = self.scene[vehidx]
 
             # replace the original with the controlled vehicle
-            self.scene[vehidx] = self.ego_vehs[i]
+            test = False
+            if test:
+                self.scene[vehidx] = self.ego_vehs[i]
 
         # update rec with current scene
         self.rec.update(self.scene)
@@ -237,6 +237,7 @@ class MultiAgentAutoEnv:
             "rmse_t": [],
             "x": [],
             "y": [],
+            "v": [],
             "s": [],
             "phi": [],
             "orig_x": [],
@@ -244,7 +245,8 @@ class MultiAgentAutoEnv:
             "orig_v": [],
             "orig_theta": [],
             "orig_length": [],
-            "orig_width": []
+            "orig_width": [],
+            "lane_id": []
         }
 
         # print("orig x: {}, orig y: {}, orig v: {}".format(orig_vehs[0].state.posG.x, orig_vehs[0].state.posG.y,
@@ -257,6 +259,7 @@ class MultiAgentAutoEnv:
             step_infos["rmse_t"].append(abs((orig_vehs[i].state.posF.t - self.ego_vehs[i].state.posF.t)))
             step_infos["x"].append(self.ego_vehs[i].state.posG.x)
             step_infos["y"].append(self.ego_vehs[i].state.posG.y)
+            step_infos["v"].append(self.ego_vehs[i].state.v)
             step_infos["s"].append(self.ego_vehs[i].state.posF.s)
             step_infos["phi"].append(self.ego_vehs[i].state.posF.phi)
             step_infos["orig_x"].append(orig_vehs[i].state.posG.x)
@@ -265,6 +268,7 @@ class MultiAgentAutoEnv:
             step_infos["orig_theta"].append(orig_vehs[i].state.posG.theta)
             step_infos["orig_length"].append(orig_vehs[i].definition.length_)
             step_infos["orig_width"].append(orig_vehs[i].definition.width_)
+            step_infos["lane_id"].append(orig_vehs[i].state.posF.roadind.tag.lane)
 
         return step_infos
 

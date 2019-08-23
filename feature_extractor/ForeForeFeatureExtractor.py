@@ -3,6 +3,12 @@ from src.Record.record import SceneRecord
 from feature_extractor.neighbor_feature import get_neighbor_fore_along_lane_2, NeighborLongitudinalResult
 from feature_extractor.interface import get_AccFs, convert_2_float
 
+'''
+"fore_fore_dist": total distance of the front vehicle from ego vehicle, 0 if no fore vehicle
+"fore_fore_relative_vel": the relative velocity of the front vehicle to ego vehicle, 0 if no fore vehicle
+"fore_fore_accel": the absolute acceleration of the front vehicle, 0 if no fore vehicle
+'''
+
 
 class ForeForeFeatureExtractor:
     def __init__(self, deltas_censor_hi: float = 100.):

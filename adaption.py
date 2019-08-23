@@ -46,6 +46,7 @@ N_ITERATION = 1
 MAX_STEP = 150
 TOTAL_STEP = 0
 
+Veh_counter = 0
 
 def online_adaption(
         env,
@@ -130,6 +131,7 @@ def online_adaption(
 
         traj, error_per_step, time_info, orig_traj, pred_traj = prediction(env_kwargs, x, adapnets, env, policy,
                                                                            prev_hiddens, n_agents, adapt_steps, nids)
+
         traj_cat = classify_traj(orig_traj)
 
         if traj_cat != "invalid":
@@ -167,6 +169,7 @@ def online_adaption(
 
 def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids):
     traj = hgail.misc.simulation.Trajectory()
+    # predict_span = 400
     predict_span = 50
     error_per_step = []  # size is (predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
     valid_data = True
@@ -176,11 +179,13 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
     pred_trajectory = []
     start_time = time.time()
     time_info = {}
+    # feature_array = np.zeros([0, 66])
     for j in range(predict_span):
         # if j == 0:
         #     print("feature {}".format(j), x)
+        x[0][15] = 0
         a, a_info, hidden_vec = policy.get_actions(x)
-
+        # feature_array = np.concatenate([feature_array, np.array(x)], axis=0)
         if adapt_steps == 1:
             adap_vec = hidden_vec
         else:
@@ -206,6 +211,7 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
             # print("orig x: ", e_info["orig_x"][i])
             # print("orig y: ", e_info["orig_y"][i])
             # print("orig v: ", e_info["orig_v"][i])
+            # print("predicted v:", e_info["v"][i])
             # print("orig theta: ", e_info["orig_theta"][i])
             # print("predicted x: ", e_info["x"][i])
             # print("predicted y: ", e_info["y"][i])
@@ -226,6 +232,7 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
             error_per_step += error_per_agent
         if any(dones):
             break
+            # continue
         x = nx
         end_time = time.time()
         if j == 19:
@@ -233,6 +240,12 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
         elif j == 49:
             time_info["50"] = end_time - start_time
 
+    # print(feature_array.shape, np.array(orig_trajectory).shape)
+    # global Veh_counter
+    # np.savez("./abu/{}.npz".format(Veh_counter), feature=feature_array, trajectory=np.array(orig_trajectory))
+    # Veh_counter += 1
+    # if Veh_counter == 100:
+    #     exit(0)
     return traj.flatten(), error_per_step, time_info, orig_trajectory, pred_trajectory
 
 
@@ -267,7 +280,7 @@ def collect_trajectories(
                 level.algo.policy.set_param_values(params[i]['policy'])
             policy = policy[0].algo.policy
         else:
-            policy_param_path = "./data/experiments/NGSIM-gail/imitate/model/policy_650.pkl"
+            policy_param_path = "./data/experiments/NGSIM-gail/imitate/model/policy.pkl"
             policy.load_param(policy_param_path)
             print("load policy param from: {}".format(policy_param_path))
             # policy.set_param_values(params['policy'])
@@ -468,7 +481,7 @@ def collect(
             this with args.env_multiagent == True
     '''
     # load information relevant to the experiment
-    params_filepath = os.path.join(exp_dir, 'imitate/log/{}'.format(params_filename))
+    params_filepath = os.path.join(exp_dir, 'imitate/{}'.format(params_filename))
     params = hgail.misc.utils.load_params(params_filepath)
     # validation setup
     validation_dir = os.path.join(exp_dir, 'imitate', 'test')
@@ -545,8 +558,8 @@ def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngs
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='validation settings')
     parser.add_argument('--n_proc', type=int, default=1)
-    parser.add_argument('--exp_dir', type=str, default='./data/experiments/multiagent_curr')
-    parser.add_argument('--params_filename', type=str, default='itr_2000.npz')
+    parser.add_argument('--exp_dir', type=str, default='./data/experiments/NGSIM-gail')
+    parser.add_argument('--params_filename', type=str, default='itr_200.npz')
     parser.add_argument('--n_runs_per_ego_id', type=int, default=1)
     parser.add_argument('--use_hgail', type=str2bool, default=False)
     parser.add_argument('--use_multiagent', type=str2bool, default=False)
@@ -558,9 +571,11 @@ if __name__ == '__main__':
     parser.add_argument('--lbd', type=float, default=0.99)
     parser.add_argument('--adapt_steps', type=int, default=1)
 
+    Veh_counter = 0
+
     run_args = parser.parse_args()
-    j = julia.Julia()
-    j.using("NGSIM")
+    # j = julia.Julia()
+    # j.using("NGSIM")
 
     args_filepath = "./args/params.npz"
     if os.path.isfile(args_filepath):
@@ -615,10 +630,10 @@ if __name__ == '__main__':
                     print("Using same lane file, skipping generating a new one")
                 print("Finish cleaning the original data")
                 print("Start generating roadway")
-                if prev_lane_name != lane_file:
-                    base_dir = os.path.expanduser('~/Autoenv/data/')
-                    j.write_roadways_to_dxf(base_dir)
-                    j.write_roadways_from_dxf(base_dir)
+                # if prev_lane_name != lane_file:
+                #     base_dir = os.path.expanduser('~/Autoenv/data/')
+                #     j.write_roadways_to_dxf(base_dir)
+                #     j.write_roadways_from_dxf(base_dir)
                 prev_lane_name = lane_file
                 print("Finish generating roadway")
                 convert_raw_ngsim_to_trajdatas()

@@ -6,6 +6,18 @@ from feature_extractor.Get import get_TurnRateG, get_AngularRateG, get_TurnRateF
 from feature_extractor.neighbor_feature import get_neighbor_fore_along_lane_3
 from feature_extractor.feature_extractor import set_dual_feature
 from feature_extractor import FeatureState
+'''
+"accel": vehicle's acceleration 
+"jerk": the derivative of teh accel
+"turn_rate_global": global turn rate of the vehicle
+"angular_rate_global": derivative of the global turn rate
+"turn_rate_frenet": relative turn rate compared to lane
+"angular_rate_frenet": derivative of turn rate compared to lane
+"timegap": time gap of two consecutive steps
+"timegap_is_avail": boolean var to indicate time gap information is available or not 
+"time_to_collision": the time our vehicle will hit the front vehicle
+"time_to_collision_is_avail": time to collision var information is available or not
+'''
 
 
 class TemporalFeatureExtractor:

@@ -3,6 +3,17 @@ from src.Record.record import SceneRecord
 from src.Basic import Vehicle
 from feature_extractor.Get import get_LaneCurvature
 
+'''
+"relative_offset": vehicle's lane offset, positive is to left. zero point is the centerline of the lane. 
+"relative_heading": the angle of the lane relative heading 
+"velocity": velocity of the car
+"length": length of the car
+"width": width of the car
+"lane_curvature": the curvature of the current lane point
+"markerdist_left": the distance between the car and the left side of current lane
+"markerdist_right": the distance between the car and the right side of current lane
+'''
+
 
 class CoreFeatureExtractor:
     def __init__(self):

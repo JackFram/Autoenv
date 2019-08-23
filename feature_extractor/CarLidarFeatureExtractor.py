@@ -5,6 +5,14 @@ from src.Record.frame import Frame
 from src.Vec import VecE2, VecSE2
 from feature_extractor.collision_detection import ConvexPolygon, to_oriented_bounding_box_2, get_collision_time
 
+'''
+LIDAR Range and Range Rate
+
+20 artificial LIDAR beams
+output in regular polar intervals, providing the relative position
+and velocity of intercepted objects.
+'''
+
 
 class LidarSensor:
     def __init__(self, nbeams: int, max_range: float = 100.0, angle_offset: float = 0.0, angle_spread: float = 2*math.pi):
