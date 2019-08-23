@@ -2,22 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="60f23679-9a28-48b8-bb04-903951b6efb8" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/orig_traj.npz" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/pred_traj.npz" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/lane_process.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/adaption.py" afterPath="$PROJECT_DIR$/adaption.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py" afterPath="$PROJECT_DIR$/algorithms/RL_Algorithm/GAIL/gail.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/envs/hyperparams.py" afterPath="$PROJECT_DIR$/envs/hyperparams.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/envs/multi_agent_env.py" afterPath="$PROJECT_DIR$/envs/multi_agent_env.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/envs/utils.py" afterPath="$PROJECT_DIR$/envs/utils.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/CarLidarFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/CarLidarFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/CoreFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/CoreFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/ForeForeFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/ForeForeFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/TemporalFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/TemporalFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/feature_extractor/WellBehavedFeatureExtractor.py" afterPath="$PROJECT_DIR$/feature_extractor/WellBehavedFeatureExtractor.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/get_gt.py" afterPath="$PROJECT_DIR$/get_gt.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -338,9 +323,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25040388" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25040388" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
