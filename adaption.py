@@ -574,8 +574,8 @@ if __name__ == '__main__':
     Veh_counter = 0
 
     run_args = parser.parse_args()
-    # j = julia.Julia()
-    # j.using("NGSIM")
+    j = julia.Julia()
+    j.using("NGSIM")
 
     args_filepath = "./args/params.npz"
     if os.path.isfile(args_filepath):
@@ -630,10 +630,10 @@ if __name__ == '__main__':
                     print("Using same lane file, skipping generating a new one")
                 print("Finish cleaning the original data")
                 print("Start generating roadway")
-                # if prev_lane_name != lane_file:
-                #     base_dir = os.path.expanduser('~/Autoenv/data/')
-                #     j.write_roadways_to_dxf(base_dir)
-                #     j.write_roadways_from_dxf(base_dir)
+                if prev_lane_name != lane_file:
+                    base_dir = os.path.expanduser('~/Autoenv/data/')
+                    j.write_roadways_to_dxf(base_dir)
+                    j.write_roadways_from_dxf(base_dir)
                 prev_lane_name = lane_file
                 print("Finish generating roadway")
                 convert_raw_ngsim_to_trajdatas()
