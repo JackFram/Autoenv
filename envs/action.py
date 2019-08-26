@@ -1,4 +1,4 @@
-from src.Basic.Vehicle import Vehicle, VehicleState, Frenet
+from src.Basic.Vehicle import Vehicle, VehicleState
 from src.Roadway.roadway import Roadway
 import math
 from src.Vec.VecSE2 import VecSE2
@@ -19,12 +19,12 @@ def propagate(veh: Vehicle, action: AccelTurnrate, roadway: Roadway, delta_t: fl
               n_integration_steps: int = 4):
     '''
     propagate the vehicle state according to the specific action
-    :param veh:
-    :param action:
-    :param roadway:
-    :param delta_t:
-    :param n_integration_steps:
-    :return:
+    :param veh: the vehicle that will be propagated
+    :param action: the action (acceleration, turning rate)
+    :param roadway: the roadway information
+    :param delta_t: how long our action will last
+    :param n_integration_steps: the integration interval number
+    :return: the propagated vehicle state
     '''
     a = action.a  # accel
 

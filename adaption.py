@@ -37,16 +37,8 @@ import tqdm
 
 plt.style.use("ggplot")
 
-# TODO: change this accordingly
-EGO_START_FRAME = 1106
-N_VEH = 1
-EGO_ID = 1978
-DATA_INDEX = [96]
 N_ITERATION = 1
-MAX_STEP = 150
-TOTAL_STEP = 0
-
-Veh_counter = 0
+N_VEH = 1
 
 def online_adaption(
         env,
@@ -112,6 +104,7 @@ def online_adaption(
 
         a, a_info, hidden_vec = policy.get_actions_with_prev(obs[:, step, :], mean[:, step, :], prev_hiddens)
         # print(hidden_vec)
+        hidden_vec = np.random.randn(1, 64)
         if adapt_steps == 1:
             adap_vec = hidden_vec
         elif adapt_steps == 2:
@@ -169,7 +162,6 @@ def online_adaption(
 
 def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids):
     traj = hgail.misc.simulation.Trajectory()
-    # predict_span = 400
     predict_span = 50
     error_per_step = []  # size is (predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
     valid_data = True
@@ -179,13 +171,13 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
     pred_trajectory = []
     start_time = time.time()
     time_info = {}
-    # feature_array = np.zeros([0, 66])
     for j in range(predict_span):
         # if j == 0:
         #     print("feature {}".format(j), x)
         x[0][15] = 0
         a, a_info, hidden_vec = policy.get_actions(x)
         # feature_array = np.concatenate([feature_array, np.array(x)], axis=0)
+        hidden_vec = np.random.randn(1, 64)
         if adapt_steps == 1:
             adap_vec = hidden_vec
         else:
@@ -201,6 +193,9 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
 
         # rnd = np.random.normal(size=means.shape)
         actions = means
+        actions = np.array([[0, 0]])
+        # print("random feature:", actions)
+        # print("policy feature:", a)
         # print("predict step: {}".format(j+1))
         nx, r, dones, e_info = env.step(actions)
         traj.add(x, actions, r, a_info, e_info)
@@ -232,7 +227,6 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
             error_per_step += error_per_agent
         if any(dones):
             break
-            # continue
         x = nx
         end_time = time.time()
         if j == 19:
@@ -240,12 +234,6 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
         elif j == 49:
             time_info["50"] = end_time - start_time
 
-    # print(feature_array.shape, np.array(orig_trajectory).shape)
-    # global Veh_counter
-    # np.savez("./abu/{}.npz".format(Veh_counter), feature=feature_array, trajectory=np.array(orig_trajectory))
-    # Veh_counter += 1
-    # if Veh_counter == 100:
-    #     exit(0)
     return traj.flatten(), error_per_step, time_info, orig_trajectory, pred_trajectory
 
 
@@ -571,8 +559,6 @@ if __name__ == '__main__':
     parser.add_argument('--lbd', type=float, default=0.99)
     parser.add_argument('--adapt_steps', type=int, default=1)
 
-    Veh_counter = 0
-
     run_args = parser.parse_args()
     j = julia.Julia()
     j.using("NGSIM")
@@ -581,7 +567,7 @@ if __name__ == '__main__':
     if os.path.isfile(args_filepath):
         args = hyperparams.load_args(args_filepath)
     else:
-        raise ValueError("No such params file")
+        raise ValueError("No such params file")  # if no such file, please run save_args.py
 
     if run_args.use_multiagent:
         args.env_multiagent = True
@@ -592,24 +578,28 @@ if __name__ == '__main__':
     else:
         collect_fn = parallel_collect_trajectories
 
-    prev_lane_name = None
-    data_base_dir = "./preprocessing/data"
-    total_error = {"overall": [],
-                   "curve": [],
-                   "lane_change": [],
-                   "straight": [],
-                   "time_info": [],
-                   "orig_traj": [],
-                   "pred_traj": []}
+    prev_lane_name = None  # used to generate roadway information
+    data_base_dir = "./preprocessing/data"  # the directory we used to processing raw data
+    total_error = {
+        "overall": [],
+        "curve": [],
+        "lane_change": [],
+        "straight": [],
+        "time_info": [],
+        "orig_traj": [],
+        "pred_traj": []
+    }
     for dir_name in os.listdir(data_base_dir):
         if "downsampled" not in dir_name and os.path.isdir(os.path.join(data_base_dir, dir_name, "processed")):
-            dir_error = {"overall": [],
-                         "curve": [],
-                         "lane_change": [],
-                         "straight": [],
-                         "time_info": [],
-                         "orig_traj": [],
-                         "pred_traj": []}
+            dir_error = {
+                "overall": [],
+                "curve": [],
+                "lane_change": [],
+                "straight": [],
+                "time_info": [],
+                "orig_traj": [],
+                "pred_traj": []
+            }
             for file_name in os.listdir(os.path.join(data_base_dir, dir_name, "processed")):
                 if "section" in file_name:
                     orig_traj_file = os.path.join(dir_name, "processed", file_name)
@@ -619,7 +609,7 @@ if __name__ == '__main__':
                     continue
                 lane_file = os.path.join(dir_name, "processed", '{}_lane'.format(orig_traj_file[:19]))
                 processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
-                df_len = clean_data(orig_traj_file)
+                df_len = clean_data(orig_traj_file)  # clean Holo data raw csv
                 if df_len == 0:
                     print("Invalid file, skipping")
                     continue

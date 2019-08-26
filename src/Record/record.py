@@ -5,8 +5,8 @@ from src.Basic.Vehicle import read_def, read_state
 
 class RecordFrame:
     def __init__(self, lo: int, hi: int):
-        self.lo = lo
-        self.hi = hi
+        self.lo = lo  # low index
+        self.hi = hi  # high index
 
     def __len__(self):
         return self.hi - self.lo + 1
@@ -24,16 +24,16 @@ def read_frame(fp):
 
 class RecordState:
     def __init__(self, state: Vehicle.VehicleState, id: int):
-        self.state = state
-        self.id = id
+        self.state = state  # vehicle state object
+        self.id = id  # corresponding vehicle id
 
 
 class ListRecord:
     def __init__(self, timestep: float, frames: list, states: list, defs: dict):
         """
         timestep::Float64
-        frames::Vector{RecordFrame}
-        states::Vector{RecordState}
+        frames::List of record frame, indicating the index range
+        states::list of record state indicating the vehicle
         defs::Dict{I, D}
 
         """

@@ -14,22 +14,10 @@ NGSIM_TRAJDATA_PATHS = [os.path.join(DIR, "../data/holo_trajectories.txt"),
                         # os.path.join(DIR, "../data/i101_trajectories-0750am-0805am.txt")
                         ]
 
-# with open(os.path.join(DIR, "../data/ngsim_80.txt"), "r") as fp_80:
-#     ROADWAY_80 = roadway.read_roadway(fp_80)
-#     fp_80.close()
-#
-# with open(os.path.join(DIR, "../data/ngsim_101.txt"), "r") as fp_101:
-#     ROADWAY_101 = roadway.read_roadway(fp_101)
-#     fp_101.close()
-#
-# with open(os.path.join(DIR, "../data/ngsim_HOLO.txt"), "r") as fp_holo:
-#     ROADWAY_HOLO = roadway.read_roadway(fp_holo)
-#     fp_holo.close()
-
 TRAJDATA_PATHS = [os.path.join(DIR, "../data/trajdata_holo_trajectories.txt")]
 
-NGSIM_TIMESTEP = 0.1 # [sec]
-SMOOTHING_WIDTH_POS = 0.5 # [s]
+NGSIM_TIMESTEP = 0.1  # [sec]
+SMOOTHING_WIDTH_POS = 0.5  # [s]
 
 '''
 Const

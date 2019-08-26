@@ -3,6 +3,10 @@
 
 import math
 
+'''
+VecE2 is a class to deal with 2 dimension vector
+'''
+
 
 class VecE2:
     def __init__(self, x=0.0, y=0.0):

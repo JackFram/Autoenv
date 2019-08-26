@@ -14,11 +14,6 @@ from src.Basic import Vehicle
 from tqdm import tqdm
 from src.Record.record import read_trajdata
 
-NGSIM_TIMESTEP = 0.1  # [sec]
-SMOOTHING_WIDTH_POS = const.SMOOTHING_WIDTH_POS # [s]
-METERS_PER_FOOT = const.METERS_PER_FOOT
-DIR = const.DIR
-
 
 def symmetric_exponential_moving_average(arr: list, T: float, dt: float = 0.1):
     delta = T / dt
@@ -117,13 +112,13 @@ def copy(trajdata: ngsim_trajdata.NGSIMTrajdata, ftr: FilterTrajectoryResult):
             b = ftr.x_arr[i-1]
             c = ftr.y_arr[i]
             d = ftr.y_arr[i-1]
-            trajdata.df.at[dfstart + i, 'speed'] = math.hypot(a-b, c-d) / NGSIM_TIMESTEP
+            trajdata.df.at[dfstart + i, 'speed'] = math.hypot(a-b, c-d) / const.NGSIM_TIMESTEP
         else:
             a = ftr.x_arr[i + 1]
             b = ftr.x_arr[i]
             c = ftr.y_arr[i + 1]
             d = ftr.y_arr[i]
-            trajdata.df.at[dfstart + i, 'speed'] = math.hypot(a-b, c-d) / NGSIM_TIMESTEP
+            trajdata.df.at[dfstart + i, 'speed'] = math.hypot(a-b, c-d) / const.NGSIM_TIMESTEP
         #print("global_heading")
         trajdata.df.at[dfstart + i, 'global_heading'] = ftr.theta_arr[i]
 
@@ -132,8 +127,8 @@ def copy(trajdata: ngsim_trajdata.NGSIMTrajdata, ftr: FilterTrajectoryResult):
 
 def filter_given_trajectory(trajdata: ngsim_trajdata.NGSIMTrajdata, carid: int):
     '''
-    :param trajdata:
-    :param carid:
+    :param trajdata: trajectory data file, NGSIMTrajdata object
+    :param carid: the id of the car that we want to filter
     :return: a smoothed trajectory
     '''
     # Filters the given vehicle's trajectory using an Extended Kalman Filter
@@ -141,8 +136,8 @@ def filter_given_trajectory(trajdata: ngsim_trajdata.NGSIMTrajdata, carid: int):
     ftr = FilterTrajectoryResult(trajdata, carid)
 
     # run pre-smoothing
-    ftr.x_arr = symmetric_exponential_moving_average(ftr.x_arr, SMOOTHING_WIDTH_POS)
-    ftr.y_arr = symmetric_exponential_moving_average(ftr.y_arr, SMOOTHING_WIDTH_POS)
+    ftr.x_arr = symmetric_exponential_moving_average(ftr.x_arr, const.SMOOTHING_WIDTH_POS)
+    ftr.y_arr = symmetric_exponential_moving_average(ftr.y_arr, const.SMOOTHING_WIDTH_POS)
 
     ftr = filter_trajectory(ftr)
 
@@ -154,7 +149,6 @@ def filter_given_trajectory(trajdata: ngsim_trajdata.NGSIMTrajdata, carid: int):
 
 def load_ngsim_trajdata(filepath: str, autofilter: bool = True):
     '''
-
     :param filepath: the path of the raw trajectory data file
     :param autofilter: indicates do the filter or not
     :return: the filtered(or not) data class
@@ -173,7 +167,6 @@ def load_ngsim_trajdata(filepath: str, autofilter: bool = True):
 
 def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
     '''
-
     :param tdraw: trajectory raw data
     :param roadway: roadway class
     :return: ListRecord(), a preprocessed and integrated version of tdraw and roadway
@@ -187,8 +180,8 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
 
     for id, dfind in tdraw.car2start.items():
         vehdefs[id] = Vehicle.VehicleDef(df.at[dfind, 'class'],
-                                         df.at[dfind, 'length'] * METERS_PER_FOOT,
-                                         df.at[dfind, 'width'] * METERS_PER_FOOT)
+                                         df.at[dfind, 'length'] * const.METERS_PER_FOOT,
+                                         df.at[dfind, 'width'] * const.METERS_PER_FOOT)
 
     state_ind = 0
     print("convert: frames and states")
@@ -206,13 +199,13 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
             dfind = ngsim_trajdata.car_df_index(tdraw, id, frame)
             assert dfind != -1
             theta = math.atan2(df.at[dfind, 'global_y'] - prev_y[id], df.at[dfind, 'global_x'] - prev_x[id])
-            posG = VecSE2.VecSE2(df.at[dfind, 'global_x'] * METERS_PER_FOOT,
-                                 df.at[dfind, 'global_y'] * METERS_PER_FOOT,
+            posG = VecSE2.VecSE2(df.at[dfind, 'global_x'] * const.METERS_PER_FOOT,
+                                 df.at[dfind, 'global_y'] * const.METERS_PER_FOOT,
                                  theta)
             prev_x[id] = df.at[dfind, 'global_x']
             prev_y[id] = df.at[dfind, 'global_y']
             # print(df.at[dfind, 'global_heading'])
-            speed = df.at[dfind, 'speed'] * METERS_PER_FOOT
+            speed = df.at[dfind, 'speed'] * const.METERS_PER_FOOT
             state_ind += 1
             # print(state_ind)
             state = Vehicle.VehicleState()
@@ -222,7 +215,7 @@ def convert(tdraw: ngsim_trajdata.NGSIMTrajdata, roadway: roadway.Roadway):
         frame_hi = state_ind
         frames.append(record.RecordFrame(frame_lo, frame_hi))
 
-    return record.ListRecord(NGSIM_TIMESTEP, frames, states, vehdefs)
+    return record.ListRecord(const.NGSIM_TIMESTEP, frames, states, vehdefs)
 
 
 def get_corresponding_roadway(filename: str):
@@ -232,15 +225,15 @@ def get_corresponding_roadway(filename: str):
     '''
     retval = None
     if "i101" in filename:
-        with open(os.path.join(DIR, "../data/ngsim_80.txt"), "r") as fp_80:
+        with open(os.path.join(const.DIR, "../data/ngsim_80.txt"), "r") as fp_80:
             retval = roadway.read_roadway(fp_80)
             fp_80.close()
     elif "i80" in filename:
-        with open(os.path.join(DIR, "../data/ngsim_101.txt"), "r") as fp_101:
+        with open(os.path.join(const.DIR, "../data/ngsim_101.txt"), "r") as fp_101:
             retval = roadway.read_roadway(fp_101)
             fp_101.close()
     elif "holo" in filename:
-        with open(os.path.join(DIR, "../data/ngsim_HOLO.txt"), "r") as fp_holo:
+        with open(os.path.join(const.DIR, "../data/ngsim_HOLO.txt"), "r") as fp_holo:
             retval = roadway.read_roadway(fp_holo)
             fp_holo.close()
     else:
@@ -251,7 +244,7 @@ def get_corresponding_roadway(filename: str):
 def convert_raw_ngsim_to_trajdatas():
     '''
     convert the raw trajectory data and roadway to a integrated version and save to a file
-    :return:
+    :return: no return
     '''
     for filepath in const.NGSIM_TRAJDATA_PATHS:
         filename = os.path.split(filepath)[1]
@@ -266,7 +259,7 @@ def convert_raw_ngsim_to_trajdatas():
         # no problems until here
         trajdata = convert(tdraw, roadway)
         print("finish converting")
-        outpath = os.path.join(DIR, "../data/trajdata_" + filename)
+        outpath = os.path.join(const.DIR, "../data/trajdata_" + filename)
         print("save to {}".format(outpath))
         with open(outpath, "w") as fp:
             trajdata.write(fp)

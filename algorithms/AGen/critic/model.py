@@ -2,6 +2,11 @@ import torch.nn as nn
 import torch
 
 
+'''
+Block of nn
+'''
+
+
 class Block(nn.Module):
     def __init__(self, input_size, hidden_layer_dims, activation_fn, drop_out_fn):
         super(Block, self).__init__()
@@ -16,6 +21,11 @@ class Block(nn.Module):
 
     def forward(self, x):
         return self.block(x)
+
+
+'''
+Reward function approximation function(Neural Network)
+'''
 
 
 class ObservationActionMLP(nn.Module):

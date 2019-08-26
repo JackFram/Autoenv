@@ -96,8 +96,7 @@ def clean_data(filename: str):
         df.at[i, 'Lane_ID'] = int(df.at[i, 'Local_X'] // 3.75)
 
         show_up.add(v_id)
-        if i == len(df) - 1 or (
-                v_id in vehicles and (r.Global_Time // 100) != (df.at[vehicles[v_id], 'Global_Time'] // 100) + 1):
+        if v_id in vehicles and (r.Global_Time // 100) != (df.at[vehicles[v_id], 'Global_Time'] // 100) + 1:
             vehicles.pop(v_id)
             discard_id.add(v_id)
             # id_map.pop(r_id_map[v_id])

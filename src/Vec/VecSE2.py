@@ -5,6 +5,11 @@ import math
 from src.Vec.VecE2 import VecE2
 
 
+'''
+VecSE2 class is to deal with a 2 dimensional vector with angle
+'''
+
+
 class VecSE2:
     def __init__(self, x=0.0, y=0.0, theta=0.0):
         self.x = float(x)

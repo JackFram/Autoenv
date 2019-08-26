@@ -3,6 +3,10 @@ import math
 from scipy.sparse import linalg, lil_matrix
 import tqdm
 
+'''
+used to interpolate and smooth the roadway
+'''
+
 
 def _fit_open(pts):
     d, n = pts.shape

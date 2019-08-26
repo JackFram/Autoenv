@@ -4,6 +4,10 @@
 import math
 import numpy as np
 
+'''
+MvNormal class is used to do Multi variant Gaussian sampling
+'''
+
 
 class MvNormal:
     def __init__(self, mu: np.array, cov: np.array):

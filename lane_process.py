@@ -37,7 +37,7 @@ def create_lane_pk(data_file_fn="./preprocessing/data/"):
                 lane_.T[[0, 1]] = lane_.T[[1, 0]]
                 lane[k] = np.concatenate([lane[k], lane_], axis=0)
     lane_dir = "./preprocessing/lane"
-    length = 70000
+    length = 10000
     for i in range(lane_cnt):
         indexes = np.unique(lane[i], return_index=True, axis=0)[1]
         lane[i] = lane[i][indexes]
