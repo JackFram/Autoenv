@@ -2,27 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="60f23679-9a28-48b8-bb04-903951b6efb8" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dataloader/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/dataloader/dataloader.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/orig_traj.npz" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pred_traj.npz" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/adaption.py" afterPath="$PROJECT_DIR$/adaption.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/AGen/critic/model.py" afterPath="$PROJECT_DIR$/algorithms/AGen/critic/model.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/algorithms/AGen/rls.py" afterPath="$PROJECT_DIR$/algorithms/AGen/rls.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/envs/action.py" afterPath="$PROJECT_DIR$/envs/action.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/iekf_optim.py" afterPath="$PROJECT_DIR$/iekf_optim.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lane_process.py" afterPath="$PROJECT_DIR$/lane_process.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/preprocessing/clean_holo.py" afterPath="$PROJECT_DIR$/preprocessing/clean_holo.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/save_args.py" afterPath="$PROJECT_DIR$/save_args.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/MvNormal/MvNormal.py" afterPath="$PROJECT_DIR$/src/MvNormal/MvNormal.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Record/frame.py" afterPath="$PROJECT_DIR$/src/Record/frame.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Record/record.py" afterPath="$PROJECT_DIR$/src/Record/record.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Vec/VecE2.py" afterPath="$PROJECT_DIR$/src/Vec/VecE2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Vec/VecSE2.py" afterPath="$PROJECT_DIR$/src/Vec/VecSE2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/const.py" afterPath="$PROJECT_DIR$/src/const.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/splines.py" afterPath="$PROJECT_DIR$/src/splines.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/trajdata.py" afterPath="$PROJECT_DIR$/src/trajdata.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/doc/AutoEnv Guide.pdf" afterPath="$PROJECT_DIR$/doc/AutoEnv Guide.pdf" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -291,6 +271,11 @@
               <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
               <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="Autoenv" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Autoenv" type="462c0819:PsiDirectoryNode" />
+              <item name="doc" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -341,9 +326,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25444266" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25444266" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
