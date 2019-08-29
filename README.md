@@ -88,6 +88,7 @@ python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent Tru
 ~/Autoenv/preprocessing/data
 - Change orig_traj_file(variable) path in ~/Autoenv/adaption.py
 - Finally run one step code in project root directory ~/Autoenv
+- add vec_env.reset() in sandbox.tf.samplers.vectorized_sampler
 ```bash
 python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent True --n_envs 1 --adapt_steps 1
 ```

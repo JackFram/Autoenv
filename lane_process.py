@@ -33,6 +33,8 @@ def create_lane_pk(data_file_fn="./preprocessing/data/"):
                         list(map(lambda x: np.array(x.split()).astype(np.float) * 3.28,
                                  lane_df[k][i][2:-2].split(']\n ['))))
                     lane_[i, :] = a[len(a) // 2]
+                    if lane_[i, 0] < 1500000:
+                        print(lane_[i, :])
 
                 lane_.T[[0, 1]] = lane_.T[[1, 0]]
                 lane[k] = np.concatenate([lane[k], lane_], axis=0)
@@ -40,6 +42,7 @@ def create_lane_pk(data_file_fn="./preprocessing/data/"):
     length = 10000
     for i in range(lane_cnt):
         indexes = np.unique(lane[i], return_index=True, axis=0)[1]
+        print(lane[i][indexes][:10])
         lane[i] = lane[i][indexes]
         indexes = [int(m * len(lane[i]) / length) for m in range(length)]
         lane[i] = lane[i][indexes]
@@ -49,6 +52,8 @@ def create_lane_pk(data_file_fn="./preprocessing/data/"):
             if value >= 1:
                 if value > max_value:
                     max_value = value
+                    print(lane[i][k, 0], lane[i][k - 1, 0])
+                    print(lane[i][k, 1], lane[i][k - 1, 1])
 
         print("max value is {}".format(max_value))
 

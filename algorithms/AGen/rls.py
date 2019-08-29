@@ -1,7 +1,5 @@
 import numpy as np
 import scipy.linalg
-import pdb
-import matplotlib.pyplot as plt
 
 
 class rls(object):

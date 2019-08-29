@@ -6,8 +6,6 @@ import os
 import sys
 import tensorflow as tf
 import time
-# import random
-import pickle
 import julia
 
 backend = 'TkAgg'
@@ -37,30 +35,24 @@ import tqdm
 
 plt.style.use("ggplot")
 
-N_ITERATION = 1
-N_VEH = 1
+N_ITERATION = 1  # the number of iterations of rls step
+N_VEH = 1  # the number of controlled vehicles for each simulation
+
 
 def online_adaption(
         env,
         policy,
-        max_steps,
         obs,
         mean,
-        render=False,
         env_kwargs=dict(),
         lbd=0.99,
         adapt_steps=1,
-        nids=1,
         trajinfos=None):
 
     if len(obs.shape) == 2:
         obs = np.expand_dims(obs, axis=0)
         mean = np.expand_dims(mean, axis=0)
     assert trajinfos is not None
-    # theta = np.load('./data/theta.npy')  # TODO: change the file path
-    # theta = np.mean(theta)
-    #
-    # print("original theta: {}".format(theta))
 
     policy_fc_weight = np.array(policy.mean_network.fc.weight.data.cpu())
     policy_fc_bias = np.array(policy.mean_network.fc.bias.data.cpu()).reshape((2, 1))
@@ -80,7 +72,6 @@ def online_adaption(
     predicted_trajs, adapnets = [], []
     policy.reset(dones)
 
-    # max_steps = min(200, obs.shape[1] - primesteps - 2)
     print("max steps")
     print(maxstep)
     mean = np.expand_dims(mean, axis=2)
@@ -91,7 +82,6 @@ def online_adaption(
     for i in range(n_agents):
         adapnets.append(rls.rls(lbd, new_theta, param_length, 2))
 
-    # print(('Reset env Running time: %s Seconds' % (end_time - start_time)))
     lx = x
     error = []  # size is (maxstep, predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
     curve_error = []
@@ -122,8 +112,8 @@ def online_adaption(
 
         prev_actions, prev_hiddens = a, hidden_vec
 
-        traj, error_per_step, time_info, orig_traj, pred_traj = prediction(env_kwargs, x, adapnets, env, policy,
-                                                                           prev_hiddens, n_agents, adapt_steps, nids)
+        traj, error_per_step, time_info, orig_traj, pred_traj = prediction(x, adapnets, env, policy,
+                                                                           prev_hiddens, n_agents, adapt_steps)
 
         traj_cat = classify_traj(orig_traj)
 
@@ -160,7 +150,7 @@ def online_adaption(
     return predicted_trajs, error_info
 
 
-def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps, nids):
+def prediction(x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps):
     traj = hgail.misc.simulation.Trajectory()
     predict_span = 50
     error_per_step = []  # size is (predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
@@ -193,7 +183,6 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
 
         # rnd = np.random.normal(size=means.shape)
         actions = means
-        actions = np.array([[0, 0]])
         # print("random feature:", actions)
         # print("policy feature:", a)
         # print("predict step: {}".format(j+1))
@@ -219,7 +208,7 @@ def prediction(env_kwargs, x, adapnets, env, policy, prev_hiddens, n_agents, ada
             # print("{}-----> dx: {} dy: {} dist: {}".format(j, dx, dy, dist))
             if valid_data:
                 if dist > 140:
-                    exit(0)
+                    exit(0)   # this is for debugging
                 error_per_agent.append(dist)
                 orig_trajectory.append([e_info["orig_x"][i], e_info["orig_y"][i]])
                 pred_trajectory.append([e_info["x"][i], e_info["y"][i]])
@@ -241,12 +230,10 @@ def collect_trajectories(
         args,
         params,
         egoids,
-        starts,
         error_dict,
         pid,
         env_fn,
         policy_fn,
-        max_steps,
         use_hgail,
         random_seed,
         lbd,
@@ -316,13 +303,11 @@ def collect_trajectories(
                 traj, error_info = online_adaption(
                     env,
                     policy,
-                    max_steps=max_steps,
                     obs=data['observations'][[veh_2_index[veh_id]], :, :],
                     mean=data['actions'][[veh_2_index[veh_id]], :, :],
                     env_kwargs=kwargs,
                     lbd=lbd,
                     adapt_steps=adapt_steps,
-                    nids=nids,
                     trajinfos=trajinfos
                 )
 
@@ -342,15 +327,12 @@ def collect_trajectories(
                 traj = online_adaption(
                     env,
                     policy,
-                    max_steps=max_steps,
                     obs=data['observations'][index, :, :],
                     mean=data['actions'][index, :, :],
                     env_kwargs=dict(egoid=egoid, traj_idx=[0]),
                     lbd=lbd,
                     adapt_steps=adapt_steps,
-                    nids=nids
                 )
-                # trajlist.append(traj)
 
     return error_dict
 
@@ -359,54 +341,67 @@ def parallel_collect_trajectories(
         args,
         params,
         egoids,
-        starts,
         n_proc,
         env_fn=build_env.build_ngsim_env,
-        max_steps=200,
         use_hgail=False,
         random_seed=None,
         lbd=0.99,
         adapt_steps=1):
     # build manager and dictionary mapping ego ids to list of trajectories
-    manager = mp.Manager()
-    error_dict = manager.list()
 
     tf_policy = False
+    parallel = False
     # set policy function
     policy_fn = validate_utils.build_policy if tf_policy else algorithms.utils.build_policy
 
     # partition egoids
     proc_egoids = utils.partition_list(egoids, n_proc)
-
-    # pool of processes, each with a set of ego ids
-    pool = mp.Pool(processes=n_proc)
-    # print(('Creating parallel env Running time: %s Seconds' % (end_time - start_time)))
-    # run collection
-    results = []
-    for pid in range(n_proc):
-        res = pool.apply_async(
-            collect_trajectories,
-            args=(
-                args,
-                params,
-                proc_egoids[pid],
-                starts,
-                error_dict,
-                pid,
-                env_fn,
-                policy_fn,
-                max_steps,
-                use_hgail,
-                random_seed,
-                lbd,
-                adapt_steps
+    if parallel:
+        manager = mp.Manager()
+        error_dict = manager.list()
+        # pool of processes, each with a set of ego ids
+        pool = mp.Pool(processes=n_proc)
+        # print(('Creating parallel env Running time: %s Seconds' % (end_time - start_time)))
+        # run collection
+        results = []
+        for pid in range(n_proc):
+            res = pool.apply_async(
+                collect_trajectories,
+                args=(
+                    args,
+                    params,
+                    proc_egoids[pid],
+                    error_dict,
+                    pid,
+                    env_fn,
+                    policy_fn,
+                    use_hgail,
+                    random_seed,
+                    lbd,
+                    adapt_steps
+                )
             )
+            results.append(res)
+        [res.get() for res in results]
+        pool.close()
+    else:
+        error_dict = []
+        error_dict = collect_trajectories(
+            args,
+            params,
+            proc_egoids[0],
+            error_dict,
+            0,
+            env_fn,
+            policy_fn,
+            use_hgail,
+            random_seed,
+            lbd,
+            adapt_steps
         )
-        results.append(res)
 
     # wait for the processes to finish
-    [res.get() for res in results]
-    pool.close()
+
     # let the julia processes finish up
     time.sleep(10)
     return error_dict[0]
@@ -451,13 +446,11 @@ def single_process_collect_trajectories(
 
 def collect(
         egoids,
-        starts,
         args,
         exp_dir,
         use_hgail,
         params_filename,
         n_proc,
-        max_steps=200,
         collect_fn=parallel_collect_trajectories,
         random_seed=None,
         lbd = 0.99,
@@ -482,9 +475,7 @@ def collect(
             args,
             params,
             egoids,
-            starts,
             n_proc,
-            max_steps=max_steps,
             use_hgail=use_hgail,
             random_seed=random_seed,
             lbd=lbd,
@@ -503,41 +494,18 @@ def load_egoids(filename, args, n_runs_per_ego_id=10, env_fn=build_env.build_ngs
     print("ids_filename")
     print(ids_filename)
     ids_filepath = os.path.join(basedir, ids_filename)
-    traj_num = 0
-    if True:
-        print("Creating ids file")
-        # this should create the ids file
-        env_fn(args)
-        if not os.path.exists(ids_filepath):
-            raise ValueError('file unable to be created, check args')
+    print("Creating ids file")
+    # this should create the ids file
+    env_fn(args)
+    if not os.path.exists(ids_filepath):
+        raise ValueError('file unable to be created, check args')
     ids = np.array(h5py.File(ids_filepath, 'r')['ids'].value)
-
-    # we want to sample start times uniformly from the range of possible values
-    # but we also want these start times to be identical for every model we
-    # validate. So we sample the start times a single time, and save them.
-    # if they exist, we load them in and reuse them
-    start_times_filename = filename.replace('.txt', '-index-{}-starts.h5'.format(offset))
-    start_times_filepath = os.path.join(basedir, start_times_filename)
-    # check if start time filepath exists
-    # if os.path.exists(start_times_filepath):
-    if False:
-        # load them in
-        starts = np.array(h5py.File(start_times_filepath, 'r')['starts'].value)
-    # otherwise, sample the start times and save them
-    else:
-        print("Creating starts file")
-        ids_file = h5py.File(ids_filepath, 'r')
-        ts = ids_file['ts'].value
-        # subtract offset gives valid end points
-        te = ids_file['te'].value
-        length = np.array([e - s for (s, e) in zip(ts, te)])
-        traj_num = length.sum()
-        # write to file
-        # starts_file = h5py.File(start_times_filepath, 'w')
-        # starts_file.create_dataset('starts', data=starts)
-        # starts_file.close()
-
-    # create a dict from id to start time
+    print("Creating starts file")
+    ids_file = h5py.File(ids_filepath, 'r')
+    ts = ids_file['ts'].value
+    te = ids_file['te'].value
+    length = np.array([e - s for (s, e) in zip(ts, te)])
+    traj_num = length.sum()
 
     ids = np.tile(ids, n_runs_per_ego_id)
     return ids, traj_num
@@ -654,13 +622,10 @@ if __name__ == '__main__':
                 if len(egoids) == 0:
                     print("No valid vehicles, skipping")
                     continue
-                starts = None
                 error = collect(
                     egoids,
-                    starts,
                     args,
                     exp_dir=run_args.exp_dir,
-                    max_steps=200,
                     params_filename=run_args.params_filename,
                     use_hgail=run_args.use_hgail,
                     n_proc=run_args.n_proc,
