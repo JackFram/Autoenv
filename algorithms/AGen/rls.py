@@ -67,12 +67,3 @@ class rls(object):
         # print(hidden_vec, self.theta)
         # print(hidden_vec @ self.theta)
         return hidden_vec @ self.theta
-
-
-if __name__ == '__main__':
-    theta = 0
-    model = rls(0.99, theta)
-    features = np.ones([1, 64])
-    observeY = np.ones([9500, 2])
-    for i in range(observeY.shape[0]):
-        model.update(features, observeY[i, :])
