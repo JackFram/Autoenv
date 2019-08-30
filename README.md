@@ -108,7 +108,7 @@ julia
   using PyCall
   using PyPlot
   using HDF5
-  quit()
+  exit()
 ```
 add python interface
 ```bash
@@ -120,8 +120,11 @@ pip install julia
 python
   import julia
   julia.Julia()
+  # if this not working try
+  from julia.api import Julia
+  j = Julia(compiled_modules=False)
   # we just want to make sure it doesnt error
-  quit()
+  exit()
 ```
 
 

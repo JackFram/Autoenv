@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 from contexttimer import Timer
 
-import hgail.misc.simulation
 import hgail.misc.utils
 import algorithms.utils
 
@@ -112,7 +111,7 @@ def online_adaption(
 
         prev_actions, prev_hiddens = a, hidden_vec
 
-        traj, error_per_step, time_info, orig_traj, pred_traj = prediction(x, adapnets, env, policy,
+        error_per_step, time_info, orig_traj, pred_traj = prediction(x, adapnets, env, policy,
                                                                            prev_hiddens, n_agents, adapt_steps)
 
         traj_cat = classify_traj(orig_traj)
@@ -129,7 +128,6 @@ def online_adaption(
             straight_error.append(error_per_step)
         if "20" in time_info.keys() and "50" in time_info.keys():
             time_list.append([time_info["20"], time_info["50"]])
-        predicted_trajs.append(traj)
         d = np.stack([adapnets[i].draw for i in range(n_agents)])
 
         env_kwargs['start'] += 1
@@ -147,11 +145,10 @@ def online_adaption(
     print("\n\nVehicle id: {} Statistical Info:\n\n".format(env_kwargs['egoid']))
     utils.print_error(error_info)
 
-    return predicted_trajs, error_info
+    return error_info
 
 
 def prediction(x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps):
-    traj = hgail.misc.simulation.Trajectory()
     predict_span = 50
     error_per_step = []  # size is (predict_span, n_agent) each element is a dict(dx: , dy: ,dist: )
     valid_data = True
@@ -187,7 +184,6 @@ def prediction(x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps):
         # print("policy feature:", a)
         # print("predict step: {}".format(j+1))
         nx, r, dones, e_info = env.step(actions)
-        traj.add(x, actions, r, a_info, e_info)
         error_per_agent = []  # length is n_agent, each element is a dict(dx: , dy: ,dist: )
 
         for i in range(n_agents):
@@ -223,7 +219,7 @@ def prediction(x, adapnets, env, policy, prev_hiddens, n_agents, adapt_steps):
         elif j == 49:
             time_info["50"] = end_time - start_time
 
-    return traj.flatten(), error_per_step, time_info, orig_trajectory, pred_trajectory
+    return error_per_step, time_info, orig_trajectory, pred_trajectory
 
 
 def collect_trajectories(
@@ -300,7 +296,7 @@ def collect_trajectories(
                 kwargs['egoid'] = veh_id
                 kwargs['traj_idx'] = 0
 
-                traj, error_info = online_adaption(
+                error_info = online_adaption(
                     env,
                     policy,
                     obs=data['observations'][[veh_2_index[veh_id]], :, :],
@@ -463,12 +459,10 @@ def collect(
     '''
     # load information relevant to the experiment
     params_filepath = os.path.join(exp_dir, 'imitate/{}'.format(params_filename))
-    params = hgail.misc.utils.load_params(params_filepath)
+    params = np.load(params_filepath)['params'].item()
     # validation setup
     validation_dir = os.path.join(exp_dir, 'imitate', 'test')
     utils.maybe_mkdir(validation_dir)
-    output_filepath = os.path.join(validation_dir, '{}_AGen_{}_{}.npz'.format(
-        args.ngsim_filename.split('.')[0], adapt_steps, args.env_multiagent))
 
     with Timer():
         error = collect_fn(
