@@ -8,55 +8,17 @@ data source, feature extraction, action propagation, reward definition.
 - Added AGen algorithm
 
 ## Installation:
-### rllab3:
-```bash
-# install miniconda
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh # Linux
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh # Mac
-# answer yes to everything
-sh ./Miniconda3-latest-Linux-x86_64.sh # Linux
-sh ./Miniconda3-latest-MacOSX-x86_64.sh # Mac
-# remove sh files
-rm Miniconda3-latest-Linux-x86_64.sh # Linux
-rm Miniconda3-latest-MacOSX-x86_64.sh  # Mac
 
-source ~/.bashrc 
-# if no bashrc file try ~/.bash_profile instead
-
-# install rllab
-git clone https://github.com/JackFram/rllab.git
-cd rllab
-# this takes a while
-conda env create -f environment.yml
-conda env update
-# If hdf5 is not installed, install it as it is required by AutoEnvs later in the process
-conda install hdf5
-conda install tensorflow
-# activate the rllab environment
-conda activate rllab3
-python setup.py develop
-cd ..
-```
-
-### installation instructions for the imitation learning algorithm
-```bash
-cd ~
-git clone https://github.com/JackFram/hgail.git
-conda activate rllab3
-cd hgail
-python setup.py develop
-# if you have errors indicating you should upgrade your numpy
-conda upgrade numpy
-# or
-pip install --upgrade numpy
-
-
-```
 ### installation instructions for AutoEnv
 ```bash
 cd ~
 git clone https://github.com/JackFram/Autoenv.git
 cd ~/Autoenv
+conda env create -f environment.yml
+conda env update
+# If hdf5 is not installed, install it as it is required by AutoEnvs later in the process
+conda install hdf5
+conda install tensorflow
 mkdir data/trajectories
 mkdir data/experiments
 ```
@@ -130,29 +92,21 @@ add several functions to NGSIM.jl
 ```bash
 vim ~/.julia/packages/NGSIM/OPF1X/src/NGSIM.jl
 ```
-add \
-\
-write_roadways_to_dxf,\
-write_roadways_from_dxf,\
-sparse\
-\
-below convert_convert_raw_ngsim_to_trajdatas under export
-
-## Run test
-```bash
-conda activate rllab3
-cd ~/Autoenv/
-pip install -r requirements.txt
-python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent True --n_envs 1 --adapt_steps 1
+add 
 
 ```
+write_roadways_to_dxf,
+write_roadways_from_dxf,
+sparse
+```
+below `convert_convert_raw_ngsim_to_trajdatas` under `export`
 
 ## Automated running ( data preprocessing included )
-- First put all of your raw trajectory.csv data and lane.csv data under directory
+- First you need to put all your data under `Autoenv/preprocessing/data/`
+your data should be the raw csv files categorized by time stamp directory
 ~/Autoenv/preprocessing/data
-- Change orig_traj_file(variable) path in ~/Autoenv/adaption.py
+- You might need to do some file path adjustment
 - Finally run one step code in project root directory ~/Autoenv
-- add vec_env.reset() in sandbox.tf.samplers.vectorized_sampler
 ```bash
 python adaption.py --n_proc 1 --params_filename itr_200.npz --use_multiagent True --n_envs 1 --adapt_steps 1
 ```
