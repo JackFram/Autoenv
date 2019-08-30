@@ -1,5 +1,4 @@
 import numpy as np
-
 from rllab import spaces
 from rllab.core.serializable import Serializable
 from rllab.envs.proxy_env import ProxyEnv

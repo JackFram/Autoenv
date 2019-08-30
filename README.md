@@ -126,7 +126,17 @@ python
   # we just want to make sure it doesnt error
   exit()
 ```
-
+add several functions to NGSIM.jl
+```bash
+vim ~/.julia/packages/NGSIM/OPF1X/src/NGSIM.jl
+```
+add \
+\
+write_roadways_to_dxf,\
+write_roadways_from_dxf,\
+sparse\
+\
+below convert_convert_raw_ngsim_to_trajdatas under export
 
 ## Run test
 ```bash
