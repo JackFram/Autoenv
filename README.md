@@ -64,6 +64,7 @@ mkdir data/experiments
 ### julia:
 Install julia 1.1. Code snippet assuming you are installing julia to home directory. If not, please modify the path in bashrc step accordingly.
 ```bash
+cd ~
 wget https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.0-linux-x86_64.tar.gz
 tar -xvf julia-1.1.0-linux-x86_64.tar.gz
 rm julia-1.1.0-linux-x86_64.tar.gz
@@ -71,7 +72,8 @@ echo "export PATH=$(pwd)/julia-1.1.0/bin:$PATH" >> ~/.bashrc
 ```
 Make sure the `julia` command pops up a julia 1.1 interpreter.
 
-###Install ngsim_env
+### Install ngsim_env
+
 ```bash
 conda activate rllab3
 git clone https://github.com/sisl/ngsim_env.git
@@ -86,6 +88,7 @@ julia
   Pkg.add(PackageSpec(url="https://github.com/sisl/Vec.jl"))
   Pkg.add(PackageSpec(url="https://github.com/sisl/Records.jl"))
   Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveDrivingModels.jl"))
+  Pkg.add(PackageSpec(url="https://github.com/sisl/AutoViz.jl"))
   Pkg.add(PackageSpec(url="https://github.com/sisl/AutoRisk.jl.git", rev="v0.7fixes"))
   Pkg.add(PackageSpec(url="https://github.com/sisl/NGSIM.jl.git"))
   Pkg.add(PackageSpec(url="https://github.com/sisl/BayesNets.jl.git"))
