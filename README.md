@@ -23,7 +23,6 @@ rm Miniconda3-latest-MacOSX-x86_64.sh  # Mac
 
 source ~/.bashrc 
 # if no bashrc file try ~/.bash_profile instead
-source ~/.bashrc
 conda install conda==4.6.14
 cd ~
 git clone https://github.com/JackFram/Autoenv.git
@@ -35,6 +34,10 @@ conda install hdf5
 conda install tensorflow
 mkdir data/trajectories
 mkdir data/experiments
+mkdir preprocessing/data
+mkdir preprocessing/final_data
+mkdir preprocessing/processed_data
+mkdir preprocessing/lane
 ```
 
 ### julia:
@@ -56,8 +59,8 @@ git clone https://github.com/sisl/ngsim_env.git
 cd ngsim_env
 
 # enter a julia interpreter and install dependencies.
-#   NOTE: I got some weird error with one of the packages, I think it was AutoViz, where there was a line ending before expected or something like that.
-#   I just repeated the add instruction and it seemed to work fine.
+#   NOTE: I got some weird error with one of the packages, I think it was AutoViz
+#   I just ignore the error and it seemed to work fine.
 julia
   # Add dependencesjulia
   using Pkg
@@ -91,7 +94,7 @@ add python interface
 conda activate rllab3
 cd ~/ngsim_env/python
 python setup.py develop
-pip install julia
+pip install julia==0.2.0
 # make sure it works:
 python
   import julia
