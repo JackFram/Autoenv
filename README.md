@@ -105,10 +105,8 @@ python
   # we just want to make sure it doesnt error
   exit()
 ```
-replace NGSIM package with our modified version
-```bash
-unzip NGSIM.zip
-```
+replace NGSIM package with our modified version unzip NGSIM.zip and put directory OPF1x under
+`~/.julia/packages/NGSIM/`
 
 ## Automated running ( data preprocessing included )
 - First you need to put all your data under `Autoenv/preprocessing/data/`
