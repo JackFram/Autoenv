@@ -11,6 +11,12 @@ data source, feature extraction, action propagation, reward definition.
 
 ### installation instructions for AutoEnv
 ```bash
+# install miniconda
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# answer yes to everything
+sh ./Miniconda3-latest-Linux-x86_64.sh
+rm Miniconda3-latest-Linux-x86_64.sh
+source ~/.bashrc
 cd ~
 git clone https://github.com/JackFram/Autoenv.git
 cd ~/Autoenv
