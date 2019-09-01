@@ -105,18 +105,10 @@ python
   # we just want to make sure it doesnt error
   exit()
 ```
-add several functions to NGSIM.jl
+replace NGSIM package with our modified version
 ```bash
-vim ~/.julia/packages/NGSIM/OPF1X/src/NGSIM.jl
+unzip NGSIM.zip
 ```
-add 
-
-```
-write_roadways_to_dxf,
-write_roadways_from_dxf,
-sparse
-```
-below `convert_convert_raw_ngsim_to_trajdatas` under `export`
 
 ## Automated running ( data preprocessing included )
 - First you need to put all your data under `Autoenv/preprocessing/data/`
