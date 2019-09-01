@@ -12,11 +12,19 @@ data source, feature extraction, action propagation, reward definition.
 ### installation instructions for AutoEnv
 ```bash
 # install miniconda
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh # Linux
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh # Mac
 # answer yes to everything
-sh ./Miniconda3-latest-Linux-x86_64.sh
-rm Miniconda3-latest-Linux-x86_64.sh
+sh ./Miniconda3-latest-Linux-x86_64.sh # Linux
+sh ./Miniconda3-latest-MacOSX-x86_64.sh # Mac
+# remove sh files
+rm Miniconda3-latest-Linux-x86_64.sh # Linux
+rm Miniconda3-latest-MacOSX-x86_64.sh  # Mac
+
+source ~/.bashrc 
+# if no bashrc file try ~/.bash_profile instead
 source ~/.bashrc
+conda install conda==4.6.14
 cd ~
 git clone https://github.com/JackFram/Autoenv.git
 cd ~/Autoenv
