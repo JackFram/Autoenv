@@ -1,0 +1,38 @@
+# Documentation: http://docs.travis-ci.com/user/languages/julia/
+language: julia
+sudo: required
+os:
+  - linux
+  # - osx
+julia:
+  - 1.0
+  - 1.1
+  - nightly
+matrix:
+  allow_failures:
+    - julia: nightly
+notifications:
+  email: false
+script:
+  - git clone https://github.com/JuliaRegistries/General  $(julia -e 'import Pkg; println(joinpath(Pkg.depots1(), "registries", "General"))')  
+  - git clone https://github.com/SISL/Registry  $(julia -e 'import Pkg; println(joinpath(Pkg.depots1(), "registries", "SISL"))')  
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia --project --color=yes --check-bounds=yes -e 'import Pkg; Pkg.build(); Pkg.test("AutomotiveDrivingModels"; coverage=true)'  
+
+after_success:
+  - julia --project -e 'import Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg;
+                                Pkg.add("Documenter"); 
+                                Pkg.add(PackageSpec(url="https://github.com/sisl/Records.jl")); 
+                                Pkg.add(PackageSpec(url="https://github.com/sisl/Vec.jl"));
+                                Pkg.develop(PackageSpec(path=pwd()));
+                                Pkg.instantiate()'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip

@@ -1,0 +1,7 @@
+data/
+*.jld
+*.pyc
+*.log
+*.webm
+docs/build
+.ipynb_checkpoints/

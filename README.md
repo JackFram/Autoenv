@@ -99,7 +99,8 @@ pip install julia==0.2.0
 python
   import julia
   julia.Julia()
-  # if this not working try
+  # if this not working try the commands pop up in the error information
+  # or try
   from julia.api import Julia
   j = Julia(compiled_modules=False)
   # we just want to make sure it doesnt error
@@ -112,10 +113,11 @@ replace package with our modified version unzip our modified packages and put di
 cd ~/Autoenv/
 rm -rf ~/.julia/packages/AutomotiveDrivingModels
 rm -rf ~/.julia/packages/NGSIM
-unzip ./AutomotiveDrivingModels.zip
-unzip ./NGSIM.zip
 mv NGSIM ~/.julia/packages/
 mv AutomotiveDrivingModels ~/.julia/packages/
+julia 
+    using AutomotiveDrivingModels
+    using NGSIM
 ```
 
 ## Automated running ( data preprocessing included )
