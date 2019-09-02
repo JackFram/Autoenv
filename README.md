@@ -33,8 +33,7 @@ conda activate rllab3
 # If hdf5 is not installed, install it as it is required by AutoEnvs later in the process
 conda install hdf5
 conda install tensorflow
-mkdir data/trajectories
-mkdir data/experiments
+cd ~/Autoenv
 mkdir preprocessing/data
 mkdir preprocessing/final_data
 mkdir preprocessing/processed_data
@@ -106,8 +105,18 @@ python
   # we just want to make sure it doesnt error
   exit()
 ```
-replace NGSIM package with our modified version unzip NGSIM.zip and put directory OPF1x under
-`~/.julia/packages/NGSIM/`
+replace package with our modified version unzip our modified packages and put directory under
+`~/.julia/packages/`
+
+```bash
+cd ~/Autoenv/
+rm -rf ~/.julia/packages/AutomotiveDrivingModels
+rm -rf ~/.julia/packages/NGSIM
+unzip ./AutomotiveDrivingModels.zip
+unzip ./NGSIM.zip
+mv NGSIM ~/.julia/packages/
+mv AutomotiveDrivingModels ~/.julia/packages/
+```
 
 ## Automated running ( data preprocessing included )
 - First you need to put all your data under `Autoenv/preprocessing/data/`
