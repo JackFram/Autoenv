@@ -1,6 +1,5 @@
 name: rllab3
 channels:
-  - soumith
   - kne
   - menpo
   - defaults
@@ -89,7 +88,6 @@ dependencies:
   - pyparsing=2.4.2=py_0
   - python=3.5.2=0
   - python-dateutil=2.7.3=py35_0
-  - pytorch=0.1.9=py35_2
   - pytz=2019.2=py_0
   - readline=6.2=2
   - scikit-learn=0.19.0=np112py35_0
@@ -105,7 +103,6 @@ dependencies:
   - testpath=0.3.1=py35hf8009f4_0
   - theano=1.0.2=py35h04f5b5a_0
   - tk=8.5.18=0
-  - torchvision=0.1.6=py35_19
   - tornado=5.1.1=py35h1de35cc_0
   - traitlets=4.3.2=py35hd3d1486_0
   - wcwidth=0.1.7=py35hdd0c235_0
@@ -138,5 +135,7 @@ dependencies:
     - pyprind==2.11.2
     - pyzmq==18.1.0
     - s3transfer==0.2.1
+    - torch==1.1.0
+    - torchvision==0.3.0
     - tqdm==4.35.0
     - urllib3==1.25.3
