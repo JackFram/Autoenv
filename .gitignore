@@ -2,5 +2,4 @@
 __pycache__
 *.ipynb
 *.pkl
-*.npz
 .ipynb_checkpoints/
