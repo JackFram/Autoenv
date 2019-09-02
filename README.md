@@ -29,6 +29,7 @@ git clone https://github.com/JackFram/Autoenv.git
 cd ~/Autoenv
 conda env create -f environment.yml
 conda env update
+conda activate rllab3
 # If hdf5 is not installed, install it as it is required by AutoEnvs later in the process
 conda install hdf5
 conda install tensorflow
