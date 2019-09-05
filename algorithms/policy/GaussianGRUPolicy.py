@@ -212,9 +212,14 @@ class GaussianGRUPolicy(nn.Module):
             ], axis=-1)
         else:
             all_input = flat_obs
-        all_input = torch.tensor(all_input).cuda()
-        if not torch.is_tensor(prev_hiddens):
-            prev_hiddens = torch.tensor(prev_hiddens).float().cuda()
+        if torch.cuda.is_available():
+            all_input = torch.tensor(all_input).cuda()
+            if not torch.is_tensor(prev_hiddens):
+                prev_hiddens = torch.tensor(prev_hiddens).float().cuda()
+        else:
+            all_input = torch.tensor(all_input)
+            if not torch.is_tensor(prev_hiddens):
+                prev_hiddens = torch.tensor(prev_hiddens).float()
         means, log_stds, hidden_vec = self.forward(all_input, prev_hiddens)
         means = means.cpu().detach().numpy()
         log_stds = log_stds.cpu().detach().numpy()
