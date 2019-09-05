@@ -633,31 +633,31 @@ if __name__ == '__main__':
                          "pred_traj": []}
             for file_name in os.listdir(os.path.join(data_base_dir, dir_name, "processed")):
                 try:
-                    if "section" in file_name:
-                        orig_traj_file = os.path.join(dir_name, "processed", file_name)
-                        print("processing file {}".format(orig_traj_file))
-                    else:
-                        print("lane file, skipping")
-                        continue
-                    lane_file = os.path.join(dir_name, "processed", '{}_lane'.format(orig_traj_file[:19]))
-                    processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
-                    df_len = clean_data(orig_traj_file)
-                    if df_len == 0:
-                        print("Invalid file, skipping")
-                        continue
-                    csv2txt(processed_data_path)
-                    if prev_lane_name != lane_file:
-                        create_lane(lane_file)
-                    else:
-                        print("Using same lane file, skipping generating a new one")
-                    print("Finish cleaning the original data")
-                    print("Start generating roadway")
-                    if prev_lane_name != lane_file:
-                        base_dir = os.path.expanduser('~/Autoenv/data/')
-                        j.write_roadways_to_dxf(base_dir)
-                        j.write_roadways_from_dxf(base_dir)
-                    prev_lane_name = lane_file
-                    print("Finish generating roadway")
+                    # if "section" in file_name:
+                    #     orig_traj_file = os.path.join(dir_name, "processed", file_name)
+                    #     print("processing file {}".format(orig_traj_file))
+                    # else:
+                    #     print("lane file, skipping")
+                    #     continue
+                    # lane_file = os.path.join(dir_name, "processed", '{}_lane'.format(orig_traj_file[:19]))
+                    # processed_data_path = 'holo_{}_perfect_cleaned.csv'.format(orig_traj_file[5:19])
+                    # df_len = clean_data(orig_traj_file)
+                    # if df_len == 0:
+                    #     print("Invalid file, skipping")
+                    #     continue
+                    # csv2txt(processed_data_path)
+                    # if prev_lane_name != lane_file:
+                    #     create_lane(lane_file)
+                    # else:
+                    #     print("Using same lane file, skipping generating a new one")
+                    # print("Finish cleaning the original data")
+                    # print("Start generating roadway")
+                    # if prev_lane_name != lane_file:
+                    #     base_dir = os.path.expanduser('~/Autoenv/data/')
+                    #     j.write_roadways_to_dxf(base_dir)
+                    #     j.write_roadways_from_dxf(base_dir)
+                    # prev_lane_name = lane_file
+                    # print("Finish generating roadway")
                     convert_raw_ngsim_to_trajdatas()
                     print("Start feature extraction")
                     extract_ngsim_features(output_filename="ngsim_holo_new.h5", n_expert_files=1)
@@ -705,6 +705,7 @@ if __name__ == '__main__':
                 except BaseException as e:
                     print("error occurred which is:{}".format(e))
                     continue
+                exit(0)
                 print("\n\nDirectory: {}, file: {} Statistical Info:\n\n".format(dir_name, file_name))
                 utils.print_error(error)
                 dir_error["overall"] += error["overall"]
