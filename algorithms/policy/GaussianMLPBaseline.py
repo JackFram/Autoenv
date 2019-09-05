@@ -52,7 +52,8 @@ class GaussianMLP(nn.Module):
     def forward(self, x):
         if self.normalize_inputs:
             x = (x - x.mean(dim=0))/(x.std(dim=0)+1e-4)
-        x = x.cuda()
+        if torch.cuda.is_available():
+            x = x.cuda()
         mean = self.mean_network(x)
         if self.normalize_outputs:
             mean = (mean - mean.mean(dim=0))/(mean.std(dim=0)+1e-4)
@@ -60,8 +61,12 @@ class GaussianMLP(nn.Module):
         return mean
 
     def fit(self, xs, ys):
-        xs = torch.tensor(xs).double().cuda()
-        ys = torch.tensor(ys).double().cuda()
+        if torch.cuda.is_available():
+            xs = torch.tensor(xs).double().cuda()
+            ys = torch.tensor(ys).double().cuda()
+        else:
+            xs = torch.tensor(xs).double()
+            ys = torch.tensor(ys).double()
         if self.subsample_factor < 1:
             num_samples_tot = xs.shape[0]
             idx = np.random.randint(0, num_samples_tot, int(num_samples_tot * self._subsample_factor))

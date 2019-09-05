@@ -34,6 +34,7 @@ from src.trajdata import convert_raw_ngsim_to_trajdatas
 # import pdb
 import math
 import tqdm
+import torch
 
 plt.style.use("ggplot")
 
@@ -268,7 +269,8 @@ def collect_trajectories(
     # print(trajinfos[0])
     args.policy_recurrent = True
     policy = policy_fn(args, env, mode=1)
-    policy = policy.cuda()
+    if torch.cuda.is_available():
+        policy = policy.cuda()
     with tf.Session() as sess:
         # initialize variables
         sess.run(tf.global_variables_initializer())

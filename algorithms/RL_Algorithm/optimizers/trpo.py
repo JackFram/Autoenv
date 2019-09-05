@@ -56,7 +56,11 @@ def trpo_step(policy_net, states, actions, advantages, max_kl, damping, use_fim=
     def get_loss(volatile=False):
         with torch.set_grad_enabled(not volatile):
             log_probs = policy_net.get_log_prob(states, actions)
-            action_loss = -torch.tensor(advantages).flatten().float().cuda() * torch.exp(log_probs - fixed_log_probs)
+            if torch.cuda.is_available():
+                action_loss = -torch.tensor(advantages).flatten().float().cuda() \
+                              * torch.exp(log_probs - fixed_log_probs)
+            else:
+                action_loss = -torch.tensor(advantages).flatten().float() * torch.exp(log_probs - fixed_log_probs)
             return action_loss.mean()
 
     """use fisher information matrix for Hessian*vector"""

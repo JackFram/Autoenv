@@ -107,8 +107,12 @@ class GaussianGRUPolicy(nn.Module):
             x = np.concatenate([x, prev_act], axis=-1)
         x = x.reshape((-1, self.input_dim))
         actions = actions.reshape((-1, self.action_dim))
-        x = torch.tensor(x).cuda()
-        actions = torch.tensor(actions).float().cuda()
+        if torch.cuda.is_available():
+            x = torch.tensor(x).cuda()
+            actions = torch.tensor(actions).float().cuda()
+        else:
+            x = torch.tensor(x)
+            actions = torch.tensor(actions).float()
         action_mean, action_log_std, hidden_vec = self.forward(x)
         action_log_std = action_log_std
         action_std = torch.exp(action_log_std)
@@ -118,7 +122,10 @@ class GaussianGRUPolicy(nn.Module):
         if self.state_include_action:
             prev_act = np.concatenate([np.zeros((actions.shape[0], 1, actions.shape[2])), actions], axis=1)[:, :-1, :]
             x = np.concatenate([x, prev_act], axis=-1)
-        x = torch.tensor(x).reshape((-1, self.input_dim)).cuda()
+        if torch.cuda.is_available():
+            x = torch.tensor(x).reshape((-1, self.input_dim)).cuda()
+        else:
+            x = torch.tensor(x).reshape((-1, self.input_dim))
         mean, action_log_std, _ = self.forward(x)
         cov_inv = self.action_log_std.exp().pow(-2).squeeze(0).repeat(x.size(0))
         param_count = 0
